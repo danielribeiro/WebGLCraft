@@ -120,6 +120,8 @@ init_web_app = ->
 
 
 # trick on rotation: create rotation matrix on jig, and on three:
+# scrach, use get  rotationx, y, z, and set on object
+
 # ak setFromRotationMatrix
 # src/core/Matrix4.js
 # 733:		rotation.setFromRotationMatrix( matrix );
