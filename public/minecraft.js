@@ -1,11 +1,8 @@
 (function() {
   var JL2THREE, addCube, init_web_app;
   JL2THREE = function(target, pos, dir, camera) {
-    var m;
-    m = new THREE.Matrix4(dir[0], dir[1], dir[2], dir[3], dir[4], dir[5], dir[6], dir[7], dir[8], dir[9], dir[10], dir[11], dir[12], dir[13], dir[14], dir[15]);
-    m.setTranslation(pos[0], pos[1], pos[2]);
-    target.matrix = m;
-    return target.update(false, true, camera);
+    target.position.set.apply(target.position, pos);
+    return target.updateMatrix();
   };
   addCube = function(system, x, y, z) {
     var cube, rad;
@@ -25,7 +22,7 @@
     ground = new jigLib.JPlane(null, [0, 1, 0, 0]);
     ground.set_friction(10);
     system.addBody(ground);
-    pcube = addCube(system, 0, 0, 100);
+    pcube = addCube(system, 0, 100, 0);
     renderer = new THREE.WebGLRenderer({
       antialias: true
     });
@@ -38,10 +35,10 @@
     camera.position.y = 0;
     scene = new THREE.Scene();
     cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
-    cube.position.set(0, 0, 0);
     cube.castShadow = true;
     cube.receiveShadow = true;
     cube.geometry.dynamic = true;
+    cube.matrixAutoUpdate = false;
     scene.add(cube);
     planeGeo = new THREE.PlaneGeometry(4000, 2000, 10, 10);
     planeMat = new THREE.MeshLambertMaterial({
@@ -49,7 +46,6 @@
     });
     plane = new THREE.Mesh(planeGeo, planeMat);
     plane.rotation.x = -Math.PI / 2;
-    plane.position.y = -25;
     plane.receiveShadow = true;
     scene.add(plane);
     ambientLight = new THREE.AmbientLight(0xcccccc);
@@ -61,15 +57,35 @@
     directionalLight.position.normalize();
     scene.add(directionalLight);
     renderer.render(scene, camera);
+    $(document).bind('keydown', 'up', function() {
+      return camera.position.y += 3;
+    });
+    $(document).bind('keydown', 'down', function() {
+      return camera.position.y -= 3;
+    });
+    $(document).bind('keydown', 'left', function() {
+      return camera.position.x -= 3;
+    });
+    $(document).bind('keydown', 'right', function() {
+      return camera.position.x += 3;
+    });
+    $(document).bind('keypress', 'a', function() {
+      return camera.position.z -= 3;
+    });
+    $(document).bind('keypress', 's', function() {
+      return camera.position.z += 3;
+    });
     now = (old = new Date().getTime());
     animate = function() {
-      var dir, pos;
+      var diff, dir, pos;
       now = new Date().getTime();
-      system.integrate((now - old) / 75);
+      diff = (now - old);
+      diff = Math.min(500, diff);
+      system.integrate(diff / 1000);
       old = now;
       pos = pcube.get_currentState().position;
       dir = pcube.get_currentState().get_orientation().glmatrix;
-      JL2THREE(cube, pos, dir);
+      JL2THREE(cube, pos, dir, camera);
       renderer.clear();
       renderer.render(scene, camera);
       return window.requestAnimationFrame(animate, renderer.domElement);

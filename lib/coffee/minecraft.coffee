@@ -1,9 +1,16 @@
 JL2THREE = (target, pos, dir, camera) ->
-    m = new THREE.Matrix4(dir[0], dir[1], dir[2], dir[3], dir[4], dir[5], dir[6], dir[7], dir[8], dir[9], dir[10], dir[11], dir[12], dir[13], dir[14], dir[15])
-    m.setTranslation pos[0], pos[1], pos[2]
-    target.matrix = m
-    target.update false, true, camera
+    target.position.set pos...
+    target.updateMatrix()
+    # m = new THREE.Matrix4
+    # raise "wtf?" if isNaN pos[0]
+    # m.setTranslation pos[0], pos[1], pos[2]
+    # m
+    # position = m
 
+    # rotate = new THREE.Matrix4(dir[0], dir[1], dir[2], dir[3], dir[4], dir[5], dir[6], dir[7], dir[8], dir[9], dir[10], dir[11], dir[12], dir[13], dir[14], dir[15])
+    # position.multiplySelf rotate
+    # target.matrix = position
+    # target.update false, true, camera
 
 
 addCube = (system, x, y, z) ->
@@ -27,7 +34,7 @@ init_web_app = ->
     ground = new jigLib.JPlane(null,[0, 1, 0, 0])
     ground.set_friction(10)
     system.addBody(ground)
-    pcube = addCube(system, 0, 0, 100)
+    pcube = addCube(system, 0, 100, 0)
 
     renderer = new THREE.WebGLRenderer(antialias: true)
     renderer.setSize 800, 600
@@ -43,10 +50,11 @@ init_web_app = ->
     scene = new THREE.Scene()
     # cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
     cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial())
-    cube.position.set 0, 0, 0
+    # cube.position.set 0, 0, 0
     cube.castShadow = true
     cube.receiveShadow = true
     cube.geometry.dynamic = true
+    cube.matrixAutoUpdate = false
 
     scene.add cube
 
@@ -61,7 +69,7 @@ init_web_app = ->
     planeMat = new THREE.MeshLambertMaterial(color: 0x00FF00)
     plane = new THREE.Mesh(planeGeo, planeMat)
     plane.rotation.x = -Math.PI / 2
-    plane.position.y = -25
+    # plane.position.y = -25
     plane.receiveShadow = true
     scene.add plane
 
@@ -77,10 +85,12 @@ init_web_app = ->
     renderer.render scene, camera
 
 
-    # $(document).bind 'keydown', 'up', -> cube.position.y += 3
-    # $(document).bind 'keydown', 'down', -> cube.position.y -= 3
-    # $(document).bind 'keydown', 'left', -> cube.position.x -= 3
-    # $(document).bind 'keydown', 'right', -> cube.position.x += 3
+    $(document).bind 'keydown', 'up', -> camera.position.y += 3
+    $(document).bind 'keydown', 'down', -> camera.position.y -= 3
+    $(document).bind 'keydown', 'left', -> camera.position.x -= 3
+    $(document).bind 'keydown', 'right', -> camera.position.x += 3
+    $(document).bind 'keypress', 'a', -> camera.position.z -= 3
+    $(document).bind 'keypress', 's', -> camera.position.z += 3
 
     now = old = new Date().getTime()
     animate = ->
@@ -92,12 +102,14 @@ init_web_app = ->
         # cube.rotation.y = t / 2
 
         now = new Date().getTime()
-        system.integrate((now - old) / 75)
+        diff = (now - old)
+        diff = Math.min 500, diff
+        system.integrate(diff / 1000)
         old = now
 
         pos = pcube.get_currentState().position
         dir = pcube.get_currentState().get_orientation().glmatrix
-        JL2THREE(cube, pos, dir)
+        JL2THREE(cube, pos, dir, camera)
 
         renderer.clear()
         renderer.render scene, camera
@@ -107,3 +119,10 @@ init_web_app = ->
 
 
 
+# trick on rotation: create rotation matrix on jig, and on three:
+# ak setFromRotationMatrix
+# src/core/Matrix4.js
+# 733:		rotation.setFromRotationMatrix( matrix );
+
+# src/core/Quaternion.js
+# 88:	setFromRotationMatrix: function ( m ) {
