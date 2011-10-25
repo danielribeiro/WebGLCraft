@@ -17,7 +17,7 @@
   init_web_app = function() {
     var ambientLight, animate, camera, cube, directionalLight, ground, now, old, pcube, plane, planeGeo, planeMat, renderer, scene, system;
     system = jigLib.PhysicsSystem.getInstance();
-    system.setGravity([0, -20, 0, 0]);
+    system.setGravity([0, -200, 0, 0]);
     system.setSolverType("ACCUMULATED");
     ground = new jigLib.JPlane(null, [0, 1, 0, 0]);
     ground.set_friction(10);
@@ -58,10 +58,10 @@
     scene.add(directionalLight);
     renderer.render(scene, camera);
     $(document).bind('keydown', 'up', function() {
-      return camera.position.y += 3;
+      return camera.position.z -= 3;
     });
     $(document).bind('keydown', 'down', function() {
-      return camera.position.y -= 3;
+      return camera.position.z += 3;
     });
     $(document).bind('keydown', 'left', function() {
       return camera.position.x -= 3;
@@ -70,10 +70,13 @@
       return camera.position.x += 3;
     });
     $(document).bind('keypress', 'a', function() {
-      return camera.position.z -= 3;
+      return camera.position.y += 3;
     });
     $(document).bind('keypress', 's', function() {
-      return camera.position.z += 3;
+      return camera.position.y -= 3;
+    });
+    $(document).bind('keydown', 'space', function() {
+      return pcube.setVelocity([0, 100, 0]);
     });
     now = (old = new Date().getTime());
     animate = function() {

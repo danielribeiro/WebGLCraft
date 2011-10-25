@@ -29,7 +29,7 @@ addCube = (system, x, y, z) ->
 
 init_web_app = ->
     system = jigLib.PhysicsSystem.getInstance()
-    system.setGravity([0,-20,0,0])
+    system.setGravity([0,-200,0,0])
     system.setSolverType "ACCUMULATED"
     ground = new jigLib.JPlane(null,[0, 1, 0, 0])
     ground.set_friction(10)
@@ -85,12 +85,14 @@ init_web_app = ->
     renderer.render scene, camera
 
 
-    $(document).bind 'keydown', 'up', -> camera.position.y += 3
-    $(document).bind 'keydown', 'down', -> camera.position.y -= 3
+    $(document).bind 'keydown', 'up', -> camera.position.z -= 3
+    $(document).bind 'keydown', 'down', -> camera.position.z += 3
     $(document).bind 'keydown', 'left', -> camera.position.x -= 3
     $(document).bind 'keydown', 'right', -> camera.position.x += 3
-    $(document).bind 'keypress', 'a', -> camera.position.z -= 3
-    $(document).bind 'keypress', 's', -> camera.position.z += 3
+    $(document).bind 'keypress', 'a', -> camera.position.y += 3
+    $(document).bind 'keypress', 's', -> camera.position.y -= 3
+    $(document).bind 'keydown', 'space', ->
+        pcube.setVelocity [0, 100, 0]
 
     now = old = new Date().getTime()
     animate = ->
