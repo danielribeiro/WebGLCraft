@@ -1,16 +1,28 @@
-JL2THREE = (target, pos, dir, camera) ->
-    target.position.set pos...
-    target.updateMatrix()
-    # m = new THREE.Matrix4
-    # raise "wtf?" if isNaN pos[0]
-    # m.setTranslation pos[0], pos[1], pos[2]
-    # m
-    # position = m
+# JL2THREE = (target, c) ->
+#     pos = c.get_currentState().position
+#     dir = c.get_currentState().get_orientation().glmatrix
+#     angles = x.toRadians() for x in [c.get_rotationX(), c.get_rotationY(), c.get_rotationZ()]
+#     target.rotation.set angles...
+#     target.position.set pos...
+#     target.updateMatrix()
 
-    # rotate = new THREE.Matrix4(dir[0], dir[1], dir[2], dir[3], dir[4], dir[5], dir[6], dir[7], dir[8], dir[9], dir[10], dir[11], dir[12], dir[13], dir[14], dir[15])
-    # position.multiplySelf rotate
-    # target.matrix = position
-    # target.update false, true, camera
+THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
+    @position.set pos[0], pos[1], pos[2]
+    @matrix =  new THREE.Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
+    @matrix.setPosition @position
+    if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
+        @matrix.scale @scale
+        @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
+    @matrixWorldNeedsUpdate = true
+
+
+JL2THREE = (object, jig) ->
+    pos = jig.get_currentState().position
+    orientation = jig.get_currentState().get_orientation().glmatrix
+    object.hackUpdateMatrix(pos, orientation)
+    # object.position.set pos[0], pos[1], pos[2]
+    # object.updateMatrix()
+    return
 
 
 addCube = (system, x, y, z) ->
@@ -20,6 +32,8 @@ addCube = (system, x, y, z) ->
     cube.set_friction 0
     system.addBody cube
     cube.moveTo [ x, y, z, 0 ]
+    # cube.setRotation [45, 0, 0]
+    # cube.set_movable false
     cube
     # cube.setRotation randomAngle()
     # links.push
@@ -30,7 +44,7 @@ addCube = (system, x, y, z) ->
 init_web_app = ->
     system = jigLib.PhysicsSystem.getInstance()
     system.setGravity([0,-200,0,0])
-    system.setSolverType "ACCUMULATED"
+    system.setSolverType "FAST"
     ground = new jigLib.JPlane(null,[0, 1, 0, 0])
     ground.set_friction(10)
     system.addBody(ground)
@@ -44,8 +58,8 @@ init_web_app = ->
 
     camera = new THREE.PerspectiveCamera(45, 800 / 600, 1, 10000)
     # camera = new THREE.OrthographicCamera(45, 800 / 600, 1, 10000)
-    camera.position.z = 300
-    camera.position.y = 0
+    camera.position.z = 900
+    camera.position.y = 200
     # camera.position.x = 100
     scene = new THREE.Scene()
     # cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
@@ -109,9 +123,7 @@ init_web_app = ->
         system.integrate(diff / 1000)
         old = now
 
-        pos = pcube.get_currentState().position
-        dir = pcube.get_currentState().get_orientation().glmatrix
-        JL2THREE(cube, pos, dir, camera)
+        JL2THREE(cube, pcube)
 
         renderer.clear()
         renderer.render scene, camera

@@ -1,0 +1,259 @@
+<!--Original Source: http://fabricasapiens.nl/projecten/threejs/physics/collisions_similar.htm-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+    <head>
+
+        <title>jigLib benchmarking / regression test: similar collisions</title>
+
+        <script src='./lib/jiglibjs.0.9.0.2.combined.js' type='text/javascript'></script>
+        <script type="text/javascript" src="./oldthree.js"></script>
+
+
+        <style>
+            body {
+                margin: auto;
+                background-color: #888;
+                padding-top: 50px;
+                font-family: sans;
+                color: #666;
+                font-size: 0.8em
+            }
+
+            #container {
+                margin: auto;
+                width: 900px;
+                padding: 10px;
+                background-color: #fff;
+                border-radius: 5px;
+                -webkit-box-shadow: 5px 5px 2px #444;
+            }
+        </style>
+    </head>
+    <body>
+
+
+        <div id="container">
+            <div id="rendercontainer" style='width: 900px; height: 400px;'></div>
+
+            <h2>Similar collisions</h2>
+	This test is designed to act as a simple benchmark for box->plane &amp;
+	box->box or sphere->plane &amp; sphere->sphere collisions.<br />
+	Should be used to measure the performance impact of optimisations,
+	changes to the codebase and browser updates.<br />
+            <br />
+
+            <script>
+
+                var container = document.getElementById('rendercontainer');
+                var width = container.style.width.substr(0,3) * 1;
+                var height = container.style.height.substr(0,3) * 1;
+
+                var system;
+                var start;
+                var shape;
+
+                var camera = new THREE.Camera(75, ( width / height ), 1, 10000);
+                camera.position.x = camera.position.y = camera.position.z = 100;
+                camera.target.position.x = camera.target.position.z = 1;
+                camera.target.position.y = 50;
+
+                var scene = new THREE.Scene();
+
+                var projector = new THREE.Projector();
+
+                var renderer = new THREE.WebGLRenderer();
+                renderer.setSize( width, height );
+                container.appendChild( renderer.domElement );
+
+                // The overall 'lightness' of the scene
+                var ambientLight = new THREE.AmbientLight( 0x999999, 1 );
+                scene.addLight( ambientLight );
+
+                // 'Parallel' lighting, e.g. the sun. The direction of all rays is the same.
+                // The 'position' refers to the position of the lightsource relative to any element
+                // The position is always normalised, so  that only the ratio of the x,y and z counts, not the absolute numbers!
+                // Here, the rays come from a 45 degree angle, situated between the z and y axis
+                var directionalLight = new THREE.DirectionalLight( 0xcccccc, 1 );
+                directionalLight.position.x = 1;
+                directionalLight.position.y = 10;
+                directionalLight.position.z = 1;
+                directionalLight.position.normalize();
+                scene.addLight( directionalLight );
+
+                // Stats
+//                var stats = new Stats();
+//                stats.domElement.style.position = 'absolute';
+//                stats.domElement.style.top = '0px';
+//                document.body.appendChild( stats.domElement );
+
+                // array of links between JigLib objects and ThreeJs scene objects
+                var links=[];
+
+                // adds objects to the scene
+                function addObject() {
+                    switch(shape)
+                    {
+                        case 'spheres': addSphere(Math.random(),200,-50+Math.random()); break;
+                        case 'cubes': addCube(Math.random(),200,-50+Math.random()); break;
+                        case 'capsules': addCylinder(Math.random(),200,-50+Math.random()); break;
+                    }
+                }
+
+                // removes all JigLib and Three.js objects from the scene
+                function clearObjects() {
+                    var i=links.length-1;
+                    if (i>0)
+                    {
+                        var obj;
+                        do {
+                            if (links[i].type!='temporary')
+                                continue;
+                            obj=links.pop();
+                            if (obj.type=='temporary')
+                            {
+                                scene.removeChild(obj.glge);
+                                system.removeBody(obj.jig);
+                                obj.glge=obj.jig=null;
+                                obj=null;
+                            }
+                        } while(i--);
+                    }
+                }
+
+                var size = 20;
+
+                // adds a cube / box to the scene
+                var addCube=function(x,y,z){
+                    var threejsmesh = new THREE.Mesh(new Cube( size, size, size), [ new THREE.MeshPhongMaterial( { color: 0x777777 }) ] );
+                    threejsmesh.position.x = x; threejsmesh.position.y = y;  threejsmesh.position.z = z;
+                    threejsmesh.autoUpdateMatrix = false;
+                    scene.addObject(threejsmesh);
+                    var jigobj=new jigLib.JBox(null, size, size, size);
+                    jigobj.set_mass(1);
+                    jigobj.set_friction(0);
+                    system.addBody(jigobj);
+                    jigobj.moveTo([x,y,z,0]);
+                    jigobj.setRotation(randomAngle());
+                    links.push({threejs:threejsmesh,jig:jigobj,type:'temporary'})
+                }
+
+                // reference to the JigLibJS physics system singleton
+                system=jigLib.PhysicsSystem.getInstance();
+                system.setGravity([0,-150,0,0]);
+
+                // initial JigLib bodies matching the GLGE objects added in the XML above
+                var ground=new jigLib.JPlane(null,[0, 1, 0, 0]);
+                ground.set_friction(0);
+//                ground.moveTo([0,0,0,0]);
+                system.addBody(ground);
+
+                // link the GLGE scene objects to the jiglib bodies
+                links.push({threejs:{},jig:ground,type:'fixed'});
+
+                var lasttime, starttime;
+                var renderCount;
+                var bodyCount = 0;
+                var maxBodyCount = 1;
+                var dropGap = 1000;
+
+                // renders the scene
+                function render(){
+                    renderCount++;
+                    var now=(new Date()).getTime();
+                    var inttime=(now-lasttime)/1000;
+                    if (inttime<0.05) inttime=0.05;
+                    system.integrate((now-lasttime)/1000);
+                    lasttime=now;
+
+                    if((now-starttime) >= (bodyCount*dropGap) && bodyCount < maxBodyCount)
+                    {
+                        addObject();
+                        bodyCount+=1;
+                    }
+
+
+                    for(var i=0; i<links.length;i++){
+                        /* if (links[i].type != "fixed")
+                    {
+                        links[i].threejs.position.y = links[i].jig.get_currentState().position[1];
+                        links[i].threejs.position.x = links[i].jig.get_currentState().position[0];
+                        links[i].threejs.position.z = links[i].jig.get_currentState().position[2];
+                        links[i].threejs.rotation.x = links[i].jig.get_rotationX();
+                        links[i].threejs.rotation.y = links[i].jig.get_rotationY();
+                        links[i].threejs.rotation.z = links[i].jig.get_rotationZ();
+                        // Well, this latter part needs a better solution I guess, but I just don't understand their data-format
+                        // They use this below, but we don't have GLGE, and it's complicated anywas :D
+                        // var ori=GLGE.Mat4(links[i].jig.get_currentState().get_orientation().glmatrix);
+                                            // links[i].glge.setRotMatrix(ori);
+                    }*/
+                        if ( links[i].type != "fixed" )
+                        {
+                            var object = links[i].threejs, jig = links[i].jig,
+                            position = jig.get_currentState().position,
+                            orientation = jig.get_currentState().get_orientation().glmatrix;
+
+                            object.matrix.identity();
+                            object.matrix.multiplySelf( THREE.Matrix4.translationMatrix( position[ 0 ], position[ 1 ], position[ 2 ] ) );
+                            object.matrix.multiplySelf( new THREE.Matrix4(
+                            orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],
+                            orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],
+                            orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],
+                            orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ]
+
+                        ) );
+                            console.log(orientation);
+                        }
+                    }
+
+                    renderer.render( scene, camera );
+//                    stats.update();
+                }
+
+                var renderT;
+
+                // starts rendering
+                function start() {
+                    document.getElementById('startBtn').disabled=true;
+                    system.setSolverType(document.getElementById('solver').value);
+                    shape=document.getElementById('shape').value;
+                    clearObjects();
+                    lasttime=starttime=(new Date()).getTime();
+                    bodyCount=0;
+                    renderCount=0;
+                    renderT=setInterval(render,15);
+                }
+
+                // stops rendering
+                function stop() {
+                    //clearInterval(runnerT);
+                    //clearInterval(renderT);
+                    //alert('total renders: '+renderCount+'\nrenders per second: '+renderCount/30+'\nbodies added: '+bodyCount);
+                    //document.getElementById('startBtn').disabled=false;
+                }
+
+                function randomAngle() {
+                    return [0, 0, 0];
+                }
+
+            </script>
+
+            <!-- user controls -->
+	object type: <select name="shape" id="shape">
+                <option value="cubes">cubes</option>
+                <!-- <option value="capsules">capsules</option> -->
+            </select> <br />
+	solver: <select name="solver" id="solver">
+                <option value="FAST">fast</option>
+                <option value="NORMAL">normal</option>
+                <option value="ACCUMULATED" selected="selected">accumulated</option>
+            </select> <br />
+	start:
+            <button id="startBtn" onclick="start();">go</button>
+            add one more object
+            <button onclick="addObject();">add</button>
+
+        </div>
+    </body>
+</html>
+
