@@ -1,7 +1,7 @@
 init_web_app = ->
     renderer = new THREE.WebGLRenderer(antialias: true)
     renderer.setSize 800, 600
-    document.body.appendChild(renderer.domElement)
+    $('#container').append(renderer.domElement)
     renderer.setClearColorHex(0x999999, 1.0)
     renderer.clear()
 
@@ -49,14 +49,29 @@ init_web_app = ->
     scene.add directionalLight
     renderer.render scene, camera
 
-    cameraVel = 30
-    $(document).bind 'keydown', 'up', -> camera.position.z -= cameraVel
-    $(document).bind 'keydown', 'down', -> camera.position.z += cameraVel
-    $(document).bind 'keydown', 'left', -> camera.position.x -= cameraVel
-    $(document).bind 'keydown', 'right', -> camera.position.x += cameraVel
-    $(document).bind 'keypress', 'a', -> camera.position.y += cameraVel
-    $(document).bind 'keypress', 's', -> camera.position.y -= cameraVel
-    $(document).bind 'keydown', 'space', -> vel = 10
+    # cameraVel = 30
+    # $(document).bind 'keydown', '8', -> camera.position.z -= cameraVel
+    # $(document).bind 'keydown', '5', -> camera.position.z += cameraVel
+    # $(document).bind 'keydown', '4', -> camera.position.x -= cameraVel
+    # $(document).bind 'keydown', '6', -> camera.position.x += cameraVel
+    # $(document).bind 'keydown', '7', -> camera.position.y += cameraVel
+    # $(document).bind 'keydown', '9', -> camera.position.y -= cameraVel
+    # $(document).bind 'keydown', 'space', -> vel = 10
+
+
+    # playerVel = 30
+    # $(document).bind 'keydown', 'w', -> cube.position.z -= playerVel
+    # $(document).bind 'keydown', 's', -> cube.position.z += playerVel
+    # $(document).bind 'keydown', 'a', -> cube.position.x -= playerVel
+    # $(document).bind 'keydown', 'd', -> cube.position.x += playerVel
+
+    # $(document).keyup -> alert 'up'
+
+    controls = new Controls camera, renderer.domElement
+    controls.movementSpeed = 500
+    controls.lookSpeed = 0.125
+    controls.lookVertical = true
+    controls.freeze = true
 
     animate = ->
         # camera.position.set Math.sin(t) * 300, 300, Math.cos(t) * 100 + 900
@@ -73,7 +88,9 @@ init_web_app = ->
         renderer.clear()
         renderer.render scene, camera
         window.requestAnimationFrame animate, renderer.domElement
-        # controls.update()
+        controls.update()
+
+
     animate()
 
 
