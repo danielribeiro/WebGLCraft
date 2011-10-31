@@ -1,13 +1,13 @@
 # Imports
-{Object3D, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
+{Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
 {AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial} = THREE
 
 
 # Update setting position and orientation. Needed since update is too monolithic.
-THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
+Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
     @position.set pos[0], pos[1], pos[2]
-    @matrix =  new THREE.Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
+    @matrix = new Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
     @matrix.setPosition @position
     if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
         @matrix.scale @scale
@@ -17,13 +17,8 @@ THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
 
 class Game
     constructor: ->
-        # system = jigLib.PhysicsSystem.getInstance()
-        # system.setGravity([0,-200,0,0])
-        # system.setSolverType "FAST"
-        # ground = new jigLib.JPlane(null,[0, 1, 0, 0])
-        # ground.set_friction(10)
-        # system.addBody(ground)
-        # pcube = addCube(system, 0, 100, 0)
+        @world = @createPhysics()
+        @pcube = addCube @world, 0, 100, 0
         @vel = 0
         @renderer = @createRenderer()
         @camera = @createCamera()
@@ -35,12 +30,21 @@ class Game
         @renderer.render @scene, @camera
         @defineControls()
 
+    createPhysics: ->
+        world = jigLib.PhysicsSystem.getInstance()
+        world.setGravity([0,-200,0,0])
+        world.setSolverType "FAST"
+        ground = new jigLib.JPlane(null,[0, 1, 0, 0])
+        ground.set_friction(10)
+        world.addBody(ground)
+        return world
+
+
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true
+        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
         cube.geometry.dynamic = true
-        # @cube.matrixAutoUpdate = false
         cube.position.y = 25
         cube
 
@@ -100,59 +104,48 @@ class Game
         cameraVel = 30
         @_setBinds 30, @cameraKeys, @camera
         @_setBinds 30, @playerKeys, @cube
-        $(document).bind 'keydown', 'space', => @vel = 10
+        $(document).bind 'keydown', 'space', => @pcube.setVelocity [0, 100, 0]
 
 
     start: ->
         @now = @old = new Date().getTime()
         animate = =>
+            @now = new Date().getTime()
             @tick()
+            @old = @now
             requestAnimationFrame animate, @renderer.domElement
         animate()
 
     tick: ->
-        @vel -= 0.2
-        @cube.position.y += @vel
-        if @cube.position.y <= 25
-            @cube.position.y = 25
-            @vel = 0
+        # @vel -= 0.2
+        # @cube.position.y += @vel
+        # if @cube.position.y <= 25
+            # @cube.position.y = 25
+            # @vel = 0
+        diff = Math.min 500, @diff()
+        @world.integrate(diff / 1000)
+        @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
 
-    #unsed
-    movePhysics: ->
-        now = new Date().getTime()
-        diff = (now - old)
-        diff = Math.min 500, diff
-        system.integrate(diff / 1000)
-        old = now
-        JL2THREE(@cube, pcube)
+    diff: -> @now - @old
+
+    syncPhysicalAndView: (view, physical) ->
+        state = physical.get_currentState()
+        orientation = state.get_orientation().glmatrix
+        view.hackUpdateMatrix state.position, orientation
 
 
-JL2THREE = (object, jig) ->
-    pos = jig.get_currentState().position
-    orientation = jig.get_currentState().get_orientation().glmatrix
-    object.hackUpdateMatrix(pos, orientation)
-    # object.position.set pos[0], pos[1], pos[2]
-    # object.updateMatrix()
-    return
-
-
-addCube = (system, x, y, z) ->
+addCube = (world, x, y, z) ->
     rad = 50
     cube = new jigLib.JBox(null, rad, rad, rad)
     cube.set_mass 1
     cube.set_friction 0
-    system.addBody cube
+    world.addBody cube
     cube.moveTo [ x, y, z, 0 ]
     # cube.setRotation [45, 0, 0]
     # cube.set_movable false
     cube
-    # cube.setRotation randomAngle()
-    # links.push
-        # glge: newObject
-        # jig: cube
-        # type: "temporary"
 
 
 init_web_app = -> new Game().start()

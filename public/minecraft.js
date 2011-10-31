@@ -1,10 +1,11 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, Game, JL2THREE, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, _ref, addCube, init_web_app;
+  var AmbientLight, CubeGeometry, DirectionalLight, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, _ref, addCube, init_web_app;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
   _ref = THREE;
   Object3D = _ref.Object3D;
+  Matrix4 = _ref.Matrix4;
   Scene = _ref.Scene;
   Mesh = _ref.Mesh;
   WebGLRenderer = _ref.WebGLRenderer;
@@ -19,9 +20,9 @@
   DirectionalLight = _ref.DirectionalLight;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
-  THREE.Object3D.prototype.hackUpdateMatrix = function(pos, orientation) {
+  Object3D.prototype.hackUpdateMatrix = function(pos, orientation) {
     this.position.set(pos[0], pos[1], pos[2]);
-    this.matrix = new THREE.Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
+    this.matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
     this.matrix.setPosition(this.position);
     if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
       this.matrix.scale(this.scale);
@@ -30,6 +31,8 @@
     return (this.matrixWorldNeedsUpdate = true);
   };
   Game = function() {
+    this.world = this.createPhysics();
+    this.pcube = addCube(this.world, 0, 100, 0);
     this.vel = 0;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
@@ -42,12 +45,23 @@
     this.defineControls();
     return this;
   };
+  Game.prototype.createPhysics = function() {
+    var ground, world;
+    world = jigLib.PhysicsSystem.getInstance();
+    world.setGravity([0, -200, 0, 0]);
+    world.setSolverType("FAST");
+    ground = new jigLib.JPlane(null, [0, 1, 0, 0]);
+    ground.set_friction(10);
+    world.addBody(ground);
+    return world;
+  };
   Game.prototype.createPlayer = function() {
     var cube;
     cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial());
     assoc(cube, {
       castShadow: true,
-      receiveShadow: true
+      receiveShadow: true,
+      matrixAutoUpdate: false
     });
     cube.geometry.dynamic = true;
     cube.position.y = 25;
@@ -133,51 +147,44 @@
     this._setBinds(30, this.cameraKeys, this.camera);
     this._setBinds(30, this.playerKeys, this.cube);
     return $(document).bind('keydown', 'space', __bind(function() {
-      return (this.vel = 10);
+      return this.pcube.setVelocity([0, 100, 0]);
     }, this));
   };
   Game.prototype.start = function() {
     var animate;
     this.now = (this.old = new Date().getTime());
     animate = __bind(function() {
+      this.now = new Date().getTime();
       this.tick();
+      this.old = this.now;
       return requestAnimationFrame(animate, this.renderer.domElement);
     }, this);
     return animate();
   };
   Game.prototype.tick = function() {
-    this.vel -= 0.2;
-    this.cube.position.y += this.vel;
-    if (this.cube.position.y <= 25) {
-      this.cube.position.y = 25;
-      this.vel = 0;
-    }
+    var diff;
+    diff = Math.min(500, this.diff());
+    this.world.integrate(diff / 1000);
+    this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     return this.renderer.render(this.scene, this.camera);
   };
-  Game.prototype.movePhysics = function() {
-    var diff, now, old;
-    now = new Date().getTime();
-    diff = (now - old);
-    diff = Math.min(500, diff);
-    system.integrate(diff / 1000);
-    old = now;
-    return JL2THREE(this.cube, pcube);
+  Game.prototype.diff = function() {
+    return this.now - this.old;
   };
-  JL2THREE = function(object, jig) {
-    var orientation, pos;
-    pos = jig.get_currentState().position;
-    orientation = jig.get_currentState().get_orientation().glmatrix;
-    object.hackUpdateMatrix(pos, orientation);
-    return null;
+  Game.prototype.syncPhysicalAndView = function(view, physical) {
+    var orientation, state;
+    state = physical.get_currentState();
+    orientation = state.get_orientation().glmatrix;
+    return view.hackUpdateMatrix(state.position, orientation);
   };
-  addCube = function(system, x, y, z) {
+  addCube = function(world, x, y, z) {
     var cube, rad;
     rad = 50;
     cube = new jigLib.JBox(null, rad, rad, rad);
     cube.set_mass(1);
     cube.set_friction(0);
-    system.addBody(cube);
+    world.addBody(cube);
     cube.moveTo([x, y, z, 0]);
     return cube;
   };
@@ -188,7 +195,7 @@ window.AmbientLight = AmbientLight
 window.CubeGeometry = CubeGeometry
 window.DirectionalLight = DirectionalLight
 window.Game = Game
-window.JL2THREE = JL2THREE
+window.Matrix4 = Matrix4
 window.Mesh = Mesh
 window.MeshLambertMaterial = MeshLambertMaterial
 window.MeshNormalMaterial = MeshNormalMaterial
