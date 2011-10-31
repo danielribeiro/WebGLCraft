@@ -1,3 +1,9 @@
+# Imports
+{Object3D, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
+{CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
+{AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial} = THREE
+
+
 # Update setting position and orientation. Needed since update is too monolithic.
 THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
     @position.set pos[0], pos[1], pos[2]
@@ -20,25 +26,32 @@ class Game
         # pcube = addCube(system, 0, 100, 0)
         @vel = 0
         @renderer = @createRenderer()
-        @camera = new THREE.PerspectiveCamera(45, 800 / 600, 1, 10000)
-        @camera.position.z = 900
-        @camera.position.y = 200
-        @scene = new THREE.Scene()
-        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
-        @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial())
-        assoc @cube, castShadow: true, receiveShadow: true
-        @cube.geometry.dynamic = true
-        # @cube.matrixAutoUpdate = false
-        @cube.position.y = 25
+        @camera = @createCamera()
+        @cube = @createPlayer()
+        @scene = new Scene()
         @scene.add @cube
-        # @scene.fog = new THREE.FogExp2( 0xffffff, 0.0015 )
         @scene.add @createFloor()
-        @addLights()
+        @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
 
+    createPlayer: ->
+        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
+        cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
+        assoc cube, castShadow: true, receiveShadow: true
+        cube.geometry.dynamic = true
+        # @cube.matrixAutoUpdate = false
+        cube.position.y = 25
+        cube
+
+    createCamera: ->
+        camera = new PerspectiveCamera(45, 800 / 600, 1, 10000)
+        camera.position.z = 900
+        camera.position.y = 200
+        camera
+
     createRenderer: ->
-        renderer = new THREE.WebGLRenderer(antialias: true)
+        renderer = new WebGLRenderer(antialias: true)
         renderer.setSize 800, 600
         renderer.setClearColorHex(0x999999, 1.0)
         renderer.clear()
@@ -47,21 +60,20 @@ class Game
 
 
     createFloor: ->
-        planeGeo = new THREE.PlaneGeometry(4000, 2000, 10, 10)
-        planeMat = new THREE.MeshLambertMaterial(color: 0x00FF00)
-        plane = new THREE.Mesh(planeGeo, planeMat)
+        planeGeo = new PlaneGeometry(4000, 2000, 10, 10)
+        planeMat = new MeshLambertMaterial(color: 0x00FF00)
+        plane = new Mesh(planeGeo, planeMat)
         plane.rotation.x = -Math.PI / 2
         plane.receiveShadow = true
         return plane
 
-
-    addLights: ->
-        ambientLight = new THREE.AmbientLight(0xcccccc)
-        @scene.add ambientLight
-        directionalLight = new THREE.DirectionalLight(0xff0000, 1.5)
+    addLights: (scene) ->
+        ambientLight = new AmbientLight(0xcccccc)
+        scene.add ambientLight
+        directionalLight = new DirectionalLight(0xff0000, 1.5)
         directionalLight.position.set 1, 1, 0.5
         directionalLight.position.normalize()
-        @scene.add directionalLight
+        scene.add directionalLight
 
     cameraKeys:
         8: 'z-'
@@ -109,13 +121,6 @@ class Game
 
     #unsed
     movePhysics: ->
-        @camera.position.set Math.sin(t) * 300, 300, Math.cos(t) * 100 + 900
-        @cube.geometry.__dirtyVertices = true
-        @cube.geometry.__dirtyNormals = true
-        @camera.lookAt @cube.position
-        @cube.rotation.x = t
-        @cube.rotation.y = t / 2
-
         now = new Date().getTime()
         diff = (now - old)
         diff = Math.min 500, diff
