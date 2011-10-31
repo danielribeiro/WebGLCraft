@@ -14,15 +14,8 @@
     return (this.matrixWorldNeedsUpdate = true);
   };
   Game = function() {
-    var ambientLight, directionalLight, plane, planeGeo, planeMat;
     this.vel = 0;
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true
-    });
-    this.renderer.setSize(800, 600);
-    $('#container').append(this.renderer.domElement);
-    this.renderer.setClearColorHex(0x999999, 1.0);
-    this.renderer.clear();
+    this.renderer = this.createRenderer();
     this.camera = new THREE.PerspectiveCamera(45, 800 / 600, 1, 10000);
     this.camera.position.z = 900;
     this.camera.position.y = 200;
@@ -35,6 +28,25 @@
     this.cube.geometry.dynamic = true;
     this.cube.position.y = 25;
     this.scene.add(this.cube);
+    this.scene.add(this.createFloor());
+    this.addLights();
+    this.renderer.render(this.scene, this.camera);
+    this.defineControls();
+    return this;
+  };
+  Game.prototype.createRenderer = function() {
+    var renderer;
+    renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+    renderer.setSize(800, 600);
+    renderer.setClearColorHex(0x999999, 1.0);
+    renderer.clear();
+    $('#container').append(renderer.domElement);
+    return renderer;
+  };
+  Game.prototype.createFloor = function() {
+    var plane, planeGeo, planeMat;
     planeGeo = new THREE.PlaneGeometry(4000, 2000, 10, 10);
     planeMat = new THREE.MeshLambertMaterial({
       color: 0x00FF00
@@ -42,18 +54,16 @@
     plane = new THREE.Mesh(planeGeo, planeMat);
     plane.rotation.x = -Math.PI / 2;
     plane.receiveShadow = true;
-    this.scene.add(plane);
+    return plane;
+  };
+  Game.prototype.addLights = function() {
+    var ambientLight, directionalLight;
     ambientLight = new THREE.AmbientLight(0xcccccc);
     this.scene.add(ambientLight);
     directionalLight = new THREE.DirectionalLight(0xff0000, 1.5);
-    directionalLight.position.x = 1;
-    directionalLight.position.y = 1;
-    directionalLight.position.z = 0.5;
+    directionalLight.position.set(1, 1, 0.5);
     directionalLight.position.normalize();
-    this.scene.add(directionalLight);
-    this.renderer.render(this.scene, this.camera);
-    this.defineControls();
-    return this;
+    return this.scene.add(directionalLight);
   };
   Game.prototype.cameraKeys = {
     8: 'z-',

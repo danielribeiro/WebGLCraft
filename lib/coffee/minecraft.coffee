@@ -1,3 +1,4 @@
+# Update setting position and orientation. Needed since update is too monolithic.
 THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
     @position.set pos[0], pos[1], pos[2]
     @matrix =  new THREE.Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
@@ -18,62 +19,49 @@ class Game
         # system.addBody(ground)
         # pcube = addCube(system, 0, 100, 0)
         @vel = 0
-        @renderer = new THREE.WebGLRenderer(antialias: true)
-        @renderer.setSize 800, 600
-        $('#container').append(@renderer.domElement)
-        @renderer.setClearColorHex(0x999999, 1.0)
-        @renderer.clear()
-
+        @renderer = @createRenderer()
         @camera = new THREE.PerspectiveCamera(45, 800 / 600, 1, 10000)
-        # camera = new THREE.OrthographicCamera(45, 800 / 600, 1, 10000)
         @camera.position.z = 900
         @camera.position.y = 200
-        # camera.position.x = 100
         @scene = new THREE.Scene()
-        # cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
+        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial())
-        # cube.position.set 0, 0, 0
         assoc @cube, castShadow: true, receiveShadow: true
         @cube.geometry.dynamic = true
-        # cube.matrixAutoUpdate = false
+        # @cube.matrixAutoUpdate = false
         @cube.position.y = 25
         @scene.add @cube
-
-        # controls = new THREE.FirstPersonControls( @camera )
-        # controls.movementSpeed = 1000
-        # controls.lookSpeed = 0.125
-        # controls.lookVertical = true
-
         # @scene.fog = new THREE.FogExp2( 0xffffff, 0.0015 )
+        @scene.add @createFloor()
+        @addLights()
+        @renderer.render @scene, @camera
+        @defineControls()
 
+    createRenderer: ->
+        renderer = new THREE.WebGLRenderer(antialias: true)
+        renderer.setSize 800, 600
+        renderer.setClearColorHex(0x999999, 1.0)
+        renderer.clear()
+        $('#container').append(renderer.domElement)
+        renderer
+
+
+    createFloor: ->
         planeGeo = new THREE.PlaneGeometry(4000, 2000, 10, 10)
         planeMat = new THREE.MeshLambertMaterial(color: 0x00FF00)
         plane = new THREE.Mesh(planeGeo, planeMat)
         plane.rotation.x = -Math.PI / 2
-        # plane.position.y = -25
         plane.receiveShadow = true
-        @scene.add plane
+        return plane
 
 
+    addLights: ->
         ambientLight = new THREE.AmbientLight(0xcccccc)
         @scene.add ambientLight
         directionalLight = new THREE.DirectionalLight(0xff0000, 1.5)
-        directionalLight.position.x = 1
-        directionalLight.position.y = 1
-        directionalLight.position.z = 0.5
+        directionalLight.position.set 1, 1, 0.5
         directionalLight.position.normalize()
         @scene.add directionalLight
-        @renderer.render @scene, @camera
-
-        @defineControls()
-
-        # $(document).keyup -> alert 'up'
-
-        # controls = new Controls @camera, @renderer.domElement
-        # controls.movementSpeed = 500
-        # controls.lookSpeed = 0.125
-        # controls.lookVertical = true
-        # controls.freeze = true
 
     cameraKeys:
         8: 'z-'
@@ -133,10 +121,7 @@ class Game
         diff = Math.min 500, diff
         system.integrate(diff / 1000)
         old = now
-
         JL2THREE(@cube, pcube)
-
-
 
 
 JL2THREE = (object, jig) ->
