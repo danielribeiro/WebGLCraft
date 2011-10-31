@@ -19,6 +19,11 @@ setBindings = (keyBinds, bind) ->
             bind type, key, command
 
 
+assoc = (o, i) ->
+    o[k] = v for k, v of i
+    return o
+
+
 class IdentityHashMap
     constructor: ->
         @hash = {}

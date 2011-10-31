@@ -1,5 +1,5 @@
 (function() {
-  var IdentityHashMap, setBindings;
+  var IdentityHashMap, assoc, setBindings;
   var __hasProp = Object.prototype.hasOwnProperty;
   patch(Number, {
     mod: function(arg) {
@@ -42,6 +42,19 @@
     }
     return _result;
   };
+  assoc = function(o, i) {
+    var _ref, _result, k, v;
+    o[k] = (function() {
+      _result = []; _ref = i;
+      for (k in _ref) {
+        if (!__hasProp.call(_ref, k)) continue;
+        v = _ref[k];
+        _result.push(v);
+      }
+      return _result;
+    })();
+    return o;
+  };
   IdentityHashMap = function() {
     this.hash = {};
     return this;
@@ -60,5 +73,6 @@
     return (typeof (_ref = this.hash[key.id]) !== "undefined" && _ref !== null);
   };
 window.IdentityHashMap = IdentityHashMap
+window.assoc = assoc
 window.setBindings = setBindings
 }).call(this);

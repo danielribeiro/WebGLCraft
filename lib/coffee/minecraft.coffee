@@ -1,7 +1,3 @@
-assoc = (o, i) ->
-    o[k] = v for k, v of i
-    return o
-
 THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
     @position.set pos[0], pos[1], pos[2]
     @matrix =  new THREE.Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
@@ -10,6 +6,7 @@ THREE.Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
         @matrix.scale @scale
         @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
     @matrixWorldNeedsUpdate = true
+
 
 class Game
     constructor: ->
@@ -68,21 +65,7 @@ class Game
         @scene.add directionalLight
         @renderer.render @scene, @camera
 
-        cameraVel = 30
-        $(document).bind 'keydown', '8', => @camera.position.z -= cameraVel
-        $(document).bind 'keydown', '5', => @camera.position.z += cameraVel
-        $(document).bind 'keydown', '4', => @camera.position.x -= cameraVel
-        $(document).bind 'keydown', '6', => @camera.position.x += cameraVel
-        $(document).bind 'keydown', '7', => @camera.position.y += cameraVel
-        $(document).bind 'keydown', '9', => @camera.position.y -= cameraVel
-        $(document).bind 'keydown', 'space', => @vel = 10
-
-
-        playerVel = 30
-        $(document).bind 'keydown', 'w', => @cube.position.z -= playerVel
-        $(document).bind 'keydown', 's', => @cube.position.z += playerVel
-        $(document).bind 'keydown', 'a', => @cube.position.x -= playerVel
-        $(document).bind 'keydown', 'd', => @cube.position.x += playerVel
+        @defineControls()
 
         # $(document).keyup -> alert 'up'
 
@@ -92,35 +75,67 @@ class Game
         # controls.lookVertical = true
         # controls.freeze = true
 
+    cameraKeys:
+        8: 'z-'
+        5: 'z+'
+        4: 'x-'
+        6: 'x+'
+        7: 'y+'
+        9: 'y-'
+
+    playerKeys:
+        w: 'z-'
+        s: 'z+'
+        a: 'x-'
+        d: 'x+'
+
+
+    _setBinds: (baseVel, keys, target)->
+        for key, action of keys
+            [axis, operation] = action
+            vel = if operation is '-' then -baseVel else baseVel
+            $(document).bind 'keydown', key, (e) -> target.position[axis] += vel
+
+    defineControls: ->
+        cameraVel = 30
+        @_setBinds 30, @cameraKeys, @camera
+        @_setBinds 30, @playerKeys, @cube
+        $(document).bind 'keydown', 'space', => @vel = 10
+
+
     start: ->
-        now = old = new Date().getTime()
+        @now = @old = new Date().getTime()
         animate = =>
-            # @camera.position.set Math.sin(t) * 300, 300, Math.cos(t) * 100 + 900
-            # @cube.geometry.__dirtyVertices = true
-            # @cube.geometry.__dirtyNormals = true
-            # @camera.lookAt @cube.position
-            # @cube.rotation.x = t
-            # @cube.rotation.y = t / 2
-
-            # now = new Date().getTime()
-            # diff = (now - old)
-            # diff = Math.min 500, diff
-            # system.integrate(diff / 1000)
-            # old = now
-
-            # JL2THREE(@cube, pcube)
-
-
-            @vel -= 0.2
-            @cube.position.y += @vel
-            if @cube.position.y <= 25
-                @cube.position.y = 25
-                @vel = 0
-            @renderer.clear()
-            @renderer.render @scene, @camera
+            @tick()
             requestAnimationFrame animate, @renderer.domElement
-            # controls.update()
         animate()
+
+    tick: ->
+        @vel -= 0.2
+        @cube.position.y += @vel
+        if @cube.position.y <= 25
+            @cube.position.y = 25
+            @vel = 0
+        @renderer.clear()
+        @renderer.render @scene, @camera
+
+    #unsed
+    movePhysics: ->
+        @camera.position.set Math.sin(t) * 300, 300, Math.cos(t) * 100 + 900
+        @cube.geometry.__dirtyVertices = true
+        @cube.geometry.__dirtyNormals = true
+        @camera.lookAt @cube.position
+        @cube.rotation.x = t
+        @cube.rotation.y = t / 2
+
+        now = new Date().getTime()
+        diff = (now - old)
+        diff = Math.min 500, diff
+        system.integrate(diff / 1000)
+        old = now
+
+        JL2THREE(@cube, pcube)
+
 
 
 
