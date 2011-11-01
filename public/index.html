@@ -13,9 +13,87 @@
 <!--        <script src='/lib/erectorjs/erectorjs.js' type='text/javascript'></script>
         <script src='/lib/erectorjs/ui-components/uiimage.js' type='text/javascript'></script>
         <script src='/lib/erectorjs/ui-components/uilink.js' type='text/javascript'></script>-->
-        <script src='./lib/RequestAnimationFrame.js' type='text/javascript'></script>
+<script src='./lib/RequestAnimationFrame.js' type='text/javascript'></script>
         <script src='./lib/Three.js' type='text/javascript'></script>
-        <script src='./lib/jiglibjs.0.9.0.2.combined.js' type='text/javascript'></script>
+            <script type="text/javascript" src="./jiglibjs2/geom/glMatrix.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/jiglib.js"></script>
+
+		<script type="text/javascript" src="./jiglibjs2/geom/Vector3D.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geom/Matrix3D.js"></script>
+
+		<script type="text/javascript" src="./jiglibjs2/math/JMatrix3D.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/math/JMath3D.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/math/JNumber3D.js"></script>
+
+		<script type="text/javascript" src="./jiglibjs2/cof/JConfig.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/CollOutData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/ContactData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/PlaneData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/EdgeData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/TerrainData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/OctreeCell.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/CollOutBodyData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/TriangleVertexIndices.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/data/SpanData.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintMaxDistance.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintWorldPoint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintPoint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/MaterialProperties.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollPointInfo.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollisionInfo.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectInfo.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectFunctor.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectBoxTerrain.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSphereMesh.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectCapsuleBox.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSphereCapsule.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectCapsuleTerrain.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSphereBox.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSphereTerrain.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectBoxBox.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectBoxMesh.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectBoxPlane.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectCapsuleCapsule.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSphereSphere.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectSpherePlane.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollDetectCapsulePlane.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollisionSystemAbstract.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollisionSystemGridEntry.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollisionSystemGrid.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/collision/CollisionSystemBrute.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JIndexedTriangle.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JOctree.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JRay.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JAABox.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JTriangle.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JSegment.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/events/JCollisionEvent.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintMaxDistance.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintWorldPoint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/constraint/JConstraintPoint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/PhysicsController.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/CachedImpulse.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/HingeJoint.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/BodyPair.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/PhysicsState.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/PhysicsSystem.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/physics/RigidBody.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JSphere.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JTriangleMesh.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JPlane.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JTerrain.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JBox.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/geometry/JCapsule.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/debug/Stats.js"></script>
+
+		<script type="text/javascript" src="./jiglibjs2/vehicles/JChassis.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/vehicles/JWheel.js"></script>
+		<script type="text/javascript" src="./jiglibjs2/vehicles/JCar.js"></script>
+
+        
+<!--        <script src='./lib/jiglibjs.0.9.0.2.combined.js' type='text/javascript'></script>-->
         <script src='./camera.js' type='text/javascript'></script>
         <script src='./minecraft.js' type='text/javascript'></script>
         <script type='text/javascript'>$(function () {init_web_app({"environment":"production"})})</script>

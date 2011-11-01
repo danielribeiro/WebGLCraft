@@ -37,7 +37,7 @@
   };
   patch(Object3D, {
     hackUpdateMatrix: function(pos, orientation) {
-      this.position.set(pos[0], pos[1], pos[2]);
+      this.position.set.apply(this.position, pos);
       this.matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
       if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
         this.matrix.scale(this.scale);
@@ -46,14 +46,11 @@
       return (this.matrixWorldNeedsUpdate = true);
     }
   });
-  patch(jigLib.JBox, {
+  patch(jiglib.JBox, {
     incVelocity: function(dx, dy, dz) {
-      var _ref2, vx, vy, vz;
-      _ref2 = this.get_currentState().linVelocity;
-      vx = _ref2[0];
-      vy = _ref2[1];
-      vz = _ref2[2];
-      return this.setVelocity([vx + dx, vy + dy, vz + dz, 0]);
+      var v;
+      v = this.get_currentState().linVelocity;
+      return this.setLineVelocity(new Vector3D(v.x + dx, v.y + dy, v.z + dz), false);
     },
     incVelX: function(delta) {
       return this.incVelocity(delta, 0, 0);
@@ -65,26 +62,10 @@
       return this.incVelocity(0, 0, delta);
     },
     getVerticalPosition: function() {
-      return this.get_currentState().position[1];
-    },
-    setVerticalPosition: function(val) {
-      var _ref2, x, y, z;
-      _ref2 = this.get_currentState().position;
-      x = _ref2[0];
-      y = _ref2[1];
-      z = _ref2[2];
-      return this.moveTo([x, val, z, 0]);
-    },
-    setVerticalVelocity: function(val) {
-      var _ref2, vx, vy, vz;
-      _ref2 = this.get_currentState().linVelocity;
-      vx = _ref2[0];
-      vy = _ref2[1];
-      vz = _ref2[2];
-      return this.setVelocity([vx, val, vz, 0]);
+      return this.get_currentState().position.y;
     },
     getVerticalVelocity: function() {
-      return this.get_currentState().linVelocity[1];
+      return this.get_currentState().linVelocity.y;
     }
   });
   Game = function() {
@@ -103,16 +84,17 @@
   };
   Game.prototype.createPhysics = function() {
     var ground, world;
-    world = jigLib.PhysicsSystem.getInstance();
-    world.setGravity([0, 0, 0, 0]);
+    world = jiglib.PhysicsSystem.getInstance();
+    world.setCollisionSystem(true);
+    world.setGravity(new Vector3D(0, -200, 0));
     world.setSolverType("FAST");
-    ground = new jigLib.JBox(null, 4000, 2000, 20);
+    ground = new jiglib.JBox(null, 4000, 2000, 20);
     ground.set_mass(1);
     ground.set_friction(0);
     ground.set_restitution(0);
-    ground.set_linVelocityDamping([0, 0, 0, 0]);
+    ground.set_linVelocityDamping(new Vector3D(0, 0, 0));
     world.addBody(ground);
-    ground.moveTo([0, -10, 0, 0]);
+    ground.moveTo(new Vector3D(0, -10, 0));
     ground.set_movable(false);
     return world;
   };
@@ -227,12 +209,10 @@
   };
   Game.prototype.tick = function() {
     var diff;
-    if (this.pcube.getVerticalPosition() > 26) {
-      this.pcube.incVelY(-5);
-      puts("fallin");
-    }
-    diff = Math.min(500, this.diff());
-    this.world.integrate(16 / 1000);
+    diff = Math.min(50, this.diff());
+    (10).times(__bind(function() {
+      return this.world.integrate(diff / 10000);
+    }, this));
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     return this.renderer.render(this.scene, this.camera);
@@ -241,20 +221,21 @@
     return this.now - this.old;
   };
   Game.prototype.syncPhysicalAndView = function(view, physical) {
-    var orientation, state;
+    var orientation, p, state;
     state = physical.get_currentState();
-    orientation = state.get_orientation().glmatrix;
-    return view.hackUpdateMatrix(state.position, orientation);
+    orientation = state.orientation.get_rawData();
+    p = state.position;
+    return view.hackUpdateMatrix([p.x, p.y, p.z], orientation);
   };
   addCube = function(world, x, y, z, static) {
     var cube, rad;
     rad = 50;
-    cube = new jigLib.JBox(null, rad, rad, rad);
+    cube = new jiglib.JBox(null, rad, rad, rad);
     cube.set_mass(1);
     cube.set_friction(0);
     cube.set_restitution(0);
     world.addBody(cube);
-    cube.moveTo([x, y, z, 0]);
+    cube.moveTo(new Vector3D(x, y, z));
     if (static) {
       cube.set_movable(false);
     }

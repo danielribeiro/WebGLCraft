@@ -14,7 +14,7 @@ lesserEqual = (a, b) -> greaterEqual(b, a)
 # Update setting position and orientation. Needed since update is too monolithic.
 patch Object3D,
     hackUpdateMatrix: (pos, orientation) ->
-        @position.set pos[0], pos[1], pos[2]
+        @position.set pos...
         @matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
         if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
             @matrix.scale @scale
@@ -22,27 +22,26 @@ patch Object3D,
         @matrixWorldNeedsUpdate = true
 
 
-patch jigLib.JBox,
+patch jiglib.JBox,
     incVelocity: (dx, dy, dz) ->
-        [vx, vy, vz] = @get_currentState().linVelocity
-        @setVelocity [vx + dx, vy + dy, vz + dz, 0]
+        v = @get_currentState().linVelocity
+        @setLineVelocity new Vector3D(v.x + dx, v.y + dy, v.z + dz), false
 
     incVelX: (delta) -> @incVelocity delta, 0, 0
     incVelY: (delta) -> @incVelocity 0, delta, 0
     incVelZ: (delta) -> @incVelocity 0, 0, delta
 
-    getVerticalPosition: -> @get_currentState().position[1]
+    getVerticalPosition: -> @get_currentState().position.y
 
-    setVerticalPosition: (val) ->
-        [x, y, z] = @get_currentState().position
-        @moveTo [x, val, z, 0]
+    # setVerticalPosition: (val) ->
+    #     [x, y, z] = @get_currentState().position
+    #     @moveTo new Vector3D x, val, z
 
-    setVerticalVelocity: (val) ->
-        [vx, vy, vz] = @get_currentState().linVelocity
-        @setVelocity [vx, val, vz, 0]
+    # setVerticalVelocity: (val) ->
+    #     [vx, vy, vz] = @get_currentState().linVelocity
+    #     @setVelocity new Vector3D vx, val, vz
 
-
-    getVerticalVelocity: -> @get_currentState().linVelocity[1]
+    getVerticalVelocity: -> @get_currentState().linVelocity.y
 
 class Game
     constructor: ->
@@ -59,16 +58,18 @@ class Game
         @defineControls()
 
     createPhysics: ->
-        world = jigLib.PhysicsSystem.getInstance()
-        world.setGravity [0, 0, 0, 0]
+        world = jiglib.PhysicsSystem.getInstance()
+        world.setCollisionSystem on
+        world.setGravity new Vector3D 0, -200, 0
+        # world.setSolverType "ACCUMULATED"
         world.setSolverType "FAST"
-        ground = new jigLib.JBox(null, 4000, 2000, 20)
+        ground = new jiglib.JBox(null, 4000, 2000, 20)
         ground.set_mass 1
         ground.set_friction 0
         ground.set_restitution 0
-        ground.set_linVelocityDamping [0, 0, 0, 0]
+        ground.set_linVelocityDamping new Vector3D 0, 0, 0
         world.addBody(ground)
-        ground.moveTo [0, -10, 0, 0]
+        ground.moveTo new Vector3D 0, -10, 0
         ground.set_movable false
         return world
 
@@ -150,17 +151,8 @@ class Game
         animate()
 
     tick: ->
-        if @pcube.getVerticalPosition() > 26
-            @pcube.incVelY(-5)
-            puts "fallin"
-        #else unless @pcube.getVerticalVelocity() > 0
-            # @pcube.setVerticalVelocity(0)
-            # @pcube.setVerticalPosition 25
-
-        diff = Math.min 500, @diff()
-        @world.integrate(16 / 1000)
-        # puts "diff is", diff
-        # @world.integrate(500 / 1000)
+        diff = Math.min 50, @diff()
+        10.times => @world.integrate(diff / 10000)
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
@@ -169,18 +161,19 @@ class Game
 
     syncPhysicalAndView: (view, physical) ->
         state = physical.get_currentState()
-        orientation = state.get_orientation().glmatrix
-        view.hackUpdateMatrix state.position, orientation
+        orientation = state.orientation.get_rawData()
+        p = state.position
+        view.hackUpdateMatrix [p.x, p.y, p.z], orientation
 
 
 addCube = (world, x, y, z, static) ->
     rad = 50
-    cube = new jigLib.JBox(null, rad, rad, rad)
+    cube = new jiglib.JBox(null, rad, rad, rad)
     cube.set_mass 1
     cube.set_friction 0
     cube.set_restitution 0
     world.addBody cube
-    cube.moveTo [ x, y, z, 0 ]
+    cube.moveTo new Vector3D x, y, z
     # cube.setRotation [45, 0, 0]
     cube.set_movable false if static
     cube
