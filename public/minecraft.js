@@ -69,8 +69,10 @@
     }
   });
   Game = function() {
+    this.pause = false;
     this.world = this.createPhysics();
     this.pcube = addCube(this.world, 0, 100, 0);
+    this.pcube.isPlayer = true;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.cube = this.createPlayer();
@@ -192,30 +194,38 @@
     this._setBinds(300, this.playerKeys, __bind(function(axis, vel) {
       return this.pcube['incVel' + axis.toUpperCase()](vel);
     }, this));
-    return $(document).bind('keydown', 'space', __bind(function() {
-      return this.pcube.incVelY(300);
+    $(document).bind('keydown', 'space', __bind(function() {
+      if (this.pcube.collisions.length > 0) {
+        return this.pcube.incVelY(300);
+      }
+    }, this));
+    return $(document).bind('keydown', 'p', __bind(function() {
+      return (this.pause = !this.pause);
     }, this));
   };
   Game.prototype.start = function() {
     var animate;
     this.now = (this.old = new Date().getTime());
     animate = __bind(function() {
-      this.now = new Date().getTime();
-      this.tick();
-      this.old = this.now;
+      if (!(this.pause)) {
+        this.tick();
+      }
       return requestAnimationFrame(animate, this.renderer.domElement);
     }, this);
     return animate();
   };
   Game.prototype.tick = function() {
     var diff;
+    this.now = new Date().getTime();
     diff = Math.min(50, this.diff());
     (10).times(__bind(function() {
-      return this.world.integrate(diff / 10000);
+      this.world.integrate(diff / 10000);
+      return this.pcube.setActive();
     }, this));
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
-    return this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
+    return (this.old = this.now);
   };
   Game.prototype.diff = function() {
     return this.now - this.old;

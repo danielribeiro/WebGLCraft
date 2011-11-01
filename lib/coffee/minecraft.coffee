@@ -45,8 +45,10 @@ patch jiglib.JBox,
 
 class Game
     constructor: ->
+        @pause = off
         @world = @createPhysics()
         @pcube = addCube @world, 0, 100, 0
+        @pcube.isPlayer = true
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
@@ -56,6 +58,7 @@ class Game
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
+
 
     createPhysics: ->
         world = jiglib.PhysicsSystem.getInstance()
@@ -138,24 +141,29 @@ class Game
         @_setBinds 30, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
         @_setBinds 300, @playerKeys, (axis, vel) =>
             @pcube['incVel' + axis.toUpperCase()](vel)
-        $(document).bind 'keydown', 'space', => @pcube.incVelY 300
+        $(document).bind 'keydown', 'space', =>
+            @pcube.incVelY 300 if @pcube.collisions.length > 0
+        $(document).bind 'keydown', 'p', => @pause = !@pause
 
 
     start: ->
         @now = @old = new Date().getTime()
         animate = =>
-            @now = new Date().getTime()
-            @tick()
-            @old = @now
+            @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
         animate()
 
     tick: ->
+        @now = new Date().getTime()
         diff = Math.min 50, @diff()
-        10.times => @world.integrate(diff / 10000)
+        10.times =>
+            @world.integrate(diff / 10000)
+            @pcube.setActive()
+        # puts "the collisions are ", @pcube.collisions
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
+        @old = @now
 
     diff: -> @now - @old
 
