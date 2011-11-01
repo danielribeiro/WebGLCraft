@@ -43,16 +43,13 @@
     return _result;
   };
   assoc = function(o, i) {
-    var _ref, _result, k, v;
-    o[k] = (function() {
-      _result = []; _ref = i;
-      for (k in _ref) {
-        if (!__hasProp.call(_ref, k)) continue;
-        v = _ref[k];
-        _result.push(v);
-      }
-      return _result;
-    })();
+    var _ref, k, v;
+    _ref = i;
+    for (k in _ref) {
+      if (!__hasProp.call(_ref, k)) continue;
+      v = _ref[k];
+      (o[k] = v);
+    }
     return o;
   };
   IdentityHashMap = function() {

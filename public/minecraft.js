@@ -38,9 +38,15 @@
     return greaterEqual(b, a);
   };
   patch(Object3D, {
-    hackUpdateMatrix: function(pos, physical) {
+    hackUpdateMatrix: function(pos, orientation) {
       this.position.set.apply(this.position, pos);
-      return this.rotation.set(physical.get_rotationX().toRadians(), physical.get_rotationY().toRadians(), physical.get_rotationZ().toRadians());
+      this.matrix = new THREE.Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
+      this.matrix.setPosition(this.position);
+      if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
+        this.matrix.scale(this.scale);
+        this.boundRadiusScale = Math.max(this.scale.x, Math.max(this.scale.y, this.scale.z));
+      }
+      return (this.matrixWorldNeedsUpdate = true);
     }
   });
   patch(jiglib.JBox, {
@@ -105,7 +111,7 @@
     assoc(mesh, {
       castShadow: true,
       receiveShadow: true,
-      matrixAutoUpdate: true
+      matrixAutoUpdate: false
     });
     mesh.geometry.dynamic = false;
     cube = new jiglib.JBox(null, rad, rad, rad);
@@ -140,7 +146,7 @@
     assoc(cube, {
       castShadow: true,
       receiveShadow: true,
-      matrixAutoUpdate: true
+      matrixAutoUpdate: false
     });
     cube.geometry.dynamic = true;
     return cube;
@@ -262,10 +268,11 @@
     return this.now - this.old;
   };
   Game.prototype.syncPhysicalAndView = function(view, physical) {
-    var p;
-    p = physical.get_currentState().position;
-    puts(physical.get_currentState().orientation);
-    return view.hackUpdateMatrix([p.x, p.y, p.z], physical);
+    var orientation, p, state;
+    state = physical.get_currentState();
+    orientation = state.orientation.get_rawData();
+    p = state.position;
+    return view.hackUpdateMatrix([p.x, p.y, p.z], orientation);
   };
   Game.prototype.addCube = function(x, y, z, static) {
     var cube, rad;
@@ -276,7 +283,7 @@
     cube.set_restitution(0);
     this.world.addBody(cube);
     cube.moveTo(new Vector3D(x, y, z));
-    cube.setAngleVelocity(new Vector3D(900, 0, 0));
+    cube.setAngleVelocity(new Vector3D(90, 90, 40));
     if (static) {
       cube.set_movable(false);
     }

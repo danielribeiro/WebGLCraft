@@ -14,16 +14,14 @@ lesserEqual = (a, b) -> greaterEqual(b, a)
 
 # Update setting position and orientation. Needed since update is too monolithic.
 patch Object3D,
-    hackUpdateMatrix: (pos, physical) ->
+    hackUpdateMatrix: (pos, orientation) ->
         @position.set pos...
-        # @matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
-        # if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
-        #     @matrix.scale @scale
-        #     @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
-        # puts "the x rot:", physical.get_rotationX()
-        @rotation.set physical.get_rotationX().toRadians(),
-            physical.get_rotationY().toRadians(),
-            physical.get_rotationZ().toRadians()
+        @matrix = new THREE.Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
+        @matrix.setPosition @position
+        if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
+            @matrix.scale @scale
+            @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
+        @matrixWorldNeedsUpdate = true
 
 
 patch jiglib.JBox,
@@ -64,7 +62,7 @@ class Game
     cubeAt: (x, y, z) ->
         rad = 50
         mesh = new Mesh(new CubeGeometry(rad, rad, rad), new MeshLambertMaterial(color: 0xCC0000))
-        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
+        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
         mesh.geometry.dynamic = false
         cube = new jiglib.JBox(null, rad, rad, rad)
         cube.set_mass 1
@@ -98,7 +96,7 @@ class Game
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
+        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
         cube.geometry.dynamic = true
         cube
 
@@ -189,9 +187,10 @@ class Game
     diff: -> @now - @old
 
     syncPhysicalAndView: (view, physical) ->
-        p = physical.get_currentState().position
-        puts physical.get_currentState().orientation
-        view.hackUpdateMatrix [p.x, p.y, p.z], physical
+        state = physical.get_currentState()
+        orientation = state.orientation.get_rawData()
+        p = state.position
+        view.hackUpdateMatrix [p.x, p.y, p.z], orientation
 
 
     addCube: (x, y, z, static) ->
@@ -202,7 +201,7 @@ class Game
         cube.set_restitution 0
         @world.addBody cube
         cube.moveTo new Vector3D x, y, z
-        cube.setAngleVelocity new Vector3D 900, 0, 0
+        cube.setAngleVelocity new Vector3D 90, 90, 40
         cube.set_movable false if static
         cube
 

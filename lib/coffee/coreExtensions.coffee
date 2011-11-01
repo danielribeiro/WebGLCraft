@@ -20,7 +20,7 @@ setBindings = (keyBinds, bind) ->
 
 
 assoc = (o, i) ->
-    o[k] = v for k, v of i
+    (o[k] = v) for k, v of i
     return o
 
 
