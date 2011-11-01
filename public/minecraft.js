@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, _ref, addCube, init_web_app;
+  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, _ref, addCube, greater, greaterEqual, init_web_app, lesser, lesserEqual;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
@@ -20,20 +20,76 @@
   DirectionalLight = _ref.DirectionalLight;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
-  Object3D.prototype.hackUpdateMatrix = function(pos, orientation) {
-    this.position.set(pos[0], pos[1], pos[2]);
-    this.matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
-    this.matrix.setPosition(this.position);
-    if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
-      this.matrix.scale(this.scale);
-      this.boundRadiusScale = Math.max(this.scale.x, Math.max(this.scale.y, this.scale.z));
-    }
-    return (this.matrixWorldNeedsUpdate = true);
+  DoubleHeleper = {
+    delta: 0.05
   };
+  greater = function(a, b) {
+    return a > b + DoubleHeleper.delta;
+  };
+  greaterEqual = function(a, b) {
+    return a >= b + DoubleHeleper.delta;
+  };
+  lesser = function(a, b) {
+    return greater(b, a);
+  };
+  lesserEqual = function(a, b) {
+    return greaterEqual(b, a);
+  };
+  patch(Object3D, {
+    hackUpdateMatrix: function(pos, orientation) {
+      this.position.set(pos[0], pos[1], pos[2]);
+      this.matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
+      if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
+        this.matrix.scale(this.scale);
+        this.boundRadiusScale = Math.max(this.scale.x, Math.max(this.scale.y, this.scale.z));
+      }
+      return (this.matrixWorldNeedsUpdate = true);
+    }
+  });
+  patch(jigLib.JBox, {
+    incVelocity: function(dx, dy, dz) {
+      var _ref2, vx, vy, vz;
+      _ref2 = this.get_currentState().linVelocity;
+      vx = _ref2[0];
+      vy = _ref2[1];
+      vz = _ref2[2];
+      return this.setVelocity([vx + dx, vy + dy, vz + dz, 0]);
+    },
+    incVelX: function(delta) {
+      return this.incVelocity(delta, 0, 0);
+    },
+    incVelY: function(delta) {
+      return this.incVelocity(0, delta, 0);
+    },
+    incVelZ: function(delta) {
+      return this.incVelocity(0, 0, delta);
+    },
+    getVerticalPosition: function() {
+      return this.get_currentState().position[1];
+    },
+    setVerticalPosition: function(val) {
+      var _ref2, x, y, z;
+      _ref2 = this.get_currentState().position;
+      x = _ref2[0];
+      y = _ref2[1];
+      z = _ref2[2];
+      return this.moveTo([x, val, z, 0]);
+    },
+    setVerticalVelocity: function(val) {
+      var _ref2, vx, vy, vz;
+      _ref2 = this.get_currentState().linVelocity;
+      vx = _ref2[0];
+      vy = _ref2[1];
+      vz = _ref2[2];
+      return this.setVelocity([vx, val, vz, 0]);
+    },
+    getVerticalVelocity: function() {
+      return this.get_currentState().linVelocity[1];
+    }
+  });
   Game = function() {
     this.world = this.createPhysics();
     this.pcube = addCube(this.world, 0, 100, 0);
-    this.vel = 0;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.cube = this.createPlayer();
@@ -48,11 +104,16 @@
   Game.prototype.createPhysics = function() {
     var ground, world;
     world = jigLib.PhysicsSystem.getInstance();
-    world.setGravity([0, -200, 0, 0]);
+    world.setGravity([0, 0, 0, 0]);
     world.setSolverType("FAST");
-    ground = new jigLib.JPlane(null, [0, 1, 0, 0]);
-    ground.set_friction(10);
+    ground = new jigLib.JBox(null, 4000, 2000, 20);
+    ground.set_mass(1);
+    ground.set_friction(0);
+    ground.set_restitution(0);
+    ground.set_linVelocityDamping([0, 0, 0, 0]);
     world.addBody(ground);
+    ground.moveTo([0, -10, 0, 0]);
+    ground.set_movable(false);
     return world;
   };
   Game.prototype.createPlayer = function() {
@@ -64,7 +125,6 @@
       matrixAutoUpdate: false
     });
     cube.geometry.dynamic = true;
-    cube.position.y = 25;
     return cube;
   };
   Game.prototype.createCamera = function() {
@@ -119,7 +179,7 @@
     a: 'x-',
     d: 'x+'
   };
-  Game.prototype._setBinds = function(baseVel, keys, target) {
+  Game.prototype._setBinds = function(baseVel, keys, incFunction) {
     var _i, _ref2, _result, key;
     _result = []; _ref2 = keys;
     for (_i in _ref2) {
@@ -133,8 +193,8 @@
           axis = _ref3[0];
           operation = _ref3[1];
           vel = operation === '-' ? -baseVel : baseVel;
-          return $(document).bind('keydown', key, function(e) {
-            return target.position[axis] += vel;
+          return $(document).bind('keydown', key, function() {
+            return incFunction(axis, vel);
           });
         })());
       })();
@@ -144,10 +204,14 @@
   Game.prototype.defineControls = function() {
     var cameraVel;
     cameraVel = 30;
-    this._setBinds(30, this.cameraKeys, this.camera);
-    this._setBinds(30, this.playerKeys, this.cube);
+    this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
+      return this.camera.position[axis] += vel;
+    }, this));
+    this._setBinds(300, this.playerKeys, __bind(function(axis, vel) {
+      return this.pcube['incVel' + axis.toUpperCase()](vel);
+    }, this));
     return $(document).bind('keydown', 'space', __bind(function() {
-      return this.pcube.setVelocity([0, 100, 0]);
+      return this.pcube.incVelY(300);
     }, this));
   };
   Game.prototype.start = function() {
@@ -163,8 +227,12 @@
   };
   Game.prototype.tick = function() {
     var diff;
+    if (this.pcube.getVerticalPosition() > 26) {
+      this.pcube.incVelY(-5);
+      puts("fallin");
+    }
     diff = Math.min(500, this.diff());
-    this.world.integrate(diff / 1000);
+    this.world.integrate(16 / 1000);
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     return this.renderer.render(this.scene, this.camera);
@@ -178,14 +246,18 @@
     orientation = state.get_orientation().glmatrix;
     return view.hackUpdateMatrix(state.position, orientation);
   };
-  addCube = function(world, x, y, z) {
+  addCube = function(world, x, y, z, static) {
     var cube, rad;
     rad = 50;
     cube = new jigLib.JBox(null, rad, rad, rad);
     cube.set_mass(1);
     cube.set_friction(0);
+    cube.set_restitution(0);
     world.addBody(cube);
     cube.moveTo([x, y, z, 0]);
+    if (static) {
+      cube.set_movable(false);
+    }
     return cube;
   };
   init_web_app = function() {
@@ -194,6 +266,7 @@
 window.AmbientLight = AmbientLight
 window.CubeGeometry = CubeGeometry
 window.DirectionalLight = DirectionalLight
+window.DoubleHeleper = DoubleHeleper
 window.Game = Game
 window.Matrix4 = Matrix4
 window.Mesh = Mesh
@@ -206,5 +279,9 @@ window.Scene = Scene
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
 window.addCube = addCube
+window.greater = greater
+window.greaterEqual = greaterEqual
 window.init_web_app = init_web_app
+window.lesser = lesser
+window.lesserEqual = lesserEqual
 }).call(this);

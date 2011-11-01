@@ -3,23 +3,51 @@
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
 {AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial} = THREE
 
+# Double Helpers
+DoubleHeleper =
+    delta: 0.05
+greater = (a, b) -> a > b + DoubleHeleper.delta
+greaterEqual = (a, b) -> a >= b + DoubleHeleper.delta
+lesser = (a, b) -> greater(b, a)
+lesserEqual = (a, b) -> greaterEqual(b, a)
 
 # Update setting position and orientation. Needed since update is too monolithic.
-Object3D.prototype.hackUpdateMatrix = (pos, orientation) ->
-    @position.set pos[0], pos[1], pos[2]
-    @matrix = new Matrix4(orientation[ 0 ], orientation[ 1 ], orientation[ 2 ], orientation[ 3 ],orientation[ 4 ], orientation[ 5 ], orientation[ 6 ], orientation[ 7 ],orientation[ 8 ], orientation[ 9 ], orientation[ 10 ], orientation[ 11 ],orientation[ 12 ], orientation[ 13 ], orientation[ 14 ], orientation[ 15 ])
-    @matrix.setPosition @position
-    if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
-        @matrix.scale @scale
-        @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
-    @matrixWorldNeedsUpdate = true
+patch Object3D,
+    hackUpdateMatrix: (pos, orientation) ->
+        @position.set pos[0], pos[1], pos[2]
+        @matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
+        if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
+            @matrix.scale @scale
+            @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
+        @matrixWorldNeedsUpdate = true
 
+
+patch jigLib.JBox,
+    incVelocity: (dx, dy, dz) ->
+        [vx, vy, vz] = @get_currentState().linVelocity
+        @setVelocity [vx + dx, vy + dy, vz + dz, 0]
+
+    incVelX: (delta) -> @incVelocity delta, 0, 0
+    incVelY: (delta) -> @incVelocity 0, delta, 0
+    incVelZ: (delta) -> @incVelocity 0, 0, delta
+
+    getVerticalPosition: -> @get_currentState().position[1]
+
+    setVerticalPosition: (val) ->
+        [x, y, z] = @get_currentState().position
+        @moveTo [x, val, z, 0]
+
+    setVerticalVelocity: (val) ->
+        [vx, vy, vz] = @get_currentState().linVelocity
+        @setVelocity [vx, val, vz, 0]
+
+
+    getVerticalVelocity: -> @get_currentState().linVelocity[1]
 
 class Game
     constructor: ->
         @world = @createPhysics()
         @pcube = addCube @world, 0, 100, 0
-        @vel = 0
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
@@ -32,11 +60,16 @@ class Game
 
     createPhysics: ->
         world = jigLib.PhysicsSystem.getInstance()
-        world.setGravity([0,-200,0,0])
+        world.setGravity [0, 0, 0, 0]
         world.setSolverType "FAST"
-        ground = new jigLib.JPlane(null,[0, 1, 0, 0])
-        ground.set_friction(10)
+        ground = new jigLib.JBox(null, 4000, 2000, 20)
+        ground.set_mass 1
+        ground.set_friction 0
+        ground.set_restitution 0
+        ground.set_linVelocityDamping [0, 0, 0, 0]
         world.addBody(ground)
+        ground.moveTo [0, -10, 0, 0]
+        ground.set_movable false
         return world
 
 
@@ -45,7 +78,6 @@ class Game
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
         assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
         cube.geometry.dynamic = true
-        cube.position.y = 25
         cube
 
     createCamera: ->
@@ -94,17 +126,18 @@ class Game
         d: 'x+'
 
 
-    _setBinds: (baseVel, keys, target)->
+    _setBinds: (baseVel, keys, incFunction)->
         for key, action of keys
             [axis, operation] = action
             vel = if operation is '-' then -baseVel else baseVel
-            $(document).bind 'keydown', key, (e) -> target.position[axis] += vel
+            $(document).bind 'keydown', key, -> incFunction(axis, vel)
 
     defineControls: ->
         cameraVel = 30
-        @_setBinds 30, @cameraKeys, @camera
-        @_setBinds 30, @playerKeys, @cube
-        $(document).bind 'keydown', 'space', => @pcube.setVelocity [0, 100, 0]
+        @_setBinds 30, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
+        @_setBinds 300, @playerKeys, (axis, vel) =>
+            @pcube['incVel' + axis.toUpperCase()](vel)
+        $(document).bind 'keydown', 'space', => @pcube.incVelY 300
 
 
     start: ->
@@ -117,13 +150,17 @@ class Game
         animate()
 
     tick: ->
-        # @vel -= 0.2
-        # @cube.position.y += @vel
-        # if @cube.position.y <= 25
-            # @cube.position.y = 25
-            # @vel = 0
+        if @pcube.getVerticalPosition() > 26
+            @pcube.incVelY(-5)
+            puts "fallin"
+        #else unless @pcube.getVerticalVelocity() > 0
+            # @pcube.setVerticalVelocity(0)
+            # @pcube.setVerticalPosition 25
+
         diff = Math.min 500, @diff()
-        @world.integrate(diff / 1000)
+        @world.integrate(16 / 1000)
+        # puts "diff is", diff
+        # @world.integrate(500 / 1000)
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
@@ -136,15 +173,16 @@ class Game
         view.hackUpdateMatrix state.position, orientation
 
 
-addCube = (world, x, y, z) ->
+addCube = (world, x, y, z, static) ->
     rad = 50
     cube = new jigLib.JBox(null, rad, rad, rad)
     cube.set_mass 1
     cube.set_friction 0
+    cube.set_restitution 0
     world.addBody cube
     cube.moveTo [ x, y, z, 0 ]
     # cube.setRotation [45, 0, 0]
-    # cube.set_movable false
+    cube.set_movable false if static
     cube
 
 
