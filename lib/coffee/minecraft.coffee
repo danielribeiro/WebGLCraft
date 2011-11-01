@@ -1,7 +1,8 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial} = THREE
+{AmbientLight, DirectionalLight, PointLight} = THREE
+{MeshLambertMaterial, MeshNormalMaterial} = THREE
 
 # Double Helpers
 DoubleHeleper =
@@ -13,13 +14,16 @@ lesserEqual = (a, b) -> greaterEqual(b, a)
 
 # Update setting position and orientation. Needed since update is too monolithic.
 patch Object3D,
-    hackUpdateMatrix: (pos, orientation) ->
+    hackUpdateMatrix: (pos, physical) ->
         @position.set pos...
-        @matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
-        if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
-            @matrix.scale @scale
-            @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
-        @matrixWorldNeedsUpdate = true
+        # @matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
+        # if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
+        #     @matrix.scale @scale
+        #     @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
+        # puts "the x rot:", physical.get_rotationX()
+        @rotation.set physical.get_rotationX().toRadians(),
+            physical.get_rotationY().toRadians(),
+            physical.get_rotationZ().toRadians()
 
 
 patch jiglib.JBox,
@@ -33,31 +37,45 @@ patch jiglib.JBox,
 
     getVerticalPosition: -> @get_currentState().position.y
 
-    # setVerticalPosition: (val) ->
-    #     [x, y, z] = @get_currentState().position
-    #     @moveTo new Vector3D x, val, z
-
-    # setVerticalVelocity: (val) ->
-    #     [vx, vy, vz] = @get_currentState().linVelocity
-    #     @setVelocity new Vector3D vx, val, vz
-
     getVerticalVelocity: -> @get_currentState().linVelocity.y
 
 class Game
     constructor: ->
         @pause = off
         @world = @createPhysics()
-        @pcube = addCube @world, 0, 100, 0
-        @pcube.isPlayer = true
+        @pcube = assoc (@addCube 0, 100, 0), isPlayer: true
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
         @scene = new Scene()
         @scene.add @cube
         @scene.add @createFloor()
+        # @populateWorld()
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
+
+    populateWorld: ->
+        for i in [-3..3]
+            for j in [-3..3]
+                @cubeAt 50 * i, 25, 50 * j
+
+
+    cubeAt: (x, y, z) ->
+        rad = 50
+        mesh = new Mesh(new CubeGeometry(rad, rad, rad), new MeshLambertMaterial(color: 0xCC0000))
+        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
+        mesh.geometry.dynamic = false
+        cube = new jiglib.JBox(null, rad, rad, rad)
+        cube.set_mass 1
+        cube.set_friction 0
+        cube.set_restitution 0
+        @world.addBody cube
+        cube.moveTo new Vector3D x, y, z
+        cube.set_movable false
+        @scene.add mesh
+        @syncPhysicalAndView mesh, cube
+
 
 
     createPhysics: ->
@@ -80,7 +98,7 @@ class Game
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
+        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
         cube.geometry.dynamic = true
         cube
 
@@ -108,12 +126,15 @@ class Game
         return plane
 
     addLights: (scene) ->
-        ambientLight = new AmbientLight(0xcccccc)
-        scene.add ambientLight
-        directionalLight = new DirectionalLight(0xff0000, 1.5)
-        directionalLight.position.set 1, 1, 0.5
-        directionalLight.position.normalize()
-        scene.add directionalLight
+        # ambientLight = new AmbientLight(0xcccccc)
+        # scene.add ambientLight
+        # directionalLight = new DirectionalLight(0xff0000, 1.5)
+        # directionalLight.position.set 1, 1, 0.5
+        # directionalLight.position.normalize()
+        # scene.add directionalLight
+        p = new PointLight(0xffffff, 1.5)
+        p.position.set 200, 200, 300
+        scene.add p
 
     cameraKeys:
         8: 'z-'
@@ -142,7 +163,7 @@ class Game
         @_setBinds 300, @playerKeys, (axis, vel) =>
             @pcube['incVel' + axis.toUpperCase()](vel)
         $(document).bind 'keydown', 'space', =>
-            @pcube.incVelY 300 if @pcube.collisions.length > 0
+            @pcube.incVelY 400 if @pcube.collisions.length > 0
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
 
@@ -168,23 +189,22 @@ class Game
     diff: -> @now - @old
 
     syncPhysicalAndView: (view, physical) ->
-        state = physical.get_currentState()
-        orientation = state.orientation.get_rawData()
-        p = state.position
-        view.hackUpdateMatrix [p.x, p.y, p.z], orientation
+        p = physical.get_currentState().position
+        puts physical.get_currentState().orientation
+        view.hackUpdateMatrix [p.x, p.y, p.z], physical
 
 
-addCube = (world, x, y, z, static) ->
-    rad = 50
-    cube = new jiglib.JBox(null, rad, rad, rad)
-    cube.set_mass 1
-    cube.set_friction 0
-    cube.set_restitution 0
-    world.addBody cube
-    cube.moveTo new Vector3D x, y, z
-    # cube.setRotation [45, 0, 0]
-    cube.set_movable false if static
-    cube
+    addCube: (x, y, z, static) ->
+        rad = 50
+        cube = new jiglib.JBox(null, rad, rad, rad)
+        cube.set_mass 1
+        cube.set_friction 0
+        cube.set_restitution 0
+        @world.addBody cube
+        cube.moveTo new Vector3D x, y, z
+        cube.setAngleVelocity new Vector3D 900, 0, 0
+        cube.set_movable false if static
+        cube
 
 
 init_web_app = -> new Game().start()

@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, _ref, addCube, greater, greaterEqual, init_web_app, lesser, lesserEqual;
+  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Scene, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
@@ -18,6 +18,8 @@
   _ref = THREE;
   AmbientLight = _ref.AmbientLight;
   DirectionalLight = _ref.DirectionalLight;
+  PointLight = _ref.PointLight;
+  _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
   DoubleHeleper = {
@@ -36,14 +38,9 @@
     return greaterEqual(b, a);
   };
   patch(Object3D, {
-    hackUpdateMatrix: function(pos, orientation) {
+    hackUpdateMatrix: function(pos, physical) {
       this.position.set.apply(this.position, pos);
-      this.matrix = new Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
-      if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
-        this.matrix.scale(this.scale);
-        this.boundRadiusScale = Math.max(this.scale.x, Math.max(this.scale.y, this.scale.z));
-      }
-      return (this.matrixWorldNeedsUpdate = true);
+      return this.rotation.set(physical.get_rotationX().toRadians(), physical.get_rotationY().toRadians(), physical.get_rotationZ().toRadians());
     }
   });
   patch(jiglib.JBox, {
@@ -71,8 +68,9 @@
   Game = function() {
     this.pause = false;
     this.world = this.createPhysics();
-    this.pcube = addCube(this.world, 0, 100, 0);
-    this.pcube.isPlayer = true;
+    this.pcube = assoc(this.addCube(0, 100, 0), {
+      isPlayer: true
+    });
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.cube = this.createPlayer();
@@ -83,6 +81,42 @@
     this.renderer.render(this.scene, this.camera);
     this.defineControls();
     return this;
+  };
+  Game.prototype.populateWorld = function() {
+    var _result, _result2, i, j;
+    _result = [];
+    for (i = -3; i <= 3; i++) {
+      _result.push((function() {
+        _result2 = [];
+        for (j = -3; j <= 3; j++) {
+          _result2.push(this.cubeAt(50 * i, 25, 50 * j));
+        }
+        return _result2;
+      }).call(this));
+    }
+    return _result;
+  };
+  Game.prototype.cubeAt = function(x, y, z) {
+    var cube, mesh, rad;
+    rad = 50;
+    mesh = new Mesh(new CubeGeometry(rad, rad, rad), new MeshLambertMaterial({
+      color: 0xCC0000
+    }));
+    assoc(mesh, {
+      castShadow: true,
+      receiveShadow: true,
+      matrixAutoUpdate: true
+    });
+    mesh.geometry.dynamic = false;
+    cube = new jiglib.JBox(null, rad, rad, rad);
+    cube.set_mass(1);
+    cube.set_friction(0);
+    cube.set_restitution(0);
+    this.world.addBody(cube);
+    cube.moveTo(new Vector3D(x, y, z));
+    cube.set_movable(false);
+    this.scene.add(mesh);
+    return this.syncPhysicalAndView(mesh, cube);
   };
   Game.prototype.createPhysics = function() {
     var ground, world;
@@ -106,7 +140,7 @@
     assoc(cube, {
       castShadow: true,
       receiveShadow: true,
-      matrixAutoUpdate: false
+      matrixAutoUpdate: true
     });
     cube.geometry.dynamic = true;
     return cube;
@@ -141,13 +175,10 @@
     return plane;
   };
   Game.prototype.addLights = function(scene) {
-    var ambientLight, directionalLight;
-    ambientLight = new AmbientLight(0xcccccc);
-    scene.add(ambientLight);
-    directionalLight = new DirectionalLight(0xff0000, 1.5);
-    directionalLight.position.set(1, 1, 0.5);
-    directionalLight.position.normalize();
-    return scene.add(directionalLight);
+    var p;
+    p = new PointLight(0xffffff, 1.5);
+    p.position.set(200, 200, 300);
+    return scene.add(p);
   };
   Game.prototype.cameraKeys = {
     8: 'z-',
@@ -196,7 +227,7 @@
     }, this));
     $(document).bind('keydown', 'space', __bind(function() {
       if (this.pcube.collisions.length > 0) {
-        return this.pcube.incVelY(300);
+        return this.pcube.incVelY(400);
       }
     }, this));
     return $(document).bind('keydown', 'p', __bind(function() {
@@ -231,21 +262,21 @@
     return this.now - this.old;
   };
   Game.prototype.syncPhysicalAndView = function(view, physical) {
-    var orientation, p, state;
-    state = physical.get_currentState();
-    orientation = state.orientation.get_rawData();
-    p = state.position;
-    return view.hackUpdateMatrix([p.x, p.y, p.z], orientation);
+    var p;
+    p = physical.get_currentState().position;
+    puts(physical.get_currentState().orientation);
+    return view.hackUpdateMatrix([p.x, p.y, p.z], physical);
   };
-  addCube = function(world, x, y, z, static) {
+  Game.prototype.addCube = function(x, y, z, static) {
     var cube, rad;
     rad = 50;
     cube = new jiglib.JBox(null, rad, rad, rad);
     cube.set_mass(1);
     cube.set_friction(0);
     cube.set_restitution(0);
-    world.addBody(cube);
+    this.world.addBody(cube);
     cube.moveTo(new Vector3D(x, y, z));
+    cube.setAngleVelocity(new Vector3D(900, 0, 0));
     if (static) {
       cube.set_movable(false);
     }
@@ -266,10 +297,10 @@ window.MeshNormalMaterial = MeshNormalMaterial
 window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera
 window.PlaneGeometry = PlaneGeometry
+window.PointLight = PointLight
 window.Scene = Scene
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
-window.addCube = addCube
 window.greater = greater
 window.greaterEqual = greaterEqual
 window.init_web_app = init_web_app
