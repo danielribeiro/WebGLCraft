@@ -72,6 +72,11 @@
     }
   });
   Game = function() {
+    this.rad = 50;
+    this.geo = new CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1);
+    this.mat = new MeshLambertMaterial({
+      color: 0xCC0000
+    });
     this.pause = false;
     this.world = this.createPhysics();
     this.pcube = assoc(this.addCube(0, 100, 0), {
@@ -83,19 +88,21 @@
     this.scene = new Scene();
     this.scene.add(this.cube);
     this.scene.add(this.createFloor());
+    this.populateWorld();
     this.addLights(this.scene);
     this.renderer.render(this.scene, this.camera);
     this.defineControls();
     return this;
   };
   Game.prototype.populateWorld = function() {
-    var _result, _result2, i, j;
+    var _result, _result2, i, j, size;
+    size = 2;
     _result = [];
-    for (i = -3; i <= 3; i++) {
+    for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
       _result.push((function() {
         _result2 = [];
-        for (j = -3; j <= 3; j++) {
-          _result2.push(this.cubeAt(50 * i, 25, 50 * j));
+        for (j = -size; (-size <= size ? j <= size : j >= size); (-size <= size ? j += 1 : j -= 1)) {
+          _result2.push(this.cubeAt(51 * i, 25, 51 * j));
         }
         return _result2;
       }).call(this));
@@ -103,18 +110,16 @@
     return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
-    var cube, mesh, rad;
-    rad = 50;
-    mesh = new Mesh(new CubeGeometry(rad, rad, rad), new MeshLambertMaterial({
-      color: 0xCC0000
-    }));
+    var cube, mesh;
+    mesh = new Mesh(this.geo, this.mat);
     assoc(mesh, {
       castShadow: true,
       receiveShadow: true,
       matrixAutoUpdate: false
     });
     mesh.geometry.dynamic = false;
-    cube = new jiglib.JBox(null, rad, rad, rad);
+    mesh.position.set(x, y, z);
+    cube = new jiglib.JBox(null, this.rad, this.rad, this.rad);
     cube.set_mass(1);
     cube.set_friction(0);
     cube.set_restitution(0);
@@ -129,7 +134,7 @@
     world = jiglib.PhysicsSystem.getInstance();
     world.setCollisionSystem(true);
     world.setGravity(new Vector3D(0, -200, 0));
-    world.setSolverType("FAST");
+    world.setSolverType("ACCUMULATED");
     ground = new jiglib.JBox(null, 4000, 2000, 20);
     ground.set_mass(1);
     ground.set_friction(0);
@@ -144,8 +149,8 @@
     var cube;
     cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial());
     assoc(cube, {
-      castShadow: true,
-      receiveShadow: true,
+      castShadow: false,
+      receiveShadow: false,
       matrixAutoUpdate: false
     });
     cube.geometry.dynamic = true;
@@ -257,7 +262,7 @@
     diff = Math.min(50, this.diff());
     (10).times(__bind(function() {
       this.world.integrate(diff / 10000);
-      return this.pcube.setActive();
+      return this.adjustCube();
     }, this));
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
@@ -267,6 +272,13 @@
   Game.prototype.diff = function() {
     return this.now - this.old;
   };
+  Game.prototype.adjustCube = function() {
+    this.pcube._rotationX = 0;
+    this.pcube._rotationZ = 0;
+    this.pcube._rotationY = 0;
+    this.pcube.get_currentState().orientation = this.pcube.createRotationMatrix().clone();
+    return this.pcube.setActive();
+  };
   Game.prototype.syncPhysicalAndView = function(view, physical) {
     var orientation, p, state;
     state = physical.get_currentState();
@@ -274,7 +286,7 @@
     p = state.position;
     return view.hackUpdateMatrix([p.x, p.y, p.z], orientation);
   };
-  Game.prototype.addCube = function(x, y, z, static) {
+  Game.prototype.addCube = function(x, y, z) {
     var cube, rad;
     rad = 50;
     cube = new jiglib.JBox(null, rad, rad, rad);
@@ -283,10 +295,6 @@
     cube.set_restitution(0);
     this.world.addBody(cube);
     cube.moveTo(new Vector3D(x, y, z));
-    cube.setAngleVelocity(new Vector3D(90, 90, 40));
-    if (static) {
-      cube.set_movable(false);
-    }
     return cube;
   };
   init_web_app = function() {

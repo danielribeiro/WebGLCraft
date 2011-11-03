@@ -39,6 +39,10 @@ patch jiglib.JBox,
 
 class Game
     constructor: ->
+        @rad = 50
+        @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
+        @mat = new MeshLambertMaterial(color: 0xCC0000)
+
         @pause = off
         @world = @createPhysics()
         @pcube = assoc (@addCube 0, 100, 0), isPlayer: true
@@ -48,23 +52,25 @@ class Game
         @scene = new Scene()
         @scene.add @cube
         @scene.add @createFloor()
-        # @populateWorld()
+        @populateWorld()
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
 
     populateWorld: ->
-        for i in [-3..3]
-            for j in [-3..3]
-                @cubeAt 50 * i, 25, 50 * j
+        size = 2
+        for i in [-size..size]
+            for j in [-size..size]
+                @cubeAt 51 * i, 25, 51 * j
+
 
 
     cubeAt: (x, y, z) ->
-        rad = 50
-        mesh = new Mesh(new CubeGeometry(rad, rad, rad), new MeshLambertMaterial(color: 0xCC0000))
+        mesh = new Mesh(@geo, @mat)
         assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
         mesh.geometry.dynamic = false
-        cube = new jiglib.JBox(null, rad, rad, rad)
+        mesh.position.set x, y, z
+        cube = new jiglib.JBox(null, @rad, @rad, @rad)
         cube.set_mass 1
         cube.set_friction 0
         cube.set_restitution 0
@@ -80,8 +86,8 @@ class Game
         world = jiglib.PhysicsSystem.getInstance()
         world.setCollisionSystem on
         world.setGravity new Vector3D 0, -200, 0
-        # world.setSolverType "ACCUMULATED"
-        world.setSolverType "FAST"
+        world.setSolverType "ACCUMULATED"
+        # world.setSolverType "FAST"
         ground = new jiglib.JBox(null, 4000, 2000, 20)
         ground.set_mass 1
         ground.set_friction 0
@@ -96,7 +102,8 @@ class Game
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
+        # assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
+        assoc cube, castShadow: false, receiveShadow: false, matrixAutoUpdate: false
         cube.geometry.dynamic = true
         cube
 
@@ -177,7 +184,7 @@ class Game
         diff = Math.min 50, @diff()
         10.times =>
             @world.integrate(diff / 10000)
-            @pcube.setActive()
+            @adjustCube()
         # puts "the collisions are ", @pcube.collisions
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
@@ -186,6 +193,14 @@ class Game
 
     diff: -> @now - @old
 
+    adjustCube: ->
+        @pcube._rotationX = 0
+        @pcube._rotationZ = 0
+        @pcube._rotationY = 0
+        @pcube.get_currentState().orientation = @pcube.createRotationMatrix().clone()
+        @pcube.setActive()
+
+
     syncPhysicalAndView: (view, physical) ->
         state = physical.get_currentState()
         orientation = state.orientation.get_rawData()
@@ -193,7 +208,7 @@ class Game
         view.hackUpdateMatrix [p.x, p.y, p.z], orientation
 
 
-    addCube: (x, y, z, static) ->
+    addCube: (x, y, z) ->
         rad = 50
         cube = new jiglib.JBox(null, rad, rad, rad)
         cube.set_mass 1
@@ -201,8 +216,6 @@ class Game
         cube.set_restitution 0
         @world.addBody cube
         cube.moveTo new Vector3D x, y, z
-        cube.setAngleVelocity new Vector3D 90, 90, 40
-        cube.set_movable false if static
         cube
 
 
