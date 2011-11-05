@@ -85,7 +85,7 @@
     this.onTheGround = true;
     this.pause = false;
     this.world = this.createPhysics();
-    this.pcube = assoc(this.addCube(-140, 25, 168), {
+    this.pcube = assoc(this.addCube(-140, 25 + 50, 168), {
       isPlayer: true
     });
     this.renderer = this.createRenderer();
@@ -102,7 +102,7 @@
   };
   Game.prototype.populateWorld = function() {
     var _result, _result2, i, j, size;
-    size = 2;
+    size = 10;
     _result = [];
     for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
       _result.push((function() {
@@ -306,24 +306,45 @@
     return false;
   };
   Game.prototype.moveCube = function(p, axis, vel) {
-    this.pcube.setActive();
+    this.activate();
     p[axis] += vel;
     this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
     return this.world.integrate(1);
   };
+  Game.prototype.activate = function() {
+    this.pcube._rotationX = 0;
+    this.pcube._rotationZ = 0;
+    this.pcube._rotationY = 0;
+    this.pcube.get_currentState().orientation = this.pcube.createRotationMatrix().clone();
+    return this.pcube.setActive();
+  };
   Game.prototype.moveAxis = function(p, axis) {
-    this.moveCube(p, axis, this.move[axis]);
-    if (!(this.collidesAxis(axis))) {
-      return true;
+    var iterationCount, ivel, vel;
+    vel = this.move[axis];
+    iterationCount = 30;
+    ivel = vel / iterationCount;
+    while (iterationCount-- > 0) {
+      this.activate();
+      p[axis] += ivel;
+      this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
+      this.world.integrate(1);
+      if (this.collidesAxis(axis)) {
+        this.activate();
+        p[axis] -= ivel;
+        this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
+        this.world.integrate(1);
+        return false;
+      }
     }
-    this.moveCube(p, axis, -this.move[axis]);
-    return false;
+    return true;
   };
   Game.prototype.tryToMoveVertically = function(p) {
     if (this.onTheGround) {
       return null;
     }
-    this.move.y--;
+    if (!(this.move.y < -10)) {
+      this.move.y--;
+    }
     if (this.moveAxis(p, 'y')) {
       return null;
     }
@@ -340,7 +361,6 @@
     this.moveAxis(p, 'x');
     this.moveAxis(p, 'z');
     this.tryToMoveVertically(p);
-    this.adjustCube();
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
@@ -349,13 +369,6 @@
   };
   Game.prototype.diff = function() {
     return this.now - this.old;
-  };
-  Game.prototype.adjustCube = function() {
-    this.pcube._rotationX = 0;
-    this.pcube._rotationZ = 0;
-    this.pcube._rotationY = 0;
-    this.pcube.get_currentState().orientation = this.pcube.createRotationMatrix().clone();
-    return this.pcube.setActive();
   };
   Game.prototype.syncPhysicalAndView = function(view, physical) {
     var orientation, p, state;

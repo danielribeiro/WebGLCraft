@@ -48,7 +48,7 @@ class Game
 
         @pause = off
         @world = @createPhysics()
-        @pcube = assoc (@addCube(-140, 25, 168)), isPlayer: true
+        @pcube = assoc (@addCube(-140, 25 + 50, 168)), isPlayer: true
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
@@ -61,7 +61,7 @@ class Game
         @defineControls()
 
     populateWorld: ->
-        size = 2
+        size = 10
         for i in [-size..size]
             for j in [-size..size]
                 @cubeAt 51 * i, 25, 51 * j
@@ -205,21 +205,39 @@ class Game
         return false
 
     moveCube: (p, axis, vel) ->
-        @pcube.setActive()
+        @activate()
         p[axis] += vel
         @pcube.moveTo new Vector3D p.x, p.y, p.z
         @world.integrate(1)
 
+    activate: ->
+        @pcube._rotationX = 0
+        @pcube._rotationZ = 0
+        @pcube._rotationY = 0
+        @pcube.get_currentState().orientation = @pcube.createRotationMatrix().clone()
+        @pcube.setActive()
+
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveAxis: (p, axis) ->
-        @moveCube p, axis, @move[axis]
-        return true unless @collidesAxis axis
-        @moveCube p, axis, -@move[axis]
-        return false
+        vel = @move[axis]
+        iterationCount = 30
+        ivel = vel / iterationCount
+        while iterationCount-- > 0
+            @activate()
+            p[axis] += ivel
+            @pcube.moveTo new Vector3D p.x, p.y, p.z
+            @world.integrate(1)
+            if @collidesAxis axis
+                @activate()
+                p[axis] -= ivel
+                @pcube.moveTo new Vector3D p.x, p.y, p.z
+                @world.integrate(1)
+                return false
+        return true
 
     tryToMoveVertically: (p) ->
         return if @onTheGround
-        @move.y--
+        @move.y-- unless @move.y < -10
         return if @moveAxis p, 'y'
         @move.y = 0
         @onTheGround = true
@@ -231,9 +249,6 @@ class Game
         @moveAxis p, 'x'
         @moveAxis p, 'z'
         @tryToMoveVertically p
-
-
-        @adjustCube()
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
@@ -241,14 +256,6 @@ class Game
         return
 
     diff: -> @now - @old
-
-    adjustCube: ->
-        @pcube._rotationX = 0
-        @pcube._rotationZ = 0
-        @pcube._rotationY = 0
-        @pcube.get_currentState().orientation = @pcube.createRotationMatrix().clone()
-        @pcube.setActive()
-
 
     syncPhysicalAndView: (view, physical) ->
         state = physical.get_currentState()
