@@ -43,7 +43,8 @@ class Game
         @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
         @mat = new MeshLambertMaterial(color: 0xCC0000)
 
-        @move = {x: 0, z: 0}
+        @move = {x: 0, z: 0, y: 0}
+        @onTheGround = true
 
         @pause = off
         @world = @createPhysics()
@@ -172,8 +173,7 @@ class Game
             vel = if operation is '-' then -baseVel else baseVel
             $(document).bind 'keydown', key, => @posInc axis, vel
             $(document).bind 'keyup', key, => @posDec axis
-        $(document).bind 'keydown', 'space', =>
-            @pcube.incVelY 400 if @pcube.collisions.length > 0
+        $(document).bind 'keydown', 'space', => @jump()
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
     # unused
@@ -182,17 +182,15 @@ class Game
         y: [0, 1, 0]
         z: [0, 0, 1]
 
-    posInc: (axis, delta) ->
-        @move[axis] = delta
 
-    posDec: (axis) ->
-        @move[axis] = 0
+    jump: ->
+        return unless @onTheGround
+        @move.y = 20
+        @onTheGround = false
 
-        # @pcube['incVel' + axis.toUpperCase()](delta)
+    posInc: (axis, delta) -> @move[axis] = delta
 
-        # p = @pcube.get_currentState().position
-        # p[axis] += delta
-        # @pcube.moveTo new Vector3D p.x, p.y, p.z
+    posDec: (axis) -> @move[axis] = 0
 
     start: ->
         @now = @old = new Date().getTime()
@@ -212,26 +210,35 @@ class Game
         @pcube.moveTo new Vector3D p.x, p.y, p.z
         @world.integrate(1)
 
+    # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveAxis: (p, axis) ->
         @moveCube p, axis, @move[axis]
-        return unless @collidesAxis axis
+        return true unless @collidesAxis axis
         @moveCube p, axis, -@move[axis]
-        return
+        return false
+
+    tryToMoveVertically: (p) ->
+        return if @onTheGround
+        @move.y--
+        return if @moveAxis p, 'y'
+        @move.y = 0
+        @onTheGround = true
 
     tick: ->
         @now = new Date().getTime()
-
         p = @pcube.get_currentState().position
+        raise "Cube is way below ground level" if p.y < 0
         @moveAxis p, 'x'
         @moveAxis p, 'z'
+        @tryToMoveVertically p
 
-        puts "the collisions are ", @pcube.collisions if @debug
 
         @adjustCube()
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera
         @old = @now
+        return
 
     diff: -> @now - @old
 

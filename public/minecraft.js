@@ -79,8 +79,10 @@
     });
     this.move = {
       x: 0,
-      z: 0
+      z: 0,
+      y: 0
     };
+    this.onTheGround = true;
     this.pause = false;
     this.world = this.createPhysics();
     this.pcube = assoc(this.addCube(-140, 25, 168), {
@@ -257,9 +259,7 @@
       }).call(this);
     }
     $(document).bind('keydown', 'space', __bind(function() {
-      if (this.pcube.collisions.length > 0) {
-        return this.pcube.incVelY(400);
-      }
+      return this.jump();
     }, this));
     return $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
@@ -269,6 +269,13 @@
     x: [1, 0, 0],
     y: [0, 1, 0],
     z: [0, 0, 1]
+  };
+  Game.prototype.jump = function() {
+    if (!(this.onTheGround)) {
+      return null;
+    }
+    this.move.y = 20;
+    return (this.onTheGround = false);
   };
   Game.prototype.posInc = function(axis, delta) {
     return (this.move[axis] = delta);
@@ -307,25 +314,38 @@
   Game.prototype.moveAxis = function(p, axis) {
     this.moveCube(p, axis, this.move[axis]);
     if (!(this.collidesAxis(axis))) {
-      return null;
+      return true;
     }
     this.moveCube(p, axis, -this.move[axis]);
-    return null;
+    return false;
+  };
+  Game.prototype.tryToMoveVertically = function(p) {
+    if (this.onTheGround) {
+      return null;
+    }
+    this.move.y--;
+    if (this.moveAxis(p, 'y')) {
+      return null;
+    }
+    this.move.y = 0;
+    return (this.onTheGround = true);
   };
   Game.prototype.tick = function() {
     var p;
     this.now = new Date().getTime();
     p = this.pcube.get_currentState().position;
+    if (p.y < 0) {
+      raise("Cube is way below ground level");
+    }
     this.moveAxis(p, 'x');
     this.moveAxis(p, 'z');
-    if (this.debug) {
-      puts("the collisions are ", this.pcube.collisions);
-    }
+    this.tryToMoveVertically(p);
     this.adjustCube();
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
-    return (this.old = this.now);
+    this.old = this.now;
+    return null;
   };
   Game.prototype.diff = function() {
     return this.now - this.old;
