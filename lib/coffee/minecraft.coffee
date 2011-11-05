@@ -43,9 +43,11 @@ class Game
         @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
         @mat = new MeshLambertMaterial(color: 0xCC0000)
 
+        @move = {x: 0, z: 0}
+
         @pause = off
         @world = @createPhysics()
-        @pcube = assoc (@addCube 0, 100, 0), isPlayer: true
+        @pcube = assoc (@addCube(-140, 25, 168)), isPlayer: true
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
@@ -85,7 +87,7 @@ class Game
     createPhysics: ->
         world = jiglib.PhysicsSystem.getInstance()
         world.setCollisionSystem on
-        world.setGravity new Vector3D 0, -200, 0
+        world.setGravity new Vector3D 0, 0, 0
         world.setSolverType "ACCUMULATED"
         # world.setSolverType "FAST"
         ground = new jiglib.JBox(null, 4000, 2000, 20)
@@ -163,14 +165,34 @@ class Game
             $(document).bind 'keydown', key, -> incFunction(axis, vel)
 
     defineControls: ->
-        cameraVel = 30
-        @_setBinds 30, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
-        @_setBinds 300, @playerKeys, (axis, vel) =>
-            @pcube['incVel' + axis.toUpperCase()](vel)
+        @_setBinds 10, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
+        baseVel = 2
+        for key, action of @playerKeys
+            [axis, operation] = action
+            vel = if operation is '-' then -baseVel else baseVel
+            $(document).bind 'keydown', key, => @posInc axis, vel
+            $(document).bind 'keyup', key, => @posDec axis
         $(document).bind 'keydown', 'space', =>
             @pcube.incVelY 400 if @pcube.collisions.length > 0
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
+    # unused
+    axisToVector:
+        x: [1, 0, 0]
+        y: [0, 1, 0]
+        z: [0, 0, 1]
+
+    posInc: (axis, delta) ->
+        @move[axis] = delta
+
+    posDec: (axis) ->
+        @move[axis] = 0
+
+        # @pcube['incVel' + axis.toUpperCase()](delta)
+
+        # p = @pcube.get_currentState().position
+        # p[axis] += delta
+        # @pcube.moveTo new Vector3D p.x, p.y, p.z
 
     start: ->
         @now = @old = new Date().getTime()
@@ -179,13 +201,33 @@ class Game
             requestAnimationFrame animate, @renderer.domElement
         animate()
 
+    collidesAxis: (axis) ->
+        for c in @pcube.collisions
+            return true if c.dirToBody[axis] != 0
+        return false
+
+    moveCube: (p, axis, vel) ->
+        @pcube.setActive()
+        p[axis] += vel
+        @pcube.moveTo new Vector3D p.x, p.y, p.z
+        @world.integrate(1)
+
+    moveAxis: (p, axis) ->
+        @moveCube p, axis, @move[axis]
+        return unless @collidesAxis axis
+        @moveCube p, axis, -@move[axis]
+        return
+
     tick: ->
         @now = new Date().getTime()
-        diff = Math.min 50, @diff()
-        10.times =>
-            @world.integrate(diff / 10000)
-            @adjustCube()
-        # puts "the collisions are ", @pcube.collisions
+
+        p = @pcube.get_currentState().position
+        @moveAxis p, 'x'
+        @moveAxis p, 'z'
+
+        puts "the collisions are ", @pcube.collisions if @debug
+
+        @adjustCube()
         @syncPhysicalAndView @cube, @pcube
         @renderer.clear()
         @renderer.render @scene, @camera

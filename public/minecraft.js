@@ -77,9 +77,13 @@
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
     });
+    this.move = {
+      x: 0,
+      z: 0
+    };
     this.pause = false;
     this.world = this.createPhysics();
-    this.pcube = assoc(this.addCube(0, 100, 0), {
+    this.pcube = assoc(this.addCube(-140, 25, 168), {
       isPlayer: true
     });
     this.renderer = this.createRenderer();
@@ -133,7 +137,7 @@
     var ground, world;
     world = jiglib.PhysicsSystem.getInstance();
     world.setCollisionSystem(true);
-    world.setGravity(new Vector3D(0, -200, 0));
+    world.setGravity(new Vector3D(0, 0, 0));
     world.setSolverType("ACCUMULATED");
     ground = new jiglib.JBox(null, 4000, 2000, 20);
     ground.set_mass(1);
@@ -228,14 +232,30 @@
     return _result;
   };
   Game.prototype.defineControls = function() {
-    var cameraVel;
-    cameraVel = 30;
-    this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
+    var _i, _ref2, baseVel, key;
+    this._setBinds(10, this.cameraKeys, __bind(function(axis, vel) {
       return this.camera.position[axis] += vel;
     }, this));
-    this._setBinds(300, this.playerKeys, __bind(function(axis, vel) {
-      return this.pcube['incVel' + axis.toUpperCase()](vel);
-    }, this));
+    baseVel = 2;
+    _ref2 = this.playerKeys;
+    for (_i in _ref2) {
+      if (!__hasProp.call(_ref2, _i)) continue;
+      (function() {
+        var _ref3, axis, operation, vel;
+        var key = _i;
+        var action = _ref2[_i];
+        _ref3 = action;
+        axis = _ref3[0];
+        operation = _ref3[1];
+        vel = operation === '-' ? -baseVel : baseVel;
+        $(document).bind('keydown', key, __bind(function() {
+          return this.posInc(axis, vel);
+        }, this));
+        return $(document).bind('keyup', key, __bind(function() {
+          return this.posDec(axis);
+        }, this));
+      }).call(this);
+    }
     $(document).bind('keydown', 'space', __bind(function() {
       if (this.pcube.collisions.length > 0) {
         return this.pcube.incVelY(400);
@@ -244,6 +264,17 @@
     return $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
     }, this));
+  };
+  Game.prototype.axisToVector = {
+    x: [1, 0, 0],
+    y: [0, 1, 0],
+    z: [0, 0, 1]
+  };
+  Game.prototype.posInc = function(axis, delta) {
+    return (this.move[axis] = delta);
+  };
+  Game.prototype.posDec = function(axis) {
+    return (this.move[axis] = 0);
   };
   Game.prototype.start = function() {
     var animate;
@@ -256,14 +287,41 @@
     }, this);
     return animate();
   };
+  Game.prototype.collidesAxis = function(axis) {
+    var _i, _len, _ref2, c;
+    _ref2 = this.pcube.collisions;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      c = _ref2[_i];
+      if (c.dirToBody[axis] !== 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+  Game.prototype.moveCube = function(p, axis, vel) {
+    this.pcube.setActive();
+    p[axis] += vel;
+    this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
+    return this.world.integrate(1);
+  };
+  Game.prototype.moveAxis = function(p, axis) {
+    this.moveCube(p, axis, this.move[axis]);
+    if (!(this.collidesAxis(axis))) {
+      return null;
+    }
+    this.moveCube(p, axis, -this.move[axis]);
+    return null;
+  };
   Game.prototype.tick = function() {
-    var diff;
+    var p;
     this.now = new Date().getTime();
-    diff = Math.min(50, this.diff());
-    (10).times(__bind(function() {
-      this.world.integrate(diff / 10000);
-      return this.adjustCube();
-    }, this));
+    p = this.pcube.get_currentState().position;
+    this.moveAxis(p, 'x');
+    this.moveAxis(p, 'z');
+    if (this.debug) {
+      puts("the collisions are ", this.pcube.collisions);
+    }
+    this.adjustCube();
     this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
