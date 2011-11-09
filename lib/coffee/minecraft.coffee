@@ -12,30 +12,6 @@ greaterEqual = (a, b) -> a >= b + DoubleHeleper.delta
 lesser = (a, b) -> greater(b, a)
 lesserEqual = (a, b) -> greaterEqual(b, a)
 
-# Update setting position and orientation. Needed since update is too monolithic.
-patch Object3D,
-    hackUpdateMatrix: (pos, orientation) ->
-        @position.set pos...
-        @matrix = new THREE.Matrix4(orientation[0], orientation[1], orientation[2], orientation[3],orientation[4], orientation[5], orientation[6], orientation[7],orientation[8], orientation[9], orientation[10], orientation[11],orientation[12], orientation[13], orientation[14], orientation[15])
-        @matrix.setPosition @position
-        if @scale.x isnt 1 or @scale.y isnt 1 or @scale.z isnt 1
-            @matrix.scale @scale
-            @boundRadiusScale = Math.max(@scale.x, Math.max(@scale.y, @scale.z))
-        @matrixWorldNeedsUpdate = true
-
-
-patch jiglib.JBox,
-    incVelocity: (dx, dy, dz) ->
-        v = @get_currentState().linVelocity
-        @setLineVelocity new Vector3D(v.x + dx, v.y + dy, v.z + dz), false
-
-    incVelX: (delta) -> @incVelocity delta, 0, 0
-    incVelY: (delta) -> @incVelocity 0, delta, 0
-    incVelZ: (delta) -> @incVelocity 0, 0, delta
-
-    getVerticalPosition: -> @get_currentState().position.y
-
-    getVerticalVelocity: -> @get_currentState().linVelocity.y
 
 class Game
     constructor: ->
@@ -47,8 +23,6 @@ class Game
         @onTheGround = true
 
         @pause = off
-        @world = @createPhysics()
-        @pcube = assoc (@addCube(-140, 25 + 50, 168)), isPlayer: true
         @renderer = @createRenderer()
         @camera = @createCamera()
         @cube = @createPlayer()
@@ -61,7 +35,7 @@ class Game
         @defineControls()
 
     populateWorld: ->
-        size = 10
+        size = 1
         for i in [-size..size]
             for j in [-size..size]
                 @cubeAt 51 * i, 25, 51 * j
@@ -70,44 +44,19 @@ class Game
 
     cubeAt: (x, y, z) ->
         mesh = new Mesh(@geo, @mat)
-        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
+        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
-        cube = new jiglib.JBox(null, @rad, @rad, @rad)
-        cube.set_mass 1
-        cube.set_friction 0
-        cube.set_restitution 0
-        @world.addBody cube
-        cube.moveTo new Vector3D x, y, z
-        cube.set_movable false
         @scene.add mesh
-        @syncPhysicalAndView mesh, cube
 
-
-
-    createPhysics: ->
-        world = jiglib.PhysicsSystem.getInstance()
-        world.setCollisionSystem on
-        world.setGravity new Vector3D 0, 0, 0
-        world.setSolverType "ACCUMULATED"
-        # world.setSolverType "FAST"
-        ground = new jiglib.JBox(null, 4000, 2000, 20)
-        ground.set_mass 1
-        ground.set_friction 0
-        ground.set_restitution 0
-        ground.set_linVelocityDamping new Vector3D 0, 0, 0
-        world.addBody(ground)
-        ground.moveTo new Vector3D 0, -10, 0
-        ground.set_movable false
-        return world
 
 
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
         cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
-        # assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: false
-        assoc cube, castShadow: false, receiveShadow: false, matrixAutoUpdate: false
+        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
         cube.geometry.dynamic = true
+        cube.position.set 50, 50, 50
         cube
 
     createCamera: ->
@@ -167,13 +116,14 @@ class Game
 
     defineControls: ->
         @_setBinds 10, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
-        baseVel = 2
+        baseVel = 5
         for key, action of @playerKeys
             [axis, operation] = action
             vel = if operation is '-' then -baseVel else baseVel
             $(document).bind 'keydown', key, => @posInc axis, vel
             $(document).bind 'keyup', key, => @posDec axis
         $(document).bind 'keydown', 'space', => @jump()
+        $(document).bind 'keydown', 'o', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
     # unused
@@ -182,13 +132,19 @@ class Game
         y: [0, 1, 0]
         z: [0, 0, 1]
 
+    changeColors: ->
+        @cube.materials = [new MeshLambertMaterial(color: 0x0000FF)]
+
 
     jump: ->
-        return unless @onTheGround
-        @move.y = 20
-        @onTheGround = false
+        @posInc 'y', 5
+        # return unless @onTheGround
+        # @move.y = 20
+        # @onTheGround = false
 
-    posInc: (axis, delta) -> @move[axis] = delta
+    posInc: (axis, delta) ->
+        @cube.position[axis] += delta
+        # @move[axis] = delta
 
     posDec: (axis) -> @move[axis] = 0
 
@@ -199,23 +155,8 @@ class Game
             requestAnimationFrame animate, @renderer.domElement
         animate()
 
-    collidesAxis: (axis) ->
-        for c in @pcube.collisions
-            return true if c.dirToBody[axis] != 0
-        return false
+    collidesAxis: (axis) -> false
 
-    moveCube: (p, axis, vel) ->
-        @activate()
-        p[axis] += vel
-        @pcube.moveTo new Vector3D p.x, p.y, p.z
-        @world.integrate(1)
-
-    activate: ->
-        @pcube._rotationX = 0
-        @pcube._rotationZ = 0
-        @pcube._rotationY = 0
-        @pcube.get_currentState().orientation = @pcube.createRotationMatrix().clone()
-        @pcube.setActive()
 
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveAxis: (p, axis) ->
@@ -226,12 +167,10 @@ class Game
             @activate()
             p[axis] += ivel
             @pcube.moveTo new Vector3D p.x, p.y, p.z
-            @world.integrate(1)
             if @collidesAxis axis
                 @activate()
                 p[axis] -= ivel
                 @pcube.moveTo new Vector3D p.x, p.y, p.z
-                @world.integrate(1)
                 return false
         return true
 
@@ -244,12 +183,10 @@ class Game
 
     tick: ->
         @now = new Date().getTime()
-        p = @pcube.get_currentState().position
-        raise "Cube is way below ground level" if p.y < 0
-        @moveAxis p, 'x'
-        @moveAxis p, 'z'
-        @tryToMoveVertically p
-        @syncPhysicalAndView @cube, @pcube
+        # raise "Cube is way below ground level" if p.y < 0
+        # @moveAxis p, 'x'
+        # @moveAxis p, 'z'
+        # @tryToMoveVertically p
         @renderer.clear()
         @renderer.render @scene, @camera
         @old = @now
@@ -257,22 +194,7 @@ class Game
 
     diff: -> @now - @old
 
-    syncPhysicalAndView: (view, physical) ->
-        state = physical.get_currentState()
-        orientation = state.orientation.get_rawData()
-        p = state.position
-        view.hackUpdateMatrix [p.x, p.y, p.z], orientation
 
-
-    addCube: (x, y, z) ->
-        rad = 50
-        cube = new jiglib.JBox(null, rad, rad, rad)
-        cube.set_mass 1
-        cube.set_friction 0
-        cube.set_restitution 0
-        @world.addBody cube
-        cube.moveTo new Vector3D x, y, z
-        cube
 
 
 init_web_app = -> new Game().start()

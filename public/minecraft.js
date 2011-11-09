@@ -37,40 +37,6 @@
   lesserEqual = function(a, b) {
     return greaterEqual(b, a);
   };
-  patch(Object3D, {
-    hackUpdateMatrix: function(pos, orientation) {
-      this.position.set.apply(this.position, pos);
-      this.matrix = new THREE.Matrix4(orientation[0], orientation[1], orientation[2], orientation[3], orientation[4], orientation[5], orientation[6], orientation[7], orientation[8], orientation[9], orientation[10], orientation[11], orientation[12], orientation[13], orientation[14], orientation[15]);
-      this.matrix.setPosition(this.position);
-      if (this.scale.x !== 1 || this.scale.y !== 1 || this.scale.z !== 1) {
-        this.matrix.scale(this.scale);
-        this.boundRadiusScale = Math.max(this.scale.x, Math.max(this.scale.y, this.scale.z));
-      }
-      return (this.matrixWorldNeedsUpdate = true);
-    }
-  });
-  patch(jiglib.JBox, {
-    incVelocity: function(dx, dy, dz) {
-      var v;
-      v = this.get_currentState().linVelocity;
-      return this.setLineVelocity(new Vector3D(v.x + dx, v.y + dy, v.z + dz), false);
-    },
-    incVelX: function(delta) {
-      return this.incVelocity(delta, 0, 0);
-    },
-    incVelY: function(delta) {
-      return this.incVelocity(0, delta, 0);
-    },
-    incVelZ: function(delta) {
-      return this.incVelocity(0, 0, delta);
-    },
-    getVerticalPosition: function() {
-      return this.get_currentState().position.y;
-    },
-    getVerticalVelocity: function() {
-      return this.get_currentState().linVelocity.y;
-    }
-  });
   Game = function() {
     this.rad = 50;
     this.geo = new CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1);
@@ -84,10 +50,6 @@
     };
     this.onTheGround = true;
     this.pause = false;
-    this.world = this.createPhysics();
-    this.pcube = assoc(this.addCube(-140, 25 + 50, 168), {
-      isPlayer: true
-    });
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.cube = this.createPlayer();
@@ -102,7 +64,7 @@
   };
   Game.prototype.populateWorld = function() {
     var _result, _result2, i, j, size;
-    size = 10;
+    size = 1;
     _result = [];
     for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
       _result.push((function() {
@@ -116,50 +78,27 @@
     return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
-    var cube, mesh;
+    var mesh;
     mesh = new Mesh(this.geo, this.mat);
     assoc(mesh, {
       castShadow: true,
       receiveShadow: true,
-      matrixAutoUpdate: false
+      matrixAutoUpdate: true
     });
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
-    cube = new jiglib.JBox(null, this.rad, this.rad, this.rad);
-    cube.set_mass(1);
-    cube.set_friction(0);
-    cube.set_restitution(0);
-    this.world.addBody(cube);
-    cube.moveTo(new Vector3D(x, y, z));
-    cube.set_movable(false);
-    this.scene.add(mesh);
-    return this.syncPhysicalAndView(mesh, cube);
-  };
-  Game.prototype.createPhysics = function() {
-    var ground, world;
-    world = jiglib.PhysicsSystem.getInstance();
-    world.setCollisionSystem(true);
-    world.setGravity(new Vector3D(0, 0, 0));
-    world.setSolverType("ACCUMULATED");
-    ground = new jiglib.JBox(null, 4000, 2000, 20);
-    ground.set_mass(1);
-    ground.set_friction(0);
-    ground.set_restitution(0);
-    ground.set_linVelocityDamping(new Vector3D(0, 0, 0));
-    world.addBody(ground);
-    ground.moveTo(new Vector3D(0, -10, 0));
-    ground.set_movable(false);
-    return world;
+    return this.scene.add(mesh);
   };
   Game.prototype.createPlayer = function() {
     var cube;
     cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial());
     assoc(cube, {
-      castShadow: false,
-      receiveShadow: false,
-      matrixAutoUpdate: false
+      castShadow: true,
+      receiveShadow: true,
+      matrixAutoUpdate: true
     });
     cube.geometry.dynamic = true;
+    cube.position.set(50, 50, 50);
     return cube;
   };
   Game.prototype.createCamera = function() {
@@ -238,7 +177,7 @@
     this._setBinds(10, this.cameraKeys, __bind(function(axis, vel) {
       return this.camera.position[axis] += vel;
     }, this));
-    baseVel = 2;
+    baseVel = 5;
     _ref2 = this.playerKeys;
     for (_i in _ref2) {
       if (!__hasProp.call(_ref2, _i)) continue;
@@ -261,6 +200,9 @@
     $(document).bind('keydown', 'space', __bind(function() {
       return this.jump();
     }, this));
+    $(document).bind('keydown', 'o', __bind(function() {
+      return this.changeColors();
+    }, this));
     return $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
     }, this));
@@ -270,15 +212,18 @@
     y: [0, 1, 0],
     z: [0, 0, 1]
   };
+  Game.prototype.changeColors = function() {
+    return (this.cube.materials = [
+      new MeshLambertMaterial({
+        color: 0x0000FF
+      })
+    ]);
+  };
   Game.prototype.jump = function() {
-    if (!(this.onTheGround)) {
-      return null;
-    }
-    this.move.y = 20;
-    return (this.onTheGround = false);
+    return this.posInc('y', 5);
   };
   Game.prototype.posInc = function(axis, delta) {
-    return (this.move[axis] = delta);
+    return this.cube.position[axis] += delta;
   };
   Game.prototype.posDec = function(axis) {
     return (this.move[axis] = 0);
@@ -295,28 +240,7 @@
     return animate();
   };
   Game.prototype.collidesAxis = function(axis) {
-    var _i, _len, _ref2, c;
-    _ref2 = this.pcube.collisions;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      c = _ref2[_i];
-      if (c.dirToBody[axis] !== 0) {
-        return true;
-      }
-    }
     return false;
-  };
-  Game.prototype.moveCube = function(p, axis, vel) {
-    this.activate();
-    p[axis] += vel;
-    this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
-    return this.world.integrate(1);
-  };
-  Game.prototype.activate = function() {
-    this.pcube._rotationX = 0;
-    this.pcube._rotationZ = 0;
-    this.pcube._rotationY = 0;
-    this.pcube.get_currentState().orientation = this.pcube.createRotationMatrix().clone();
-    return this.pcube.setActive();
   };
   Game.prototype.moveAxis = function(p, axis) {
     var iterationCount, ivel, vel;
@@ -327,12 +251,10 @@
       this.activate();
       p[axis] += ivel;
       this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
-      this.world.integrate(1);
       if (this.collidesAxis(axis)) {
         this.activate();
         p[axis] -= ivel;
         this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
-        this.world.integrate(1);
         return false;
       }
     }
@@ -352,16 +274,7 @@
     return (this.onTheGround = true);
   };
   Game.prototype.tick = function() {
-    var p;
     this.now = new Date().getTime();
-    p = this.pcube.get_currentState().position;
-    if (p.y < 0) {
-      raise("Cube is way below ground level");
-    }
-    this.moveAxis(p, 'x');
-    this.moveAxis(p, 'z');
-    this.tryToMoveVertically(p);
-    this.syncPhysicalAndView(this.cube, this.pcube);
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
     this.old = this.now;
@@ -369,24 +282,6 @@
   };
   Game.prototype.diff = function() {
     return this.now - this.old;
-  };
-  Game.prototype.syncPhysicalAndView = function(view, physical) {
-    var orientation, p, state;
-    state = physical.get_currentState();
-    orientation = state.orientation.get_rawData();
-    p = state.position;
-    return view.hackUpdateMatrix([p.x, p.y, p.z], orientation);
-  };
-  Game.prototype.addCube = function(x, y, z) {
-    var cube, rad;
-    rad = 50;
-    cube = new jiglib.JBox(null, rad, rad, rad);
-    cube.set_mass(1);
-    cube.set_friction(0);
-    cube.set_restitution(0);
-    this.world.addBody(cube);
-    cube.moveTo(new Vector3D(x, y, z));
-    return cube;
   };
   init_web_app = function() {
     return new Game().start();
