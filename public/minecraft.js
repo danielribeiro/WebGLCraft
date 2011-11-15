@@ -53,7 +53,7 @@
       z: 0,
       y: 0
     };
-    this.onTheGround = true;
+    this.keysDown = {};
     this.pause = false;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
@@ -88,24 +88,24 @@
     mesh = new Mesh(this.geo, this.mat);
     assoc(mesh, {
       castShadow: true,
-      receiveShadow: true,
-      matrixAutoUpdate: true
+      receiveShadow: true
     });
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
+    mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
     return this.scene.add(mesh);
   };
   Game.prototype.createPlayer = function() {
     var cube, r;
-    r = 48;
+    r = 40;
     cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
     assoc(cube, {
       castShadow: true,
-      receiveShadow: true,
-      matrixAutoUpdate: true
+      receiveShadow: true
     });
     cube.geometry.dynamic = true;
     cube.position.set(0, 25, 0);
+    cube.name = "player";
     return cube;
   };
   Game.prototype.createCamera = function() {
@@ -136,6 +136,7 @@
     plane.position.y = -1;
     plane.rotation.x = -Math.PI / 2;
     plane.receiveShadow = true;
+    plane.name = 'floor';
     return plane;
   };
   Game.prototype.addLights = function(scene) {
@@ -151,12 +152,6 @@
     6: 'x+',
     7: 'y+',
     9: 'y-'
-  };
-  Game.prototype.playerKeys = {
-    w: 'z-',
-    s: 'z+',
-    a: 'x-',
-    d: 'x+'
   };
   Game.prototype._setBinds = function(baseVel, keys, incFunction) {
     var _i, _ref2, _result, key;
@@ -181,28 +176,20 @@
     return _result;
   };
   Game.prototype.defineControls = function() {
-    var _i, _ref2, baseVel, key;
+    var _i, _len, _ref2;
     this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
       this.camera.position[axis] += vel;
       return this.camera.lookAt(vec(0, 0, 0));
     }, this));
-    baseVel = 5;
-    _ref2 = this.playerKeys;
-    for (_i in _ref2) {
-      if (!__hasProp.call(_ref2, _i)) continue;
+    _ref2 = "wasd".split('');
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       (function() {
-        var _ref3, axis, operation, vel;
-        var key = _i;
-        var action = _ref2[_i];
-        _ref3 = action;
-        axis = _ref3[0];
-        operation = _ref3[1];
-        vel = operation === '-' ? -baseVel : baseVel;
+        var key = _ref2[_i];
         $(document).bind('keydown', key, __bind(function() {
-          return this.posInc(axis, vel);
+          return (this.keysDown[key] = true);
         }, this));
         return $(document).bind('keyup', key, __bind(function() {
-          return this.posDec(axis);
+          return (this.keysDown[key] = false);
         }, this));
       }).call(this);
     }
@@ -227,10 +214,11 @@
     })) : (this.cube.material = new MeshNormalMaterial());
   };
   Game.prototype.jump = function() {
-    return this.posInc('y', 5);
+    return this.posInc('y', 20);
   };
   Game.prototype.posInc = function(axis, delta) {
-    return (this.move[axis] = delta);
+    this.move[axis] += delta;
+    return puts("inced " + (axis) + " by " + (delta) + ". now it is: " + (this.move[axis]));
   };
   Game.prototype.changeColorsIfCollide = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
@@ -300,7 +288,41 @@
     return this.cube.position[axis] += vel;
   };
   Game.prototype.tryToMoveVertically = function(p) {
-    return this.moveAxis(p, 'y');
+    var vel;
+    if (!(this.move.y < -10)) {
+      this.move.y--;
+    }
+    vel = this.move.y;
+    this.cube.position.y += vel;
+    if (this.cube.position.y < 25) {
+      this.move.y = 0;
+      return (this.cube.position.y = 25);
+    }
+  };
+  Game.prototype.playerKeys = {
+    w: 'z-',
+    s: 'z+',
+    a: 'x-',
+    d: 'x+'
+  };
+  Game.prototype.defineMove = function() {
+    var _ref2, _ref3, action, axis, baseVel, key, operation, vel;
+    baseVel = 5;
+    this.move.x = 0;
+    this.move.z = 0;
+    _ref2 = this.playerKeys;
+    for (key in _ref2) {
+      if (!__hasProp.call(_ref2, key)) continue;
+      action = _ref2[key];
+      _ref3 = action;
+      axis = _ref3[0];
+      operation = _ref3[1];
+      vel = operation === '-' ? -baseVel : baseVel;
+      if (this.keysDown[key]) {
+        this.move[axis] += vel;
+      }
+    }
+    return null;
   };
   Game.prototype.tick = function() {
     var p;
@@ -309,12 +331,13 @@
     if (p.y < 0) {
       raise("Cube is way below ground level");
     }
+    this.defineMove();
     this.moveAxis(p, 'x');
     this.moveAxis(p, 'z');
     this.tryToMoveVertically(p);
-    this.changeColorsIfCollide();
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
+    this.changeColorsIfCollide();
     this.old = this.now;
     return null;
   };

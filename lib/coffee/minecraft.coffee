@@ -20,7 +20,7 @@ class Game
         @mat = new MeshLambertMaterial(color: 0xCC0000)
 
         @move = {x: 0, z: 0, y: 0}
-        @onTheGround = true
+        @keysDown = {}
 
         @pause = off
         @renderer = @createRenderer()
@@ -45,9 +45,10 @@ class Game
 
     cubeAt: (x, y, z) ->
         mesh = new Mesh(@geo, @mat)
-        assoc mesh, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
+        assoc mesh, castShadow: true, receiveShadow: true
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
+        mesh.name = "red block at #{x} #{y} #{z}"
         @scene.add mesh
 
 
@@ -55,11 +56,12 @@ class Game
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
             # THREE.MeshLambertMaterial(color: 0xCC0000))
-        r = 48
+        r = 40
         cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
+        assoc cube, castShadow: true, receiveShadow: true
         cube.geometry.dynamic = true
         cube.position.set 0, 25, 0
+        cube.name = "player"
         cube
 
     createCamera: ->
@@ -84,6 +86,7 @@ class Game
         plane.position.y = -1
         plane.rotation.x = -Math.PI / 2
         plane.receiveShadow = true
+        plane.name = 'floor'
         return plane
 
     addLights: (scene) ->
@@ -105,13 +108,6 @@ class Game
         7: 'y+'
         9: 'y-'
 
-    playerKeys:
-        w: 'z-'
-        s: 'z+'
-        a: 'x-'
-        d: 'x+'
-
-
     _setBinds: (baseVel, keys, incFunction)->
         for key, action of keys
             [axis, operation] = action
@@ -122,12 +118,9 @@ class Game
         @_setBinds 30, @cameraKeys, (axis, vel) =>
             @camera.position[axis] += vel
             @camera.lookAt vec 0, 0, 0
-        baseVel = 5
-        for key, action of @playerKeys
-            [axis, operation] = action
-            vel = if operation is '-' then -baseVel else baseVel
-            $(document).bind 'keydown', key, => @posInc axis, vel
-            $(document).bind 'keyup', key, => @posDec axis
+        for key in "wasd".split('')
+            $(document).bind 'keydown', key, => @keysDown[key] = true
+            $(document).bind 'keyup', key, => @keysDown[key] = false
         $(document).bind 'keydown', 'space', => @jump()
         $(document).bind 'keydown', 'r', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
@@ -145,16 +138,15 @@ class Game
         else
             @cube.material = new MeshNormalMaterial()
 
-
-
     jump: ->
-        @posInc 'y', 5
+        @posInc 'y', 20
         # return unless @onTheGround
         # @move.y = 20
         # @onTheGround = false
 
     posInc: (axis, delta) ->
-        @move[axis] = delta
+        @move[axis] += delta
+        puts "inced #{axis} by #{delta}. now it is: #{@move[axis]}"
 
 
     changeColorsIfCollide: ->
@@ -212,23 +204,41 @@ class Game
         # return true
 
     tryToMoveVertically: (p) ->
-        @moveAxis p, 'y'
-        # return if @onTheGround
-        # @move.y-- unless @move.y < -10
-        # return if @moveAxis p, 'y'
-        # @move.y = 0
-        # @onTheGround = true
+        @move.y-- unless @move.y < -10
+        vel = @move.y
+        @cube.position.y += vel
+        if @cube.position.y < 25
+            @move.y = 0
+            @cube.position.y = 25
+
+
+    playerKeys:
+        w: 'z-'
+        s: 'z+'
+        a: 'x-'
+        d: 'x+'
+
+    defineMove: ->
+        baseVel = 5
+        @move.x = 0
+        @move.z = 0
+        for key, action of @playerKeys
+            [axis, operation] = action
+            vel = if operation is '-' then -baseVel else baseVel
+            @move[axis] += vel if @keysDown[key]
+        return
 
     tick: ->
         @now = new Date().getTime()
         p = @cube.position
         raise "Cube is way below ground level" if p.y < 0
+        @defineMove()
         @moveAxis p, 'x'
         @moveAxis p, 'z'
         @tryToMoveVertically p
-        @changeColorsIfCollide()
         @renderer.clear()
         @renderer.render @scene, @camera
+        @changeColorsIfCollide()
         @old = @now
         return
 
