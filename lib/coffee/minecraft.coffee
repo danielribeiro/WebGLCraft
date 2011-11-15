@@ -11,7 +11,7 @@ greater = (a, b) -> a > b + DoubleHeleper.delta
 greaterEqual = (a, b) -> a >= b + DoubleHeleper.delta
 lesser = (a, b) -> greater(b, a)
 lesserEqual = (a, b) -> greaterEqual(b, a)
-
+vec = (x, y, z) -> new Vector3 x, y, z
 
 class Game
     constructor: ->
@@ -159,18 +159,28 @@ class Game
 
 
     changeColorsIfCollide: ->
-        todir = new Vector3 0, 0, 1
-        pos = @cube.position.clone()
-        # lower back
-        pos.x += 25
-        pos.y -= 25
-        pos.z -= 25
-        return unless @rayCollides pos, todir
+        for x in [-1, 1]
+            for y in [-1, 1]
+                for z in [-1, 1]
+                    return @changeMaterial() if @raysFromVertexCollide x, y, z
+        return
+
+    changeMaterial: ->
         @cube.material = new MeshLambertMaterial(color: 0x0000FF)
 
+    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
+        vertex = @cube.position.clone()
+        vertex.x += vertexX * 25
+        vertex.y += vertexY * 25
+        vertex.z += vertexZ * 25
+        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
+        for dir in dirs
+            return true if @rayCollides vertex, dir
+        return false
 
-    rayCollides: (vertex, vector) ->
-        intersections = new Ray(vertex, vector).intersectScene @scene
+
+    rayCollides: (vertex, direction) ->
+        intersections = new Ray(vertex, direction).intersectScene @scene
         return intersections[0]?.distance <= 50
 
     posDec: (axis) -> @move[axis] = 0

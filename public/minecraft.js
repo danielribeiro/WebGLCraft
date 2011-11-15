@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual;
+  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual, vec;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
@@ -38,6 +38,9 @@
   };
   lesserEqual = function(a, b) {
     return greaterEqual(b, a);
+  };
+  vec = function(x, y, z) {
+    return new Vector3(x, y, z);
   };
   Game = function() {
     this.rad = 50;
@@ -220,22 +223,48 @@
     return this.changeColorsIfCollide();
   };
   Game.prototype.changeColorsIfCollide = function() {
-    var pos, todir;
-    todir = new Vector3(0, 0, 1);
-    pos = this.cube.position.clone();
-    pos.x += 25;
-    pos.y -= 25;
-    pos.z -= 25;
-    if (!(this.rayCollides(pos, todir))) {
-      return null;
+    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
+    _ref2 = [-1, 1];
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      x = _ref2[_i];
+      _ref3 = [-1, 1];
+      for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
+        y = _ref3[_j];
+        _ref4 = [-1, 1];
+        for (_k = 0, _len3 = _ref4.length; _k < _len3; _k++) {
+          z = _ref4[_k];
+          if (this.raysFromVertexCollide(x, y, z)) {
+            return this.changeMaterial();
+          }
+        }
+      }
     }
+    return null;
+  };
+  Game.prototype.changeMaterial = function() {
     return (this.cube.material = new MeshLambertMaterial({
       color: 0x0000FF
     }));
   };
-  Game.prototype.rayCollides = function(vertex, vector) {
+  Game.prototype.raysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
+    var _i, _len, _ref2, dir, dirs, vertex;
+    vertex = this.cube.position.clone();
+    vertex.x += vertexX * 25;
+    vertex.y += vertexY * 25;
+    vertex.z += vertexZ * 25;
+    dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)];
+    _ref2 = dirs;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      dir = _ref2[_i];
+      if (this.rayCollides(vertex, dir)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  Game.prototype.rayCollides = function(vertex, direction) {
     var intersections;
-    intersections = new Ray(vertex, vector).intersectScene(this.scene);
+    intersections = new Ray(vertex, direction).intersectScene(this.scene);
     return (intersections[0] == null ? undefined : intersections[0].distance) <= 50;
   };
   Game.prototype.posDec = function(axis) {
@@ -322,4 +351,5 @@ window.greaterEqual = greaterEqual
 window.init_web_app = init_web_app
 window.lesser = lesser
 window.lesserEqual = lesserEqual
+window.vec = vec
 }).call(this);
