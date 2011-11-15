@@ -36,11 +36,10 @@ class Game
         @defineControls()
 
     populateWorld: ->
-        size = 1
-        @cubeAt 0, 25, 0
-        # for i in [-size..size]
-        #     for j in [-size..size]
-        #         @cubeAt 200 + 51 * i, 25, -200 + 51 * j
+        size = 2
+        for i in [-size..size]
+            for j in [-size..size]
+                @cubeAt 200 + 51 * i, 25, -200 + 51 * j
 
 
 
@@ -120,7 +119,9 @@ class Game
             $(document).bind 'keydown', key, -> incFunction(axis, vel)
 
     defineControls: ->
-        @_setBinds 10, @cameraKeys, (axis, vel) => @camera.position[axis] += vel
+        @_setBinds 30, @cameraKeys, (axis, vel) =>
+            @camera.position[axis] += vel
+            @camera.lookAt vec 0, 0, 0
         baseVel = 5
         for key, action of @playerKeys
             [axis, operation] = action
@@ -153,9 +154,7 @@ class Game
         # @onTheGround = false
 
     posInc: (axis, delta) ->
-        @cube.position[axis] += delta
-        @changeColorsIfCollide()
-        # @move[axis] = delta
+        @move[axis] = delta
 
 
     changeColorsIfCollide: ->
@@ -198,32 +197,36 @@ class Game
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveAxis: (p, axis) ->
         vel = @move[axis]
-        iterationCount = 30
-        ivel = vel / iterationCount
-        while iterationCount-- > 0
-            @activate()
-            p[axis] += ivel
-            @pcube.moveTo new Vector3D p.x, p.y, p.z
-            if @collidesAxis axis
-                @activate()
-                p[axis] -= ivel
-                @pcube.moveTo new Vector3D p.x, p.y, p.z
-                return false
-        return true
+        @cube.position[axis] += vel
+        # iterationCount = 30
+        # ivel = vel / iterationCount
+        # while iterationCount-- > 0
+        #     @activate()
+        #     p[axis] += ivel
+        #     @pcube.moveTo new Vector3D p.x, p.y, p.z
+        #     if @collidesAxis axis
+        #         @activate()
+        #         p[axis] -= ivel
+        #         @pcube.moveTo new Vector3D p.x, p.y, p.z
+        #         return false
+        # return true
 
     tryToMoveVertically: (p) ->
-        return if @onTheGround
-        @move.y-- unless @move.y < -10
-        return if @moveAxis p, 'y'
-        @move.y = 0
-        @onTheGround = true
+        @moveAxis p, 'y'
+        # return if @onTheGround
+        # @move.y-- unless @move.y < -10
+        # return if @moveAxis p, 'y'
+        # @move.y = 0
+        # @onTheGround = true
 
     tick: ->
         @now = new Date().getTime()
-        # raise "Cube is way below ground level" if p.y < 0
-        # @moveAxis p, 'x'
-        # @moveAxis p, 'z'
-        # @tryToMoveVertically p
+        p = @cube.position
+        raise "Cube is way below ground level" if p.y < 0
+        @moveAxis p, 'x'
+        @moveAxis p, 'z'
+        @tryToMoveVertically p
+        @changeColorsIfCollide()
         @renderer.clear()
         @renderer.render @scene, @camera
         @old = @now

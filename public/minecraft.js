@@ -69,9 +69,19 @@
     return this;
   };
   Game.prototype.populateWorld = function() {
-    var size;
-    size = 1;
-    return this.cubeAt(0, 25, 0);
+    var _result, _result2, i, j, size;
+    size = 2;
+    _result = [];
+    for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
+      _result.push((function() {
+        _result2 = [];
+        for (j = -size; (-size <= size ? j <= size : j >= size); (-size <= size ? j += 1 : j -= 1)) {
+          _result2.push(this.cubeAt(200 + 51 * i, 25, -200 + 51 * j));
+        }
+        return _result2;
+      }).call(this));
+    }
+    return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
     var mesh;
@@ -172,8 +182,9 @@
   };
   Game.prototype.defineControls = function() {
     var _i, _ref2, baseVel, key;
-    this._setBinds(10, this.cameraKeys, __bind(function(axis, vel) {
-      return this.camera.position[axis] += vel;
+    this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
+      this.camera.position[axis] += vel;
+      return this.camera.lookAt(vec(0, 0, 0));
     }, this));
     baseVel = 5;
     _ref2 = this.playerKeys;
@@ -219,8 +230,7 @@
     return this.posInc('y', 5);
   };
   Game.prototype.posInc = function(axis, delta) {
-    this.cube.position[axis] += delta;
-    return this.changeColorsIfCollide();
+    return (this.move[axis] = delta);
   };
   Game.prototype.changeColorsIfCollide = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
@@ -285,38 +295,24 @@
     return false;
   };
   Game.prototype.moveAxis = function(p, axis) {
-    var iterationCount, ivel, vel;
+    var vel;
     vel = this.move[axis];
-    iterationCount = 30;
-    ivel = vel / iterationCount;
-    while (iterationCount-- > 0) {
-      this.activate();
-      p[axis] += ivel;
-      this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
-      if (this.collidesAxis(axis)) {
-        this.activate();
-        p[axis] -= ivel;
-        this.pcube.moveTo(new Vector3D(p.x, p.y, p.z));
-        return false;
-      }
-    }
-    return true;
+    return this.cube.position[axis] += vel;
   };
   Game.prototype.tryToMoveVertically = function(p) {
-    if (this.onTheGround) {
-      return null;
-    }
-    if (!(this.move.y < -10)) {
-      this.move.y--;
-    }
-    if (this.moveAxis(p, 'y')) {
-      return null;
-    }
-    this.move.y = 0;
-    return (this.onTheGround = true);
+    return this.moveAxis(p, 'y');
   };
   Game.prototype.tick = function() {
+    var p;
     this.now = new Date().getTime();
+    p = this.cube.position;
+    if (p.y < 0) {
+      raise("Cube is way below ground level");
+    }
+    this.moveAxis(p, 'x');
+    this.moveAxis(p, 'z');
+    this.tryToMoveVertically(p);
+    this.changeColorsIfCollide();
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
     this.old = this.now;
