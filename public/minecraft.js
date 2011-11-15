@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Scene, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual;
+  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
@@ -19,6 +19,8 @@
   AmbientLight = _ref.AmbientLight;
   DirectionalLight = _ref.DirectionalLight;
   PointLight = _ref.PointLight;
+  Ray = _ref.Ray;
+  Vector3 = _ref.Vector3;
   _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
@@ -56,6 +58,7 @@
     this.scene = new Scene();
     this.scene.add(this.cube);
     this.scene.add(this.createFloor());
+    this.scene.add(this.camera);
     this.populateWorld();
     this.addLights(this.scene);
     this.renderer.render(this.scene, this.camera);
@@ -63,19 +66,9 @@
     return this;
   };
   Game.prototype.populateWorld = function() {
-    var _result, _result2, i, j, size;
+    var size;
     size = 1;
-    _result = [];
-    for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
-      _result.push((function() {
-        _result2 = [];
-        for (j = -size; (-size <= size ? j <= size : j >= size); (-size <= size ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(51 * i, 25, 51 * j));
-        }
-        return _result2;
-      }).call(this));
-    }
-    return _result;
+    return this.cubeAt(0, 25, 0);
   };
   Game.prototype.cubeAt = function(x, y, z) {
     var mesh;
@@ -90,15 +83,16 @@
     return this.scene.add(mesh);
   };
   Game.prototype.createPlayer = function() {
-    var cube;
-    cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial());
+    var cube, r;
+    r = 48;
+    cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
     assoc(cube, {
       castShadow: true,
       receiveShadow: true,
       matrixAutoUpdate: true
     });
     cube.geometry.dynamic = true;
-    cube.position.set(50, 50, 50);
+    cube.position.set(0, 25, 0);
     return cube;
   };
   Game.prototype.createCamera = function() {
@@ -126,6 +120,7 @@
       color: 0x00FF00
     });
     plane = new Mesh(planeGeo, planeMat);
+    plane.position.y = -1;
     plane.rotation.x = -Math.PI / 2;
     plane.receiveShadow = true;
     return plane;
@@ -200,7 +195,7 @@
     $(document).bind('keydown', 'space', __bind(function() {
       return this.jump();
     }, this));
-    $(document).bind('keydown', 'o', __bind(function() {
+    $(document).bind('keydown', 'r', __bind(function() {
       return this.changeColors();
     }, this));
     return $(document).bind('keydown', 'p', __bind(function() {
@@ -213,17 +208,35 @@
     z: [0, 0, 1]
   };
   Game.prototype.changeColors = function() {
-    return (this.cube.materials = [
-      new MeshLambertMaterial({
-        color: 0x0000FF
-      })
-    ]);
+    return this.cube.material instanceof MeshNormalMaterial ? (this.cube.material = new MeshLambertMaterial({
+      color: 0x0000FF
+    })) : (this.cube.material = new MeshNormalMaterial());
   };
   Game.prototype.jump = function() {
     return this.posInc('y', 5);
   };
   Game.prototype.posInc = function(axis, delta) {
-    return this.cube.position[axis] += delta;
+    this.cube.position[axis] += delta;
+    return this.changeColorsIfCollide();
+  };
+  Game.prototype.changeColorsIfCollide = function() {
+    var pos, todir;
+    todir = new Vector3(0, 0, 1);
+    pos = this.cube.position.clone();
+    pos.x += 25;
+    pos.y -= 25;
+    pos.z -= 25;
+    if (!(this.rayCollides(pos, todir))) {
+      return null;
+    }
+    return (this.cube.material = new MeshLambertMaterial({
+      color: 0x0000FF
+    }));
+  };
+  Game.prototype.rayCollides = function(vertex, vector) {
+    var intersections;
+    intersections = new Ray(vertex, vector).intersectScene(this.scene);
+    return (intersections[0] == null ? undefined : intersections[0].distance) <= 50;
   };
   Game.prototype.posDec = function(axis) {
     return (this.move[axis] = 0);
@@ -299,7 +312,9 @@ window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera
 window.PlaneGeometry = PlaneGeometry
 window.PointLight = PointLight
+window.Ray = Ray
 window.Scene = Scene
+window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
 window.greater = greater

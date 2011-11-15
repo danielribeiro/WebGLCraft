@@ -1,7 +1,7 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, PointLight} = THREE
+{AmbientLight, DirectionalLight, PointLight, Ray, Vector3} = THREE
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
 
 # Double Helpers
@@ -29,6 +29,7 @@ class Game
         @scene = new Scene()
         @scene.add @cube
         @scene.add @createFloor()
+        @scene.add @camera
         @populateWorld()
         @addLights @scene
         @renderer.render @scene, @camera
@@ -36,9 +37,10 @@ class Game
 
     populateWorld: ->
         size = 1
-        for i in [-size..size]
-            for j in [-size..size]
-                @cubeAt 51 * i, 25, 51 * j
+        @cubeAt 0, 25, 0
+        # for i in [-size..size]
+        #     for j in [-size..size]
+        #         @cubeAt 200 + 51 * i, 25, -200 + 51 * j
 
 
 
@@ -52,11 +54,13 @@ class Game
 
 
     createPlayer: ->
-        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshLambertMaterial(color: 0xCC0000))
-        cube = new Mesh(new CubeGeometry(50, 50, 50), new MeshNormalMaterial())
+        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
+            # THREE.MeshLambertMaterial(color: 0xCC0000))
+        r = 48
+        cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
         assoc cube, castShadow: true, receiveShadow: true, matrixAutoUpdate: true
         cube.geometry.dynamic = true
-        cube.position.set 50, 50, 50
+        cube.position.set 0, 25, 0
         cube
 
     createCamera: ->
@@ -78,6 +82,7 @@ class Game
         planeGeo = new PlaneGeometry(4000, 2000, 10, 10)
         planeMat = new MeshLambertMaterial(color: 0x00FF00)
         plane = new Mesh(planeGeo, planeMat)
+        plane.position.y = -1
         plane.rotation.x = -Math.PI / 2
         plane.receiveShadow = true
         return plane
@@ -123,8 +128,9 @@ class Game
             $(document).bind 'keydown', key, => @posInc axis, vel
             $(document).bind 'keyup', key, => @posDec axis
         $(document).bind 'keydown', 'space', => @jump()
-        $(document).bind 'keydown', 'o', => @changeColors()
+        $(document).bind 'keydown', 'r', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
+
 
     # unused
     axisToVector:
@@ -133,7 +139,11 @@ class Game
         z: [0, 0, 1]
 
     changeColors: ->
-        @cube.materials = [new MeshLambertMaterial(color: 0x0000FF)]
+        if @cube.material instanceof MeshNormalMaterial
+            @cube.material = new MeshLambertMaterial(color: 0x0000FF)
+        else
+            @cube.material = new MeshNormalMaterial()
+
 
 
     jump: ->
@@ -144,7 +154,24 @@ class Game
 
     posInc: (axis, delta) ->
         @cube.position[axis] += delta
+        @changeColorsIfCollide()
         # @move[axis] = delta
+
+
+    changeColorsIfCollide: ->
+        todir = new Vector3 0, 0, 1
+        pos = @cube.position.clone()
+        # lower back
+        pos.x += 25
+        pos.y -= 25
+        pos.z -= 25
+        return unless @rayCollides pos, todir
+        @cube.material = new MeshLambertMaterial(color: 0x0000FF)
+
+
+    rayCollides: (vertex, vector) ->
+        intersections = new Ray(vertex, vector).intersectScene @scene
+        return intersections[0]?.distance <= 50
 
     posDec: (axis) -> @move[axis] = 0
 
