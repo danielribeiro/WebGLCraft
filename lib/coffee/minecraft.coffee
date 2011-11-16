@@ -118,10 +118,9 @@ class Game
         @_setBinds 30, @cameraKeys, (axis, vel) =>
             @camera.position[axis] += vel
             @camera.lookAt vec 0, 0, 0
-        for key in "wasd".split('')
+        for key in "wasd".split('').concat('space')
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
-        $(document).bind 'keydown', 'space', => @jump()
         $(document).bind 'keydown', 'r', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
@@ -137,17 +136,6 @@ class Game
             @cube.material = new MeshLambertMaterial(color: 0x0000FF)
         else
             @cube.material = new MeshNormalMaterial()
-
-    jump: ->
-        @posInc 'y', 20
-        # return unless @onTheGround
-        # @move.y = 20
-        # @onTheGround = false
-
-    posInc: (axis, delta) ->
-        @move[axis] += delta
-        puts "inced #{axis} by #{delta}. now it is: #{@move[axis]}"
-
 
     changeColorsIfCollide: ->
         for x in [-1, 1]
@@ -204,7 +192,9 @@ class Game
         # return true
 
     tryToMoveVertically: (p) ->
-        @move.y-- unless @move.y < -10
+        if @keysDown.space
+            @move.y += 3
+        @move.y -= 0.3 unless @move.y < -20
         vel = @move.y
         @cube.position.y += vel
         if @cube.position.y < 25

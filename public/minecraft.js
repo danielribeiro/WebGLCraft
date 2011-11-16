@@ -181,7 +181,7 @@
       this.camera.position[axis] += vel;
       return this.camera.lookAt(vec(0, 0, 0));
     }, this));
-    _ref2 = "wasd".split('');
+    _ref2 = "wasd".split('').concat('space');
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       (function() {
         var key = _ref2[_i];
@@ -193,9 +193,6 @@
         }, this));
       }).call(this);
     }
-    $(document).bind('keydown', 'space', __bind(function() {
-      return this.jump();
-    }, this));
     $(document).bind('keydown', 'r', __bind(function() {
       return this.changeColors();
     }, this));
@@ -212,13 +209,6 @@
     return this.cube.material instanceof MeshNormalMaterial ? (this.cube.material = new MeshLambertMaterial({
       color: 0x0000FF
     })) : (this.cube.material = new MeshNormalMaterial());
-  };
-  Game.prototype.jump = function() {
-    return this.posInc('y', 20);
-  };
-  Game.prototype.posInc = function(axis, delta) {
-    this.move[axis] += delta;
-    return puts("inced " + (axis) + " by " + (delta) + ". now it is: " + (this.move[axis]));
   };
   Game.prototype.changeColorsIfCollide = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
@@ -289,8 +279,11 @@
   };
   Game.prototype.tryToMoveVertically = function(p) {
     var vel;
-    if (!(this.move.y < -10)) {
-      this.move.y--;
+    if (this.keysDown.space) {
+      this.move.y += 3;
+    }
+    if (!(this.move.y < -20)) {
+      this.move.y -= 0.3;
     }
     vel = this.move.y;
     this.cube.position.y += vel;
