@@ -42,3 +42,10 @@ task :compile do
   system "watchr", 'compileall.rb'
 end
 
+desc "runs unit tests"
+task :jspec do
+  compileall 'lib/coffee', 'public'
+  compileall 'spec/coffee', 'spec/javascripts'
+  imports = %w[spec/jasmine-node/lib spec/javascripts public]
+  system "env NODE_PATH=#{imports.join ':'} node spec/jasmine-node/specs.js"
+end
