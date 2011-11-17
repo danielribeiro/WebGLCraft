@@ -144,6 +144,34 @@ class Game
                     return @changeMaterial() if @raysFromVertexCollide x, y, z
         return
 
+    getNormals: ->
+        edgeNormals = {}
+        for x in [-1, 1]
+            for y in [-1, 1]
+                for z in [-1, 1]
+                    @getNormalsFromVertex edgeNormals, x, y, z
+        @printNormals edgeNormals
+        return
+
+    printNormals: (vects) ->
+        printany = false
+        for k, val of vects when val
+            puts k
+            printany = true
+        puts "" if printany
+
+    getNormalsFromVertex: (edgeNormals, vertexX, vertexY, vertexZ) ->
+        vertex = @cube.position.clone()
+        vertex.x += vertexX * 25
+        vertex.y += vertexY * 25
+        vertex.z += vertexZ * 25
+        edgeNormals["y#{vertexY}z#{vertexZ}"] or=  @rayCollides vertex, vec(-vertexX, 0, 0)
+        edgeNormals["x#{vertexX}z#{vertexZ}"] or=  @rayCollides vertex, vec(0, -vertexY, 0)
+        edgeNormals["x#{vertexX}y#{vertexY}"] or=  @rayCollides vertex, vec(0, 0, -vertexZ)
+        return
+
+
+
     changeMaterial: ->
         @cube.material = new MeshLambertMaterial(color: 0x0000FF)
 
@@ -160,7 +188,12 @@ class Game
 
     rayCollides: (vertex, direction) ->
         intersections = new Ray(vertex, direction).intersectScene @scene
-        return intersections[0]?.distance <= 50
+        return @getClosest(intersections)?.distance <= 50
+
+    getClosest: (intersections) ->
+        for i in intersections
+            return i if i.object.name isnt 'player'
+        return
 
     posDec: (axis) -> @move[axis] = 0
 
@@ -192,7 +225,7 @@ class Game
         # return true
 
     tryToMoveVertically: (p) ->
-        if @keysDown.space
+        if @keysDown.space and @move.y < 3
             @move.y += 3
         @move.y -= 0.3 unless @move.y < -20
         vel = @move.y
@@ -227,8 +260,9 @@ class Game
         @moveAxis p, 'z'
         @tryToMoveVertically p
         @renderer.clear()
-        @renderer.render @scene, @camera
         @changeColorsIfCollide()
+        @getNormals()
+        @renderer.render @scene, @camera
         @old = @now
         return
 

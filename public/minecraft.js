@@ -229,6 +229,52 @@
     }
     return null;
   };
+  Game.prototype.getNormals = function() {
+    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, edgeNormals, x, y, z;
+    edgeNormals = {};
+    _ref2 = [-1, 1];
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      x = _ref2[_i];
+      _ref3 = [-1, 1];
+      for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
+        y = _ref3[_j];
+        _ref4 = [-1, 1];
+        for (_k = 0, _len3 = _ref4.length; _k < _len3; _k++) {
+          z = _ref4[_k];
+          this.getNormalsFromVertex(edgeNormals, x, y, z);
+        }
+      }
+    }
+    this.printNormals(edgeNormals);
+    return null;
+  };
+  Game.prototype.printNormals = function(vects) {
+    var _ref2, k, printany, val;
+    printany = false;
+    _ref2 = vects;
+    for (k in _ref2) {
+      if (!__hasProp.call(_ref2, k)) continue;
+      val = _ref2[k];
+      if (val) {
+        puts(k);
+        printany = true;
+      }
+    }
+    if (printany) {
+      return puts("");
+    }
+  };
+  Game.prototype.getNormalsFromVertex = function(edgeNormals, vertexX, vertexY, vertexZ) {
+    var vertex;
+    vertex = this.cube.position.clone();
+    vertex.x += vertexX * 25;
+    vertex.y += vertexY * 25;
+    vertex.z += vertexZ * 25;
+    edgeNormals[("y" + (vertexY) + "z" + (vertexZ))] || (edgeNormals[("y" + (vertexY) + "z" + (vertexZ))] = this.rayCollides(vertex, vec(-vertexX, 0, 0)));
+    edgeNormals[("x" + (vertexX) + "z" + (vertexZ))] || (edgeNormals[("x" + (vertexX) + "z" + (vertexZ))] = this.rayCollides(vertex, vec(0, -vertexY, 0)));
+    edgeNormals[("x" + (vertexX) + "y" + (vertexY))] || (edgeNormals[("x" + (vertexX) + "y" + (vertexY))] = this.rayCollides(vertex, vec(0, 0, -vertexZ)));
+    return null;
+  };
   Game.prototype.changeMaterial = function() {
     return (this.cube.material = new MeshLambertMaterial({
       color: 0x0000FF
@@ -251,9 +297,20 @@
     return false;
   };
   Game.prototype.rayCollides = function(vertex, direction) {
-    var intersections;
+    var _ref2, _ref3, intersections;
     intersections = new Ray(vertex, direction).intersectScene(this.scene);
-    return (intersections[0] == null ? undefined : intersections[0].distance) <= 50;
+    return ((typeof (_ref3 = ((_ref2 = this.getClosest(intersections)))) === "undefined" || _ref3 === null) ? undefined : _ref3.distance) <= 50;
+  };
+  Game.prototype.getClosest = function(intersections) {
+    var _i, _len, _ref2, i;
+    _ref2 = intersections;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      i = _ref2[_i];
+      if (i.object.name !== 'player') {
+        return i;
+      }
+    }
+    return null;
   };
   Game.prototype.posDec = function(axis) {
     return (this.move[axis] = 0);
@@ -279,7 +336,7 @@
   };
   Game.prototype.tryToMoveVertically = function(p) {
     var vel;
-    if (this.keysDown.space) {
+    if (this.keysDown.space && this.move.y < 3) {
       this.move.y += 3;
     }
     if (!(this.move.y < -20)) {
@@ -329,8 +386,9 @@
     this.moveAxis(p, 'z');
     this.tryToMoveVertically(p);
     this.renderer.clear();
-    this.renderer.render(this.scene, this.camera);
     this.changeColorsIfCollide();
+    this.getNormals();
+    this.renderer.render(this.scene, this.camera);
     this.old = this.now;
     return null;
   };
