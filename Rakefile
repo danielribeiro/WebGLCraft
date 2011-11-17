@@ -3,12 +3,7 @@ require 'rake'
 require 'rake/clean'
 require 'rubygems/package_task'
 require 'rake/testtask'
-require 'spec/rake/spectask'
 
-Spec::Rake::SpecTask.new do |t|
-  t.spec_files = FileList['spec/**/*.rb'].exclude(/spec_helper.rb/)
-  t.libs << Dir["lib"]
-end
 
 task :default => [:compile_watch]
 #################################
@@ -17,7 +12,6 @@ task :default => [:compile_watch]
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__),'lib')
 def compileall(from, to, force = false)
   require 'coffeecompiler'
-
   outDir = File.expand_path to
   coffeeDir = File.expand_path from
   puts "Compiling all files: #{coffeeDir} -> #{outDir}"
@@ -43,7 +37,7 @@ task :compile do
 end
 
 desc "runs unit tests"
-task :jspec do
+task :spec do
   compileall 'lib/coffee', 'public'
   compileall 'spec/coffee', 'spec/javascripts'
   imports = %w[spec/jasmine-node/lib spec/javascripts public]

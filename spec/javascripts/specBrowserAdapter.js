@@ -1,14 +1,12 @@
 if (typeof global !== "undefined" && global !== null) {
     global.window = global
-    global.headless = false
+    global.headless = true
+
 }
 else {
-    function noop() {
-    }
-    window.require = noop
+    window.require = function() {}
     window.headless = false
 }
-
 
 
 

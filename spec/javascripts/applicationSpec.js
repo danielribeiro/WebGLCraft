@@ -1,5 +1,5 @@
 (function() {
-  var importAll, partIs, same;
+  var importAll, partIs, positive, same;
   var __hasProp = Object.prototype.hasOwnProperty;
   importAll = function(from) {
     var _i, _ref, _result, i;
@@ -17,13 +17,39 @@
   same = function(thi, that) {
     return expect(thi).toEqual(that);
   };
-  require('specBrowserAdapter.js');
-  describe("Basic Tests", function() {
-    return it("works", function() {
-      return same("oi", new String('oi'));
+  positive = function(val) {
+    return expect(val).toBeGreaterThan(0);
+  };
+  require('specBrowserAdapter');
+  require('collision');
+  describe("Collision", function() {
+    it("returns the normal vector, given the collision edges", function() {
+      var normals, vector;
+      vector = {
+        'x+y-': true,
+        'x-y-': true,
+        'y-z-': true,
+        'y-z-': true
+      };
+      normals = Collision.normals(vector);
+      same(normals.x, 0);
+      positive(normals.y);
+      return same(normals.z, 0);
+    });
+    return it("the normal vector affects two directions if an edge is\
+    the sole edge of both planes that make it", function() {
+      var normals, vector;
+      vector = {
+        'x-z-': true
+      };
+      normals = Collision.normals(vector);
+      positive(normals.x, 0);
+      same(normals.y, 0);
+      return positive(normals.z);
     });
   });
 window.importAll = importAll
 window.partIs = partIs
+window.positive = positive
 window.same = same
 }).call(this);
