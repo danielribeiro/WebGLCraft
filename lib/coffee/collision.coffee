@@ -1,5 +1,3 @@
-require 'lib/rbcoffee'
-
 Collision =
     normals: (edges) ->
         normal = {x: 0, y: 0, z: 0}
@@ -29,9 +27,16 @@ class Collision.Face
         @edges = []
 
     populateNormal: (normal) ->
+        return if @edges.length == 0
         if @edges.length > 1
             normal[@plane] += @getPush()
+        else
+            edge = @edges[0]
+            face = edge.adjacentFace(@)
+            normal[@plane] += @getPush() if face.edgeCount() == 1
         return
+
+    edgeCount: -> @edges.length
 
     # Yeah, the signal is inverted. Third Newton's law is to blame.
     getPush: ->
@@ -43,3 +48,7 @@ class Collision.Face
 
 class Collision.Edge
     constructor: (@face1, @face2) ->
+
+    adjacentFace: (face) ->
+        return @face2 if face is @face1
+        return @face1

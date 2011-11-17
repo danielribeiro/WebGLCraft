@@ -1,7 +1,6 @@
 (function() {
   var Collision;
   var __hasProp = Object.prototype.hasOwnProperty;
-  require('lib/rbcoffee');
   Collision = {
     normals: function(edges) {
       var _ref, face, name, normal;
@@ -50,10 +49,23 @@
     return this;
   };
   Collision.Face.prototype.populateNormal = function(normal) {
+    var edge, face;
+    if (this.edges.length === 0) {
+      return null;
+    }
     if (this.edges.length > 1) {
       normal[this.plane] += this.getPush();
+    } else {
+      edge = this.edges[0];
+      face = edge.adjacentFace(this);
+      if (face.edgeCount() === 1) {
+        normal[this.plane] += this.getPush();
+      }
     }
     return null;
+  };
+  Collision.Face.prototype.edgeCount = function() {
+    return this.edges.length;
   };
   Collision.Face.prototype.getPush = function() {
     if (this.sign === '+') {
@@ -68,6 +80,12 @@
     this.face2 = _arg2;
     this.face1 = _arg;
     return this;
+  };
+  Collision.Edge.prototype.adjacentFace = function(face) {
+    if (face === this.face1) {
+      return this.face2;
+    }
+    return this.face1;
   };
 window.Collision = Collision
 }).call(this);
