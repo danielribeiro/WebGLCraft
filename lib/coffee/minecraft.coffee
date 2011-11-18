@@ -15,6 +15,7 @@ class Game
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
 
+        @onGround = false
         @pause = off
         @renderer = @createRenderer()
         @camera = @createCamera()
@@ -29,16 +30,18 @@ class Game
         @defineControls()
 
     populateWorld: ->
-        size = 2
+        size = 5
         for i in [-size..size]
             for j in [-size..size]
-                @cubeAt 200 + 51 * i, 25, 51 * j
+                @cubeAt 200 + 50 * i, 25, 50 * j
 
+        for i in [0..size]
+            for j in [0..size]
+                @cubeAt 200 + 50 * i, 75, 50 * j
 
 
     cubeAt: (x, y, z) ->
         mesh = new Mesh(@geo, @mat)
-        assoc mesh, castShadow: true, receiveShadow: true
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
         mesh.name = "red block at #{x} #{y} #{z}"
@@ -49,11 +52,10 @@ class Game
     createPlayer: ->
         # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
             # THREE.MeshLambertMaterial(color: 0xCC0000))
-        r = 40
+        r = 50
         cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
-        assoc cube, castShadow: true, receiveShadow: true
         cube.geometry.dynamic = true
-        cube.position.set 0, 25, 0
+        cube.position.set 0, 100, 0
         cube.name = "player"
         cube
 
@@ -123,32 +125,23 @@ class Game
         else
             @cube.material = new MeshNormalMaterial()
 
-    getNormals: ->
-        edgeNormals = {}
+    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
+        vertex = @cube.position.clone()
+        vertex.x += vertexX * 25
+        vertex.y += vertexY * 25
+        vertex.z += vertexZ * 25
+        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
+        for dir in dirs
+            return true if @rayCollides vertex, dir
+        return false
+
+    collides: ->
+        return true if @cube.position.y < 25
         for x in [-1, 1]
             for y in [-1, 1]
                 for z in [-1, 1]
-                    @getNormalsFromVertex edgeNormals, x, y, z
-        ret = Collision.normals edgeNormals
-        ret.y++ if (@cube.position.y - 25) < 0.05
-        return ret
-
-    getNormalsFromVertex: (edgeNormals, vertexX, vertexY, vertexZ) ->
-        v = @cube.position.clone()
-        v.x += vertexX * 25
-        v.y += vertexY * 25
-        v.z += vertexZ * 25
-        xplane = @planeName 'x', vertexX
-        yplane = @planeName 'y', vertexY
-        zplane = @planeName 'z', vertexZ
-        edgeNormals[yplane + zplane] or=  @rayCollides v, vec(-vertexX, 0, 0)
-        edgeNormals[xplane + zplane] or=  @rayCollides v, vec(0, -vertexY, 0)
-        edgeNormals[xplane + yplane] or=  @rayCollides v, vec(0, 0, -vertexZ)
-        return
-
-    planeName: (plane, signal) ->
-        signalName = if signal > 0 then '+' else '-'
-        return plane + signalName
+                    return true if @raysFromVertexCollide x, y, z
+        return false
 
     rayCollides: (vertex, direction) ->
         intersections = new Ray(vertex, direction).intersectScene @scene
@@ -170,31 +163,35 @@ class Game
 
 
     axes: ['x', 'y', 'z']
-    iterationCount: 10
+    iterationCount: 5
 
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveCube: (axis) ->
         iterationCount = @iterationCount
+        ivel = {}
+        for axis in @axes
+            ivel[axis] = @move[axis] / @iterationCount
         while iterationCount-- > 0
-            for axis in @axes
-                @cube.position[axis] += @ivel axis
-            normal = @getNormals()
-            for axis in @axes
-                if normal[axis] != 0
-                    @cube.position[axis] += Math.abs(@ivel(axis)) * normal[axis]
+            for axis in @axes when ivel[axis] isnt 0
+                @cube.position[axis] += ivel[axis]
+                if @collides()
+                    @cube.position[axis] -= ivel[axis]
                     @move[axis] = 0
+                    ivel[axis] = 0
+                    @touchesGround() if axis is 'y'
         return
 
-
-    ivel: (axis) -> @move[axis] / @iterationCount
-
-
+    touchesGround: ->
+        @onGround = true
 
     playerKeys:
         w: 'z-'
         s: 'z+'
         a: 'x-'
         d: 'x+'
+
+    shouldJump: -> @keysDown.space and @onGround
+
 
     defineMove: ->
         baseVel = 5
@@ -204,8 +201,9 @@ class Game
             [axis, operation] = action
             vel = if operation is '-' then -baseVel else baseVel
             @move[axis] += vel if @keysDown[key]
-        if @keysDown.space and @move.y < 3
-            @move.y += 3
+        if @shouldJump()
+            @onGround = false
+            @move.y += 7
         @move.y -= 0.3 unless @move.y < -20
         return
 
