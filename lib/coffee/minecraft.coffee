@@ -124,25 +124,11 @@ class Game
         $(document).bind 'keydown', 'r', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
-
-    # unused
-    axisToVector:
-        x: [1, 0, 0]
-        y: [0, 1, 0]
-        z: [0, 0, 1]
-
     changeColors: ->
         if @cube.material instanceof MeshNormalMaterial
             @cube.material = new MeshLambertMaterial(color: 0x0000FF)
         else
             @cube.material = new MeshNormalMaterial()
-
-    changeColorsIfCollide: ->
-        for x in [-1, 1]
-            for y in [-1, 1]
-                for z in [-1, 1]
-                    return @changeMaterial() if @raysFromVertexCollide x, y, z
-        return
 
     getNormals: ->
         edgeNormals = {}
@@ -150,41 +136,24 @@ class Game
             for y in [-1, 1]
                 for z in [-1, 1]
                     @getNormalsFromVertex edgeNormals, x, y, z
-        @printNormals edgeNormals
-        return
-
-    printNormals: (vects) ->
-        printany = false
-        for k, val of vects when val
-            puts k
-            printany = true
-        puts "" if printany
+        return Collision.normals edgeNormals
 
     getNormalsFromVertex: (edgeNormals, vertexX, vertexY, vertexZ) ->
-        vertex = @cube.position.clone()
-        vertex.x += vertexX * 25
-        vertex.y += vertexY * 25
-        vertex.z += vertexZ * 25
-        edgeNormals["y#{vertexY}z#{vertexZ}"] or=  @rayCollides vertex, vec(-vertexX, 0, 0)
-        edgeNormals["x#{vertexX}z#{vertexZ}"] or=  @rayCollides vertex, vec(0, -vertexY, 0)
-        edgeNormals["x#{vertexX}y#{vertexY}"] or=  @rayCollides vertex, vec(0, 0, -vertexZ)
+        v = @cube.position.clone()
+        v.x += vertexX * 25
+        v.y += vertexY * 25
+        v.z += vertexZ * 25
+        xplane = @planeName 'x', vertexX
+        yplane = @planeName 'y', vertexY
+        zplane = @planeName 'z', vertexZ
+        edgeNormals[yplane + zplane] or=  @rayCollides v, vec(-vertexX, 0, 0)
+        edgeNormals[xplane + zplane] or=  @rayCollides v, vec(0, -vertexY, 0)
+        edgeNormals[xplane + yplane] or=  @rayCollides v, vec(0, 0, -vertexZ)
         return
 
-
-
-    changeMaterial: ->
-        @cube.material = new MeshLambertMaterial(color: 0x0000FF)
-
-    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
-        vertex = @cube.position.clone()
-        vertex.x += vertexX * 25
-        vertex.y += vertexY * 25
-        vertex.z += vertexZ * 25
-        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
-        for dir in dirs
-            return true if @rayCollides vertex, dir
-        return false
-
+    planeName: (plane, signal) ->
+        signalName = if signal > 0 then '+' else '-'
+        return plane + signalName
 
     rayCollides: (vertex, direction) ->
         intersections = new Ray(vertex, direction).intersectScene @scene
@@ -194,8 +163,6 @@ class Game
         for i in intersections
             return i if i.object.name isnt 'player'
         return
-
-    posDec: (axis) -> @move[axis] = 0
 
     start: ->
         @now = @old = new Date().getTime()
@@ -260,7 +227,6 @@ class Game
         @moveAxis p, 'z'
         @tryToMoveVertically p
         @renderer.clear()
-        @changeColorsIfCollide()
         @getNormals()
         @renderer.render @scene, @camera
         @old = @now

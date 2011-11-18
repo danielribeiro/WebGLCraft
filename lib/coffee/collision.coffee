@@ -17,7 +17,6 @@ Collision =
             edge = new Collision.Edge face1, face2
             face1.addEdge edge
             face2.addEdge edge
-
         return faces
 
 

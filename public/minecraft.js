@@ -200,34 +200,10 @@
       return (this.pause = !this.pause);
     }, this));
   };
-  Game.prototype.axisToVector = {
-    x: [1, 0, 0],
-    y: [0, 1, 0],
-    z: [0, 0, 1]
-  };
   Game.prototype.changeColors = function() {
     return this.cube.material instanceof MeshNormalMaterial ? (this.cube.material = new MeshLambertMaterial({
       color: 0x0000FF
     })) : (this.cube.material = new MeshNormalMaterial());
-  };
-  Game.prototype.changeColorsIfCollide = function() {
-    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
-    _ref2 = [-1, 1];
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      x = _ref2[_i];
-      _ref3 = [-1, 1];
-      for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
-        y = _ref3[_j];
-        _ref4 = [-1, 1];
-        for (_k = 0, _len3 = _ref4.length; _k < _len3; _k++) {
-          z = _ref4[_k];
-          if (this.raysFromVertexCollide(x, y, z)) {
-            return this.changeMaterial();
-          }
-        }
-      }
-    }
-    return null;
   };
   Game.prototype.getNormals = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, edgeNormals, x, y, z;
@@ -245,56 +221,26 @@
         }
       }
     }
-    this.printNormals(edgeNormals);
-    return null;
-  };
-  Game.prototype.printNormals = function(vects) {
-    var _ref2, k, printany, val;
-    printany = false;
-    _ref2 = vects;
-    for (k in _ref2) {
-      if (!__hasProp.call(_ref2, k)) continue;
-      val = _ref2[k];
-      if (val) {
-        puts(k);
-        printany = true;
-      }
-    }
-    if (printany) {
-      return puts("");
-    }
+    return Collision.normals(edgeNormals);
   };
   Game.prototype.getNormalsFromVertex = function(edgeNormals, vertexX, vertexY, vertexZ) {
-    var vertex;
-    vertex = this.cube.position.clone();
-    vertex.x += vertexX * 25;
-    vertex.y += vertexY * 25;
-    vertex.z += vertexZ * 25;
-    edgeNormals[("y" + (vertexY) + "z" + (vertexZ))] || (edgeNormals[("y" + (vertexY) + "z" + (vertexZ))] = this.rayCollides(vertex, vec(-vertexX, 0, 0)));
-    edgeNormals[("x" + (vertexX) + "z" + (vertexZ))] || (edgeNormals[("x" + (vertexX) + "z" + (vertexZ))] = this.rayCollides(vertex, vec(0, -vertexY, 0)));
-    edgeNormals[("x" + (vertexX) + "y" + (vertexY))] || (edgeNormals[("x" + (vertexX) + "y" + (vertexY))] = this.rayCollides(vertex, vec(0, 0, -vertexZ)));
+    var v, xplane, yplane, zplane;
+    v = this.cube.position.clone();
+    v.x += vertexX * 25;
+    v.y += vertexY * 25;
+    v.z += vertexZ * 25;
+    xplane = this.planeName('x', vertexX);
+    yplane = this.planeName('y', vertexY);
+    zplane = this.planeName('z', vertexZ);
+    edgeNormals[yplane + zplane] || (edgeNormals[yplane + zplane] = this.rayCollides(v, vec(-vertexX, 0, 0)));
+    edgeNormals[xplane + zplane] || (edgeNormals[xplane + zplane] = this.rayCollides(v, vec(0, -vertexY, 0)));
+    edgeNormals[xplane + yplane] || (edgeNormals[xplane + yplane] = this.rayCollides(v, vec(0, 0, -vertexZ)));
     return null;
   };
-  Game.prototype.changeMaterial = function() {
-    return (this.cube.material = new MeshLambertMaterial({
-      color: 0x0000FF
-    }));
-  };
-  Game.prototype.raysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
-    var _i, _len, _ref2, dir, dirs, vertex;
-    vertex = this.cube.position.clone();
-    vertex.x += vertexX * 25;
-    vertex.y += vertexY * 25;
-    vertex.z += vertexZ * 25;
-    dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)];
-    _ref2 = dirs;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      dir = _ref2[_i];
-      if (this.rayCollides(vertex, dir)) {
-        return true;
-      }
-    }
-    return false;
+  Game.prototype.planeName = function(plane, signal) {
+    var signalName;
+    signalName = signal > 0 ? '+' : '-';
+    return plane + signalName;
   };
   Game.prototype.rayCollides = function(vertex, direction) {
     var _ref2, _ref3, intersections;
@@ -311,9 +257,6 @@
       }
     }
     return null;
-  };
-  Game.prototype.posDec = function(axis) {
-    return (this.move[axis] = 0);
   };
   Game.prototype.start = function() {
     var animate;
@@ -386,7 +329,6 @@
     this.moveAxis(p, 'z');
     this.tryToMoveVertically(p);
     this.renderer.clear();
-    this.changeColorsIfCollide();
     this.getNormals();
     this.renderer.render(this.scene, this.camera);
     this.old = this.now;

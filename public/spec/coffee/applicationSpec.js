@@ -1,5 +1,5 @@
 (function() {
-  var importAll, partIs, positive, same;
+  var importAll, positive, same;
   var __hasProp = Object.prototype.hasOwnProperty;
   importAll = function(from) {
     var _i, _ref, _result, i;
@@ -10,9 +10,6 @@
       _result.push(global[i] = from[i]);
     }
     return _result;
-  };
-  partIs = function(htmlPart, expected) {
-    return same(htmlPart.to_html(), expected);
   };
   same = function(thi, that) {
     return expect(thi).toEqual(that);
@@ -49,7 +46,6 @@
     });
   });
 window.importAll = importAll
-window.partIs = partIs
 window.positive = positive
 window.same = same
 }).call(this);

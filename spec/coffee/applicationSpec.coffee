@@ -2,14 +2,8 @@ importAll = (from) ->
     for i of from
         global[i] = from[i]
 
-partIs = (htmlPart, expected) ->
-    same htmlPart.to_html(), expected
-
-same = (thi, that) ->
-    expect(thi).toEqual(that)
-
-positive = (val) ->
-    expect(val).toBeGreaterThan(0)
+same = (thi, that) -> expect(thi).toEqual(that)
+positive = (val) -> expect(val).toBeGreaterThan(0)
 
 require 'specBrowserAdapter'
 require 'collision'
