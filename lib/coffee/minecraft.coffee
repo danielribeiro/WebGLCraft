@@ -6,6 +6,21 @@
 
 vec = (x, y, z) -> new Vector3 x, y, z
 
+class Grid
+    constructor: (@size) ->
+        @size or= 5
+        @matrix = []
+        @size.times (i) =>
+            @matrix[i] = []
+            @size.times (j) =>
+                @matrix[i][j] = []
+
+    get: (x, y, z) -> @matrix[x][y][z]
+
+    put: (x, y, z, val) -> @matrix[x][y][z] = val
+
+
+
 class Game
     constructor: ->
         @rad = 50
@@ -14,6 +29,8 @@ class Game
 
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
+
+        @grid = new Grid(50)
 
         @onGround = false
         @pause = off
@@ -29,15 +46,32 @@ class Game
         @renderer.render @scene, @camera
         @defineControls()
 
+    posFromGrid: (position) ->
+        {x, y, z} = position
+        return @fromGrid x, y, z
+
+    fromGrid: (x, y, z) ->
+        return @grid.get @gridCoords(x, y, z)...
+
+    gridCoords: (x, y, z) ->
+        x = Math.floor x / @rad
+        y = Math.floor y / @rad
+        z = Math.floor z / @rad
+        return [x, y, z]
+
+    intoGrid: (x, y, z, val) ->
+        args = @gridCoords(x, y, z).concat(val)
+        return @grid.put args...
+
     populateWorld: ->
         size = 5
-        for i in [-size..size]
-            for j in [-size..size]
-                @cubeAt 200 + 50 * i, 25, 50 * j
+        for i in [0..(2 * size)]
+            for j in [0..(2 * size)]
+                @cubeAt 200 + @rad * i, 25, @rad * j
 
-        for i in [0..size]
-            for j in [0..size]
-                @cubeAt 200 + 50 * i, 75, 50 * j
+        for i in [size..(2*size)]
+            for j in [size..(2*size)]
+                @cubeAt 200 + @rad * i, 75, @rad * j
 
 
     cubeAt: (x, y, z) ->
@@ -45,6 +79,7 @@ class Game
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
         mesh.name = "red block at #{x} #{y} #{z}"
+        @intoGrid x, y, z, mesh
         @scene.add mesh
 
 
@@ -80,14 +115,14 @@ class Game
         plane = new Mesh(planeGeo, planeMat)
         plane.position.y = -1
         plane.rotation.x = -Math.PI / 2
-        plane.receiveShadow = true
+        # plane.receiveShadow = true
         plane.name = 'floor'
         return plane
 
     addLights: (scene) ->
         # ambientLight = new AmbientLight(0xcccccc)
         # scene.add ambientLight
-        # directionalLight = new DirectionalLight(0xff0000, 1.5)
+        # directionalLight = new DirectionalLight(0xffffff, 1.5)
         # directionalLight.position.set 1, 1, 0.5
         # directionalLight.position.normalize()
         # scene.add directionalLight

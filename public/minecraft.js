@@ -1,8 +1,8 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
-  var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
+  var AmbientLight, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
-  };
+  }, __hasProp = Object.prototype.hasOwnProperty;
   _ref = THREE;
   Object3D = _ref.Object3D;
   Matrix4 = _ref.Matrix4;
@@ -27,6 +27,24 @@
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
+  Grid = function(_arg) {
+    this.size = _arg;
+    this.size || (this.size = 5);
+    this.matrix = [];
+    this.size.times(__bind(function(i) {
+      this.matrix[i] = [];
+      return this.size.times(__bind(function(j) {
+        return (this.matrix[i][j] = []);
+      }, this));
+    }, this));
+    return this;
+  };
+  Grid.prototype.get = function(x, y, z) {
+    return this.matrix[x][y][z];
+  };
+  Grid.prototype.put = function(x, y, z, val) {
+    return (this.matrix[x][y][z] = val);
+  };
   Game = function() {
     this.rad = 50;
     this.geo = new CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1);
@@ -39,6 +57,7 @@
       y: 0
     };
     this.keysDown = {};
+    this.grid = new Grid(50);
     this.onGround = false;
     this.pause = false;
     this.renderer = this.createRenderer();
@@ -54,20 +73,44 @@
     this.defineControls();
     return this;
   };
+  Game.prototype.posFromGrid = function(position) {
+    var _ref2, x, y, z;
+    _ref2 = position;
+    x = _ref2.x;
+    y = _ref2.y;
+    z = _ref2.z;
+    return this.fromGrid(x, y, z);
+  };
+  Game.prototype.fromGrid = function(x, y, z) {
+    return this.grid.get.apply(this.grid, this.gridCoords(x, y, z));
+  };
+  Game.prototype.gridCoords = function(x, y, z) {
+    x = Math.floor(x / this.rad);
+    y = Math.floor(y / this.rad);
+    z = Math.floor(z / this.rad);
+    return [x, y, z];
+  };
+  Game.prototype.intoGrid = function(x, y, z, val) {
+    var args;
+    args = this.gridCoords(x, y, z).concat(val);
+    return this.grid.put.apply(this.grid, args);
+  };
   Game.prototype.populateWorld = function() {
-    var _result, _result2, i, j, size;
+    var _ref2, _ref3, _result, _result2, i, j, size;
     size = 5;
-    for (i = -size; (-size <= size ? i <= size : i >= size); (-size <= size ? i += 1 : i -= 1)) {
-      for (j = -size; (-size <= size ? j <= size : j >= size); (-size <= size ? j += 1 : j -= 1)) {
-        this.cubeAt(200 + 50 * i, 25, 50 * j);
+    _ref2 = (2 * size);
+    for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
+      _ref3 = (2 * size);
+      for (j = 0; (0 <= _ref3 ? j <= _ref3 : j >= _ref3); (0 <= _ref3 ? j += 1 : j -= 1)) {
+        this.cubeAt(200 + this.rad * i, 25, this.rad * j);
       }
     }
-    _result = [];
-    for (i = 0; (0 <= size ? i <= size : i >= size); (0 <= size ? i += 1 : i -= 1)) {
+    _result = []; _ref2 = (2 * size);
+    for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _result.push((function() {
-        _result2 = [];
-        for (j = 0; (0 <= size ? j <= size : j >= size); (0 <= size ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(200 + 50 * i, 75, 50 * j));
+        _result2 = []; _ref3 = (2 * size);
+        for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
+          _result2.push(this.cubeAt(200 + this.rad * i, 75, this.rad * j));
         }
         return _result2;
       }).call(this));
@@ -80,6 +123,7 @@
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
     mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
+    this.intoGrid(x, y, z, mesh);
     return this.scene.add(mesh);
   };
   Game.prototype.createPlayer = function() {
@@ -118,7 +162,6 @@
     plane = new Mesh(planeGeo, planeMat);
     plane.position.y = -1;
     plane.rotation.x = -Math.PI / 2;
-    plane.receiveShadow = true;
     plane.name = 'floor';
     return plane;
   };
@@ -346,6 +389,7 @@ window.AmbientLight = AmbientLight
 window.CubeGeometry = CubeGeometry
 window.DirectionalLight = DirectionalLight
 window.Game = Game
+window.Grid = Grid
 window.Matrix4 = Matrix4
 window.Mesh = Mesh
 window.MeshLambertMaterial = MeshLambertMaterial
