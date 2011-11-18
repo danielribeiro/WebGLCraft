@@ -61,7 +61,7 @@
       _result.push((function() {
         _result2 = [];
         for (j = -size; (-size <= size ? j <= size : j >= size); (-size <= size ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(200 + 51 * i, 25, -200 + 51 * j));
+          _result2.push(this.cubeAt(200 + 51 * i, 25, 51 * j));
         }
         return _result2;
       }).call(this));
@@ -191,7 +191,7 @@
     })) : (this.cube.material = new MeshNormalMaterial());
   };
   Game.prototype.getNormals = function() {
-    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, edgeNormals, x, y, z;
+    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, edgeNormals, ret, x, y, z;
     edgeNormals = {};
     _ref2 = [-1, 1];
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
@@ -206,7 +206,11 @@
         }
       }
     }
-    return Collision.normals(edgeNormals);
+    ret = Collision.normals(edgeNormals);
+    if ((this.cube.position.y - 25) < 0.05) {
+      ret.y++;
+    }
+    return ret;
   };
   Game.prototype.getNormalsFromVertex = function(edgeNormals, vertexX, vertexY, vertexZ) {
     var v, xplane, yplane, zplane;
@@ -233,11 +237,11 @@
     return ((typeof (_ref3 = ((_ref2 = this.getClosest(intersections)))) === "undefined" || _ref3 === null) ? undefined : _ref3.distance) <= 50;
   };
   Game.prototype.getClosest = function(intersections) {
-    var _i, _len, _ref2, i;
+    var _i, _len, _ref2, _ref3, i;
     _ref2 = intersections;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       i = _ref2[_i];
-      if (i.object.name !== 'player') {
+      if (!(('player' === (_ref3 = i.object.name) || 'floor' === _ref3))) {
         return i;
       }
     }
@@ -257,25 +261,31 @@
   Game.prototype.collidesAxis = function(axis) {
     return false;
   };
-  Game.prototype.moveAxis = function(p, axis) {
-    var vel;
-    vel = this.move[axis];
-    return this.cube.position[axis] += vel;
+  Game.prototype.axes = ['x', 'y', 'z'];
+  Game.prototype.iterationCount = 10;
+  Game.prototype.moveCube = function(axis) {
+    var _i, _len, _ref2, iterationCount, normal;
+    iterationCount = this.iterationCount;
+    while (iterationCount-- > 0) {
+      _ref2 = this.axes;
+      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+        axis = _ref2[_i];
+        this.cube.position[axis] += this.ivel(axis);
+      }
+      normal = this.getNormals();
+      _ref2 = this.axes;
+      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+        axis = _ref2[_i];
+        if (normal[axis] !== 0) {
+          this.cube.position[axis] += Math.abs(this.ivel(axis)) * normal[axis];
+          this.move[axis] = 0;
+        }
+      }
+    }
+    return null;
   };
-  Game.prototype.tryToMoveVertically = function(p) {
-    var vel;
-    if (this.keysDown.space && this.move.y < 3) {
-      this.move.y += 3;
-    }
-    if (!(this.move.y < -20)) {
-      this.move.y -= 0.3;
-    }
-    vel = this.move.y;
-    this.cube.position.y += vel;
-    if (this.cube.position.y < 25) {
-      this.move.y = 0;
-      return (this.cube.position.y = 25);
-    }
+  Game.prototype.ivel = function(axis) {
+    return this.move[axis] / this.iterationCount;
   };
   Game.prototype.playerKeys = {
     w: 'z-',
@@ -300,21 +310,22 @@
         this.move[axis] += vel;
       }
     }
+    if (this.keysDown.space && this.move.y < 3) {
+      this.move.y += 3;
+    }
+    if (!(this.move.y < -20)) {
+      this.move.y -= 0.3;
+    }
     return null;
   };
   Game.prototype.tick = function() {
-    var p;
     this.now = new Date().getTime();
-    p = this.cube.position;
-    if (p.y < 0) {
+    if (this.cube.position.y < 0) {
       raise("Cube is way below ground level");
     }
     this.defineMove();
-    this.moveAxis(p, 'x');
-    this.moveAxis(p, 'z');
-    this.tryToMoveVertically(p);
+    this.moveCube();
     this.renderer.clear();
-    this.getNormals();
     this.renderer.render(this.scene, this.camera);
     this.old = this.now;
     return null;

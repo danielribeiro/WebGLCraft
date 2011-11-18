@@ -32,7 +32,7 @@ class Game
         size = 2
         for i in [-size..size]
             for j in [-size..size]
-                @cubeAt 200 + 51 * i, 25, -200 + 51 * j
+                @cubeAt 200 + 51 * i, 25, 51 * j
 
 
 
@@ -129,7 +129,9 @@ class Game
             for y in [-1, 1]
                 for z in [-1, 1]
                     @getNormalsFromVertex edgeNormals, x, y, z
-        return Collision.normals edgeNormals
+        ret = Collision.normals edgeNormals
+        ret.y++ if (@cube.position.y - 25) < 0.05
+        return ret
 
     getNormalsFromVertex: (edgeNormals, vertexX, vertexY, vertexZ) ->
         v = @cube.position.clone()
@@ -154,7 +156,7 @@ class Game
 
     getClosest: (intersections) ->
         for i in intersections
-            return i if i.object.name isnt 'player'
+            return i unless i.object.name in ['player', 'floor']
         return
 
     start: ->
@@ -167,32 +169,25 @@ class Game
     collidesAxis: (axis) -> false
 
 
-    # tries to move the cube in the axis. returns true if and only if it doesn't collide
-    moveAxis: (p, axis) ->
-        vel = @move[axis]
-        @cube.position[axis] += vel
-        # iterationCount = 30
-        # ivel = vel / iterationCount
-        # while iterationCount-- > 0
-        #     @activate()
-        #     p[axis] += ivel
-        #     @pcube.moveTo new Vector3D p.x, p.y, p.z
-        #     if @collidesAxis axis
-        #         @activate()
-        #         p[axis] -= ivel
-        #         @pcube.moveTo new Vector3D p.x, p.y, p.z
-        #         return false
-        # return true
+    axes: ['x', 'y', 'z']
+    iterationCount: 10
 
-    tryToMoveVertically: (p) ->
-        if @keysDown.space and @move.y < 3
-            @move.y += 3
-        @move.y -= 0.3 unless @move.y < -20
-        vel = @move.y
-        @cube.position.y += vel
-        if @cube.position.y < 25
-            @move.y = 0
-            @cube.position.y = 25
+    # tries to move the cube in the axis. returns true if and only if it doesn't collide
+    moveCube: (axis) ->
+        iterationCount = @iterationCount
+        while iterationCount-- > 0
+            for axis in @axes
+                @cube.position[axis] += @ivel axis
+            normal = @getNormals()
+            for axis in @axes
+                if normal[axis] != 0
+                    @cube.position[axis] += Math.abs(@ivel(axis)) * normal[axis]
+                    @move[axis] = 0
+        return
+
+
+    ivel: (axis) -> @move[axis] / @iterationCount
+
 
 
     playerKeys:
@@ -209,18 +204,17 @@ class Game
             [axis, operation] = action
             vel = if operation is '-' then -baseVel else baseVel
             @move[axis] += vel if @keysDown[key]
+        if @keysDown.space and @move.y < 3
+            @move.y += 3
+        @move.y -= 0.3 unless @move.y < -20
         return
 
     tick: ->
         @now = new Date().getTime()
-        p = @cube.position
-        raise "Cube is way below ground level" if p.y < 0
+        raise "Cube is way below ground level" if @cube.position.y < 0
         @defineMove()
-        @moveAxis p, 'x'
-        @moveAxis p, 'z'
-        @tryToMoveVertically p
+        @moveCube()
         @renderer.clear()
-        @getNormals()
         @renderer.render @scene, @camera
         @old = @now
         return

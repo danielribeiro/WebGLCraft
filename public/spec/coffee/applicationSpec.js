@@ -1,5 +1,5 @@
 (function() {
-  var importAll, positive, same;
+  var importAll, negative, positive, same;
   var __hasProp = Object.prototype.hasOwnProperty;
   importAll = function(from) {
     var _i, _ref, _result, i;
@@ -17,35 +17,51 @@
   positive = function(val) {
     return expect(val).toBeGreaterThan(0);
   };
+  negative = function(val) {
+    return expect(val).toBeLessThan(0);
+  };
   require('specBrowserAdapter');
   require('collision');
   describe("Collision", function() {
-    it("returns the normal vector, given the collision edges", function() {
-      var normals, vector;
+    it("returns the normal vector, given the collision edges of floor", function() {
+      var normal, vector;
       vector = {
         'x+y-': true,
         'x-y-': true,
         'y-z-': true,
         'y-z-': true
       };
-      normals = Collision.normals(vector);
-      same(normals.x, 0);
-      positive(normals.y);
-      return same(normals.z, 0);
+      normal = Collision.normals(vector);
+      same(normal.x, 0);
+      positive(normal.y);
+      return same(normal.z, 0);
     });
-    return it("the normal vector affects two directions if an edge is\
+    it("the normal vector affects two directions if an edge is\
     the sole edge of both planes that make it", function() {
-      var normals, vector;
+      var normal, vector;
       vector = {
         'x-z-': true
       };
-      normals = Collision.normals(vector);
-      positive(normals.x, 0);
-      same(normals.y, 0);
-      return positive(normals.z);
+      normal = Collision.normals(vector);
+      positive(normal.x, 0);
+      same(normal.y, 0);
+      return positive(normal.z);
+    });
+    return xit("works on real world:", function() {
+      var normal, vector;
+      vector = {
+        'x+y+': true,
+        'x+z-': true,
+        'y+z-': true
+      };
+      normal = Collision.normals(vector);
+      negative(normal.x, 0);
+      same(normal.y, 0);
+      return positive(normal.z);
     });
   });
 window.importAll = importAll
+window.negative = negative
 window.positive = positive
 window.same = same
 }).call(this);
