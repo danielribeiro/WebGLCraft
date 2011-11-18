@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CubeGeometry, DirectionalLight, DoubleHeleper, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, greater, greaterEqual, init_web_app, lesser, lesserEqual, vec;
+  var AmbientLight, CubeGeometry, DirectionalLight, Game, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __hasProp = Object.prototype.hasOwnProperty, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
@@ -24,21 +24,6 @@
   _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
-  DoubleHeleper = {
-    delta: 0.05
-  };
-  greater = function(a, b) {
-    return a > b + DoubleHeleper.delta;
-  };
-  greaterEqual = function(a, b) {
-    return a >= b + DoubleHeleper.delta;
-  };
-  lesser = function(a, b) {
-    return greater(b, a);
-  };
-  lesserEqual = function(a, b) {
-    return greaterEqual(b, a);
-  };
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
@@ -343,7 +328,6 @@
 window.AmbientLight = AmbientLight
 window.CubeGeometry = CubeGeometry
 window.DirectionalLight = DirectionalLight
-window.DoubleHeleper = DoubleHeleper
 window.Game = Game
 window.Matrix4 = Matrix4
 window.Mesh = Mesh
@@ -358,10 +342,6 @@ window.Scene = Scene
 window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
-window.greater = greater
-window.greaterEqual = greaterEqual
 window.init_web_app = init_web_app
-window.lesser = lesser
-window.lesserEqual = lesserEqual
 window.vec = vec
 }).call(this);

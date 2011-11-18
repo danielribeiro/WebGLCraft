@@ -4,13 +4,6 @@
 {AmbientLight, DirectionalLight, PointLight, Ray, Vector3} = THREE
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
 
-# Double Helpers
-DoubleHeleper =
-    delta: 0.05
-greater = (a, b) -> a > b + DoubleHeleper.delta
-greaterEqual = (a, b) -> a >= b + DoubleHeleper.delta
-lesser = (a, b) -> greater(b, a)
-lesserEqual = (a, b) -> greaterEqual(b, a)
 vec = (x, y, z) -> new Vector3 x, y, z
 
 class Game
