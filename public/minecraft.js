@@ -115,21 +115,58 @@
     return false;
   };
   CollisionHelper.prototype.possibleCubes = function() {
+    var cubes;
+    cubes = [];
+    this.withRange(__bind(function(x, y, z) {
+      var cube;
+      cube = this.grid.get(x, y, z);
+      if (typeof cube !== "undefined" && cube !== null) {
+        return cubes.push(cube);
+      }
+    }, this));
+    return cubes;
+  };
+  CollisionHelper.prototype.withRange = function(func) {
+    var minx, miny, minz, p, x, y, z;
+    p = this.cube.position;
+    minx = (x = this.min(p.x));
+    miny = this.min(p.y);
+    minz = this.min(p.z);
+    while (x <= minx + 2) {
+      y = miny;
+      while (y <= miny + 2) {
+        z = minz;
+        while (z <= minz + 2) {
+          func(x, y, z);
+          z++;
+        }
+        y++;
+      }
+      x++;
+    }
+    return null;
+  };
+  CollisionHelper.prototype.possibleCubes2 = function() {
     var cube, cubes, minx, miny, minz, p, x, y, z;
     cubes = [];
     p = this.cube.position;
     minx = (x = this.min(p.x));
-    miny = (y = this.min(p.y));
-    minz = (z = this.min(p.z));
-    while (x++ <= minx + 2) {
-      while (y++ <= miny + 2) {
-        while (z++ <= minz + 2) {
+    miny = this.min(p.y);
+    minz = this.min(p.z);
+    while (x <= minx + 2) {
+      y = miny;
+      while (y <= miny + 2) {
+        z = minz;
+        while (z <= minz + 2) {
           cube = this.grid.get(x, y, z);
           if (typeof cube !== "undefined" && cube !== null) {
             cubes.push(cube);
           }
+          z++;
         }
+        y++;
       }
+      x++;
     }
     return cubes;
   };
@@ -137,16 +174,6 @@
     var val;
     val = positionAxis;
     return Math.floor((val - 25) / this.rad);
-  };
-  CollisionHelper.prototype.range = function(axis) {
-    var _i, _ref2, _ref3, _result, min, val;
-    val = this.cube.position[axis];
-    min = Math.floor((val - 25) / this.rad);
-    return (function() {
-      _result = []; _ref2 = (min - 1); _ref3 = (min + 2);
-      for (var _i = _ref2; _ref2 <= _ref3 ? _i <= _ref3 : _i >= _ref3; _ref2 <= _ref3 ? _i += 1 : _i -= 1){ _result.push(_i); }
-      return _result;
-    }).call(this);
   };
   Game = function() {
     this.rad = 50;
@@ -221,13 +248,11 @@
     return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
-    var c, mesh;
+    var mesh;
     mesh = new Mesh(this.geo, this.mat);
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
     mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
-    c = this.gridCoords(x, y, z);
-    puts("mesh " + (mesh.name) + " in " + (c));
     this.intoGrid(x, y, z, mesh);
     return this.scene.add(mesh);
   };
@@ -351,7 +376,7 @@
     return animate();
   };
   Game.prototype.axes = ['x', 'y', 'z'];
-  Game.prototype.iterationCount = 5;
+  Game.prototype.iterationCount = 10;
   Game.prototype.moveCube = function(axis) {
     var _i, _len, _ref2, iterationCount, ivel;
     iterationCount = this.iterationCount;

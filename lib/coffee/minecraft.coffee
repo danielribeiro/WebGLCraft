@@ -56,28 +56,53 @@ class CollisionHelper
             return true if @rayCollides vertex, dir
         return false
 
+
     possibleCubes: ->
+        cubes = []
+        @withRange (x, y, z) =>
+            cube = @grid.get x, y, z
+            cubes.push cube if cube?
+        return cubes
+
+    withRange: (func) ->
+        p = @cube.position
+        minx = x = @min p.x
+        miny = @min p.y
+        minz = @min p.z
+        while x <= minx + 2
+            y = miny
+            while y <= miny + 2
+                z = minz
+                while z <= minz + 2
+                    func x, y, z
+                    z++
+                y++
+            x++
+        return
+
+
+    possibleCubes2: ->
         cubes = []
         p = @cube.position
         minx = x = @min p.x
-        miny = y = @min p.y
-        minz = z = @min p.z
-        while x++ <= minx + 2
-            while y++ <= miny + 2
-                while z++ <= minz + 2
+        miny = @min p.y
+        minz = @min p.z
+        while x <= minx + 2
+            y = miny
+            while y <= miny + 2
+                z = minz
+                while z <= minz + 2
                     cube = @grid.get x, y, z
                     cubes.push cube if cube?
+                    z++
+                y++
+            x++
         return cubes
+
 
     min: (positionAxis) ->
         val = positionAxis
         return Math.floor((val - 25) / @rad)
-
-    range: (axis) ->
-        val = @cube.position[axis]
-        min = Math.floor((val - 25) / @rad)
-        return [(min - 1)..(min + 2)]
-
 
 
 class Game
@@ -135,8 +160,6 @@ class Game
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
         mesh.name = "red block at #{x} #{y} #{z}"
-        c = @gridCoords(x, y, z)
-        puts "mesh #{mesh.name} in #{c}"
         @intoGrid x, y, z, mesh
         @scene.add mesh
 
@@ -228,7 +251,7 @@ class Game
         animate()
 
     axes: ['x', 'y', 'z']
-    iterationCount: 5
+    iterationCount: 10
 
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveCube: (axis) ->
