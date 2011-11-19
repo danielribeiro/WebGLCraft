@@ -80,26 +80,6 @@ class CollisionHelper
             x++
         return
 
-
-    possibleCubes2: ->
-        cubes = []
-        p = @cube.position
-        minx = x = @min p.x
-        miny = @min p.y
-        minz = @min p.z
-        while x <= minx + 2
-            y = miny
-            while y <= miny + 2
-                z = minz
-                while z <= minz + 2
-                    cube = @grid.get x, y, z
-                    cubes.push cube if cube?
-                    z++
-                y++
-            x++
-        return cubes
-
-
     min: (positionAxis) ->
         val = positionAxis
         return Math.floor((val - 25) / @rad)

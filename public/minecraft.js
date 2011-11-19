@@ -146,30 +146,6 @@
     }
     return null;
   };
-  CollisionHelper.prototype.possibleCubes2 = function() {
-    var cube, cubes, minx, miny, minz, p, x, y, z;
-    cubes = [];
-    p = this.cube.position;
-    minx = (x = this.min(p.x));
-    miny = this.min(p.y);
-    minz = this.min(p.z);
-    while (x <= minx + 2) {
-      y = miny;
-      while (y <= miny + 2) {
-        z = minz;
-        while (z <= minz + 2) {
-          cube = this.grid.get(x, y, z);
-          if (typeof cube !== "undefined" && cube !== null) {
-            cubes.push(cube);
-          }
-          z++;
-        }
-        y++;
-      }
-      x++;
-    }
-    return cubes;
-  };
   CollisionHelper.prototype.min = function(positionAxis) {
     var val;
     val = positionAxis;
