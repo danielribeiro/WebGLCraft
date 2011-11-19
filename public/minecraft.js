@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CollisionHelper, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, CollisionHelper, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, eachRange, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -26,6 +26,15 @@
   MeshNormalMaterial = _ref.MeshNormalMaterial;
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
+  };
+  eachRange = function(initial, final, func) {
+    var i;
+    i = initial;
+    while (i <= final) {
+      func(i);
+      i++;
+    }
+    return null;
   };
   Grid = function(_arg) {
     this.size = _arg;
@@ -127,23 +136,18 @@
     return cubes;
   };
   CollisionHelper.prototype.withRange = function(func) {
-    var minx, miny, minz, p, x, y, z;
+    var minx, miny, minz, p;
     p = this.cube.position;
-    minx = (x = this.min(p.x));
+    minx = this.min(p.x);
     miny = this.min(p.y);
     minz = this.min(p.z);
-    while (x <= minx + 2) {
-      y = miny;
-      while (y <= miny + 2) {
-        z = minz;
-        while (z <= minz + 2) {
-          func(x, y, z);
-          z++;
-        }
-        y++;
-      }
-      x++;
-    }
+    eachRange(minx, minx + 2, function(x) {
+      return eachRange(miny, miny + 2, function(y) {
+        return eachRange(minz, minz + 2, function(z) {
+          return func(x, y, z);
+        });
+      });
+    });
     return null;
   };
   CollisionHelper.prototype.min = function(positionAxis) {
@@ -456,6 +460,7 @@ window.Scene = Scene
 window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
+window.eachRange = eachRange
 window.init_web_app = init_web_app
 window.vec = vec
 }).call(this);

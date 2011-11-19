@@ -5,6 +5,12 @@
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
+eachRange = (initial, final, func) ->
+    i = initial
+    while i <= final
+        func i
+        i++
+    return
 
 class Grid
     constructor: (@size) ->
@@ -66,18 +72,13 @@ class CollisionHelper
 
     withRange: (func) ->
         p = @cube.position
-        minx = x = @min p.x
+        minx = @min p.x
         miny = @min p.y
         minz = @min p.z
-        while x <= minx + 2
-            y = miny
-            while y <= miny + 2
-                z = minz
-                while z <= minz + 2
+        eachRange minx, minx + 2, (x) ->
+            eachRange miny, miny + 2, (y) ->
+                eachRange minz, minz + 2, (z) ->
                     func x, y, z
-                    z++
-                y++
-            x++
         return
 
     min: (positionAxis) ->
