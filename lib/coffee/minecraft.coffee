@@ -15,9 +15,68 @@ class Grid
             @size.times (j) =>
                 @matrix[i][j] = []
 
-    get: (x, y, z) -> @matrix[x][y][z]
+    get: (x, y, z) ->
+        return unless x >= 0 and y >= 0 and z >= 0
+        return unless x < @size and y < @size and z < @size
+        @matrix[x][y][z]
 
     put: (x, y, z, val) -> @matrix[x][y][z] = val
+
+
+class CollisionHelper
+    constructor: (@cube, @grid, @scene)-> return
+    rad: 50
+
+    collides: ->
+        return true if @cube.position.y < 25
+        for x in [-1, 1]
+            for y in [-1, 1]
+                for z in [-1, 1]
+                    return true if @raysFromVertexCollide x, y, z
+        return false
+
+    rayCollides: (vertex, direction) ->
+        objs = @possibleCubes()
+        intersections = new Ray(vertex, direction).intersectObjects objs
+        return @getClosest(intersections)?.distance <= 50
+
+    getClosest: (intersections) ->
+        for i in intersections
+            return i unless i.object.name in ['player', 'floor']
+        return
+
+
+    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
+        vertex = @cube.position.clone()
+        vertex.x += vertexX * 25
+        vertex.y += vertexY * 25
+        vertex.z += vertexZ * 25
+        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
+        for dir in dirs
+            return true if @rayCollides vertex, dir
+        return false
+
+    possibleCubes: ->
+        cubes = []
+        p = @cube.position
+        minx = x = @min p.x
+        miny = y = @min p.y
+        minz = z = @min p.z
+        while x++ <= minx + 2
+            while y++ <= miny + 2
+                while z++ <= minz + 2
+                    cube = @grid.get x, y, z
+                    cubes.push cube if cube?
+        return cubes
+
+    min: (positionAxis) ->
+        val = positionAxis
+        return Math.floor((val - 25) / @rad)
+
+    range: (axis) ->
+        val = @cube.position[axis]
+        min = Math.floor((val - 25) / @rad)
+        return [(min - 1)..(min + 2)]
 
 
 
@@ -26,12 +85,9 @@ class Game
         @rad = 50
         @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
         @mat = new MeshLambertMaterial(color: 0xCC0000)
-
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
-
         @grid = new Grid(50)
-
         @onGround = false
         @pause = off
         @renderer = @createRenderer()
@@ -54,9 +110,9 @@ class Game
         return @grid.get @gridCoords(x, y, z)...
 
     gridCoords: (x, y, z) ->
-        x = Math.floor x / @rad
-        y = Math.floor y / @rad
-        z = Math.floor z / @rad
+        x = Math.floor(x / @rad)
+        y = Math.floor(y / @rad)
+        z = Math.floor(z / @rad)
         return [x, y, z]
 
     intoGrid: (x, y, z, val) ->
@@ -79,6 +135,8 @@ class Game
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
         mesh.name = "red block at #{x} #{y} #{z}"
+        c = @gridCoords(x, y, z)
+        puts "mesh #{mesh.name} in #{c}"
         @intoGrid x, y, z, mesh
         @scene.add mesh
 
@@ -160,32 +218,7 @@ class Game
         else
             @cube.material = new MeshNormalMaterial()
 
-    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
-        vertex = @cube.position.clone()
-        vertex.x += vertexX * 25
-        vertex.y += vertexY * 25
-        vertex.z += vertexZ * 25
-        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
-        for dir in dirs
-            return true if @rayCollides vertex, dir
-        return false
-
-    collides: ->
-        return true if @cube.position.y < 25
-        for x in [-1, 1]
-            for y in [-1, 1]
-                for z in [-1, 1]
-                    return true if @raysFromVertexCollide x, y, z
-        return false
-
-    rayCollides: (vertex, direction) ->
-        intersections = new Ray(vertex, direction).intersectScene @scene
-        return @getClosest(intersections)?.distance <= 50
-
-    getClosest: (intersections) ->
-        for i in intersections
-            return i unless i.object.name in ['player', 'floor']
-        return
+    collides: -> new CollisionHelper(@cube, @grid, @scene).collides()
 
     start: ->
         @now = @old = new Date().getTime()
@@ -193,9 +226,6 @@ class Game
             @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
         animate()
-
-    collidesAxis: (axis) -> false
-
 
     axes: ['x', 'y', 'z']
     iterationCount: 5
@@ -226,7 +256,6 @@ class Game
         d: 'x+'
 
     shouldJump: -> @keysDown.space and @onGround
-
 
     defineMove: ->
         baseVel = 5

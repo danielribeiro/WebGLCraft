@@ -3,6 +3,9 @@ patch Number,
         return @ % arg if @ >= 0
         return (@ + arg) % arg
 
+    div: (arg) -> return Math.floor(@ / arg)
+
+
     times: (fn) ->
         i = 0
         while i < @

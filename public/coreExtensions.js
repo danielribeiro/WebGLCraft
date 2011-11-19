@@ -8,6 +8,9 @@
       }
       return (this + arg) % arg;
     },
+    div: function(arg) {
+      return Math.floor(this / arg);
+    },
     times: function(fn) {
       var _result, i;
       i = 0;
