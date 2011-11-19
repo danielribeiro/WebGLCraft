@@ -93,7 +93,7 @@ class Game
         @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
-        @grid = new Grid(50)
+        @grid = new Grid(200)
         @onGround = false
         @pause = off
         @renderer = @createRenderer()
@@ -126,7 +126,7 @@ class Game
         return @grid.put args...
 
     populateWorld: ->
-        size = 5
+        size = 50
         for i in [0..(2 * size)]
             for j in [0..(2 * size)]
                 @cubeAt 200 + @rad * i, 25, @rad * j
@@ -143,6 +143,8 @@ class Game
         mesh.name = "red block at #{x} #{y} #{z}"
         @intoGrid x, y, z, mesh
         @scene.add mesh
+        mesh.updateMatrix()
+        mesh.matrixAutoUpdate = false
 
 
 

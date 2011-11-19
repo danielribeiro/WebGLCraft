@@ -167,7 +167,7 @@
       y: 0
     };
     this.keysDown = {};
-    this.grid = new Grid(50);
+    this.grid = new Grid(200);
     this.onGround = false;
     this.pause = false;
     this.renderer = this.createRenderer();
@@ -207,7 +207,7 @@
   };
   Game.prototype.populateWorld = function() {
     var _ref2, _ref3, _result, _result2, i, j, size;
-    size = 5;
+    size = 50;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
@@ -234,7 +234,9 @@
     mesh.position.set(x, y, z);
     mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
     this.intoGrid(x, y, z, mesh);
-    return this.scene.add(mesh);
+    this.scene.add(mesh);
+    mesh.updateMatrix();
+    return (mesh.matrixAutoUpdate = false);
   };
   Game.prototype.createPlayer = function() {
     var cube, r;
