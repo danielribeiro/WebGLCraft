@@ -126,7 +126,7 @@ class Game
         return @grid.put args...
 
     populateWorld: ->
-        size = 50
+        size = 5
         for i in [0..(2 * size)]
             for j in [0..(2 * size)]
                 @cubeAt 200 + @rad * i, 25, @rad * j
@@ -134,6 +134,10 @@ class Game
         for i in [size..(2*size)]
             for j in [size..(2*size)]
                 @cubeAt 200 + @rad * i, 75, @rad * j
+
+        for i in [size..(2*size)]
+            for j in [size..(2*size)]
+                @cubeAt 200 + @rad * i, 75 + 150, @rad * j
 
 
     cubeAt: (x, y, z) ->
@@ -247,9 +251,10 @@ class Game
                 @cube.position[axis] += ivel[axis]
                 if @collides()
                     @cube.position[axis] -= ivel[axis]
+                    @touchesGround() if axis is 'y' and ivel.y < 0
                     @move[axis] = 0
                     ivel[axis] = 0
-                    @touchesGround() if axis is 'y'
+
         return
 
     touchesGround: ->

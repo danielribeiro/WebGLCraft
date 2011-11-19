@@ -207,7 +207,7 @@
   };
   Game.prototype.populateWorld = function() {
     var _ref2, _ref3, _result, _result2, i, j, size;
-    size = 50;
+    size = 5;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
@@ -215,12 +215,19 @@
         this.cubeAt(200 + this.rad * i, 25, this.rad * j);
       }
     }
+    _ref2 = (2 * size);
+    for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
+      _ref3 = (2 * size);
+      for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
+        this.cubeAt(200 + this.rad * i, 75, this.rad * j);
+      }
+    }
     _result = []; _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _result.push((function() {
         _result2 = []; _ref3 = (2 * size);
         for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(200 + this.rad * i, 75, this.rad * j));
+          _result2.push(this.cubeAt(200 + this.rad * i, 75 + 150, this.rad * j));
         }
         return _result2;
       }).call(this));
@@ -376,11 +383,11 @@
           this.cube.position[axis] += ivel[axis];
           if (this.collides()) {
             this.cube.position[axis] -= ivel[axis];
-            this.move[axis] = 0;
-            ivel[axis] = 0;
-            if (axis === 'y') {
+            if (axis === 'y' && ivel.y < 0) {
               this.touchesGround();
             }
+            this.move[axis] = 0;
+            ivel[axis] = 0;
           }
         }
       }
