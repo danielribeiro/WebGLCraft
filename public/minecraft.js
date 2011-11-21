@@ -124,30 +124,37 @@
     return false;
   };
   CollisionHelper.prototype.possibleCubes = function() {
-    var cubes;
+    var cubes, grid;
     cubes = [];
-    this.withRange(__bind(function(x, y, z) {
+    grid = this.grid;
+    this.withRange(function(x, y, z) {
       var cube;
-      cube = this.grid.get(x, y, z);
+      cube = grid.get(x, y, z);
       if (typeof cube !== "undefined" && cube !== null) {
         return cubes.push(cube);
       }
-    }, this));
+    });
     return cubes;
   };
   CollisionHelper.prototype.withRange = function(func) {
-    var minx, miny, minz, p;
+    var minx, miny, minz, p, x, y, z;
     p = this.cube.position;
     minx = this.min(p.x);
     miny = this.min(p.y);
     minz = this.min(p.z);
-    eachRange(minx, minx + 4, function(x) {
-      return eachRange(miny, miny + 4, function(y) {
-        return eachRange(minz, minz + 4, function(z) {
-          return func(x, y, z);
-        });
-      });
-    });
+    x = minx;
+    while (x <= minx + 4) {
+      y = miny;
+      while (y <= miny + 4) {
+        z = minz;
+        while (z <= minz + 4) {
+          func(x, y, z);
+          z++;
+        }
+        y++;
+      }
+      x++;
+    }
     return null;
   };
   CollisionHelper.prototype.min = function(positionAxis) {
@@ -169,7 +176,7 @@
     };
     this.keysDown = {};
     this.grid = new Grid(200);
-    this.onGround = false;
+    this.onGround = true;
     this.pause = false;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
@@ -433,10 +440,13 @@
       this.onGround = false;
       this.move.y += 7;
     }
-    if (!(this.move.y < -20)) {
-      this.move.y -= 0.3;
-    }
+    this.applyGravity();
     return null;
+  };
+  Game.prototype.applyGravity = function() {
+    if (!(this.move.y < -20)) {
+      return this.move.y -= 0.3;
+    }
   };
   Game.prototype.tick = function() {
     this.now = new Date().getTime();

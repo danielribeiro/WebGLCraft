@@ -65,8 +65,9 @@ class CollisionHelper
 
     possibleCubes: ->
         cubes = []
-        @withRange (x, y, z) =>
-            cube = @grid.get x, y, z
+        grid = @grid
+        @withRange (x, y, z) ->
+            cube = grid.get x, y, z
             cubes.push cube if cube?
         return cubes
 
@@ -75,10 +76,16 @@ class CollisionHelper
         minx = @min p.x
         miny = @min p.y
         minz = @min p.z
-        eachRange minx, minx + 4, (x) ->
-            eachRange miny, miny + 4, (y) ->
-                eachRange minz, minz + 4, (z) ->
+        x = minx
+        while x <= minx + 4
+            y = miny
+            while y <= miny + 4
+                z = minz
+                while z <= minz + 4
                     func x, y, z
+                    z++
+                y++
+            x++
         return
 
     min: (positionAxis) ->
@@ -95,7 +102,7 @@ class Game
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
         @grid = new Grid(200)
-        @onGround = false
+        @onGround = true
         @pause = off
         @renderer = @createRenderer()
         @camera = @createCamera()
@@ -285,8 +292,10 @@ class Game
         if @shouldJump()
             @onGround = false
             @move.y += 7
-        @move.y -= 0.3 unless @move.y < -20
+        @applyGravity()
         return
+
+    applyGravity: -> @move.y -= 0.3 unless @move.y < -20
 
     tick: ->
         @now = new Date().getTime()
