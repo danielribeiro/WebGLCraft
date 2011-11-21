@@ -75,15 +75,16 @@ class CollisionHelper
         minx = @min p.x
         miny = @min p.y
         minz = @min p.z
-        eachRange minx, minx + 2, (x) ->
-            eachRange miny, miny + 2, (y) ->
-                eachRange minz, minz + 2, (z) ->
+        eachRange minx, minx + 4, (x) ->
+            eachRange miny, miny + 4, (y) ->
+                eachRange minz, minz + 4, (z) ->
                     func x, y, z
         return
 
     min: (positionAxis) ->
         val = positionAxis
-        return Math.floor((val - 25) / @rad)
+        halfcube = @rad / 2
+        return Math.floor((val - halfcube) / @rad) - 2
 
 
 class Game
@@ -158,14 +159,14 @@ class Game
         r = 50
         cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
         cube.geometry.dynamic = true
-        cube.position.set 0, 100, 0
+        cube.position.set 800, 100, 450
         cube.name = "player"
         cube
 
     createCamera: ->
         camera = new PerspectiveCamera(45, 800 / 600, 1, 10000)
-        camera.position.z = 900
-        camera.position.y = 200
+        camera.position.set 900, 400, 1500
+        camera.lookAt vec 0, 0, 0
         camera
 
     createRenderer: ->
@@ -233,8 +234,12 @@ class Game
     start: ->
         @now = @old = new Date().getTime()
         animate = =>
-            @tick() unless @pause
-            requestAnimationFrame animate, @renderer.domElement
+            try
+                @tick() unless @pause
+                requestAnimationFrame animate, @renderer.domElement
+            catch e
+                $("#debug").append "<pre>#{e.stack}</pre>"
+
         animate()
 
     axes: ['x', 'y', 'z']
@@ -248,6 +253,7 @@ class Game
             ivel[axis] = @move[axis] / @iterationCount
         while iterationCount-- > 0
             for axis in @axes when ivel[axis] isnt 0
+                originalpos = @cube.position[axis]
                 @cube.position[axis] += ivel[axis]
                 if @collides()
                     @cube.position[axis] -= ivel[axis]
@@ -289,8 +295,13 @@ class Game
         @moveCube()
         @renderer.clear()
         @renderer.render @scene, @camera
+        @debug()
         @old = @now
         return
+
+    debug: ->
+        for axis in @axes
+            $('#pos' + axis).html String @cube.position[axis]
 
     diff: -> @now - @old
 

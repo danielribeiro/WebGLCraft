@@ -141,9 +141,9 @@
     minx = this.min(p.x);
     miny = this.min(p.y);
     minz = this.min(p.z);
-    eachRange(minx, minx + 2, function(x) {
-      return eachRange(miny, miny + 2, function(y) {
-        return eachRange(minz, minz + 2, function(z) {
+    eachRange(minx, minx + 4, function(x) {
+      return eachRange(miny, miny + 4, function(y) {
+        return eachRange(minz, minz + 4, function(z) {
           return func(x, y, z);
         });
       });
@@ -151,9 +151,10 @@
     return null;
   };
   CollisionHelper.prototype.min = function(positionAxis) {
-    var val;
+    var halfcube, val;
     val = positionAxis;
-    return Math.floor((val - 25) / this.rad);
+    halfcube = this.rad / 2;
+    return Math.floor((val - halfcube) / this.rad) - 2;
   };
   Game = function() {
     this.rad = 50;
@@ -250,15 +251,15 @@
     r = 50;
     cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
     cube.geometry.dynamic = true;
-    cube.position.set(0, 100, 0);
+    cube.position.set(800, 100, 450);
     cube.name = "player";
     return cube;
   };
   Game.prototype.createCamera = function() {
     var camera;
     camera = new PerspectiveCamera(45, 800 / 600, 1, 10000);
-    camera.position.z = 900;
-    camera.position.y = 200;
+    camera.position.set(900, 400, 1500);
+    camera.lookAt(vec(0, 0, 0));
     return camera;
   };
   Game.prototype.createRenderer = function() {
@@ -357,17 +358,21 @@
     var animate;
     this.now = (this.old = new Date().getTime());
     animate = __bind(function() {
-      if (!(this.pause)) {
-        this.tick();
+      try {
+        if (!(this.pause)) {
+          this.tick();
+        }
+        return requestAnimationFrame(animate, this.renderer.domElement);
+      } catch (e) {
+        return $("#debug").append("<pre>" + (e.stack) + "</pre>");
       }
-      return requestAnimationFrame(animate, this.renderer.domElement);
     }, this);
     return animate();
   };
   Game.prototype.axes = ['x', 'y', 'z'];
   Game.prototype.iterationCount = 10;
   Game.prototype.moveCube = function(axis) {
-    var _i, _len, _ref2, iterationCount, ivel;
+    var _i, _len, _ref2, iterationCount, ivel, originalpos;
     iterationCount = this.iterationCount;
     ivel = {};
     _ref2 = this.axes;
@@ -380,6 +385,7 @@
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         axis = _ref2[_i];
         if (ivel[axis] !== 0) {
+          originalpos = this.cube.position[axis];
           this.cube.position[axis] += ivel[axis];
           if (this.collides()) {
             this.cube.position[axis] -= ivel[axis];
@@ -441,8 +447,18 @@
     this.moveCube();
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
+    this.debug();
     this.old = this.now;
     return null;
+  };
+  Game.prototype.debug = function() {
+    var _i, _len, _ref2, _result, axis;
+    _result = []; _ref2 = this.axes;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      axis = _ref2[_i];
+      _result.push($('#pos' + axis).html(String(this.cube.position[axis])));
+    }
+    return _result;
   };
   Game.prototype.diff = function() {
     return this.now - this.old;
