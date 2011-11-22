@@ -143,11 +143,11 @@
     miny = this.min(p.y);
     minz = this.min(p.z);
     x = minx;
-    while (x <= minx + 4) {
+    while (x <= minx + 2) {
       y = miny;
-      while (y <= miny + 4) {
+      while (y <= miny + 2) {
         z = minz;
-        while (z <= minz + 4) {
+        while (z <= minz + 2) {
           func(x, y, z);
           z++;
         }
@@ -158,10 +158,9 @@
     return null;
   };
   CollisionHelper.prototype.min = function(positionAxis) {
-    var halfcube, val;
+    var val;
     val = positionAxis;
-    halfcube = this.rad / 2;
-    return Math.floor((val - halfcube) / this.rad) - 2;
+    return Math.floor(val / this.rad) - 1;
   };
   Game = function() {
     this.rad = 50;

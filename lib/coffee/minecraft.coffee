@@ -77,11 +77,11 @@ class CollisionHelper
         miny = @min p.y
         minz = @min p.z
         x = minx
-        while x <= minx + 4
+        while x <= minx + 2
             y = miny
-            while y <= miny + 4
+            while y <= miny + 2
                 z = minz
-                while z <= minz + 4
+                while z <= minz + 2
                     func x, y, z
                     z++
                 y++
@@ -90,8 +90,7 @@ class CollisionHelper
 
     min: (positionAxis) ->
         val = positionAxis
-        halfcube = @rad / 2
-        return Math.floor((val - halfcube) / @rad) - 2
+        return Math.floor(val / @rad) - 1
 
 
 class Game
