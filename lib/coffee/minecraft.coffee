@@ -5,12 +5,36 @@
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
-eachRange = (initial, final, func) ->
-    i = initial
-    while i <= final
-        func i
-        i++
-    return
+
+class Player
+    constructor: ->
+        @_cube = @createCube()
+
+
+    position: (axis) ->
+        return @_cube.position unless axis?
+        return @_cube.position[axis]
+
+    incPosition: (axis, val) ->
+        @_cube.position[axis] += val
+        return
+
+    setPosition: (axis, val) ->
+        @_cube.position[axis] = val
+        return
+
+    addToScene: (scene) -> scene.add @_cube
+
+    createCube: ->
+        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
+            # THREE.MeshLambertMaterial(color: 0xCC0000))
+        r = 50
+        cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
+        cube.geometry.dynamic = true
+        cube.position.set 800, 100, 450
+        cube.name = "player"
+        cube
+
 
 class Grid
     constructor: (@size) ->
@@ -30,11 +54,11 @@ class Grid
 
 
 class CollisionHelper
-    constructor: (@cube, @grid, @scene)-> return
+    constructor: (@player, @grid)-> return
     rad: 50
 
     collides: ->
-        return true if @cube.position.y < 25
+        return true if @player.position('y') < 25
         for x in [-1, 1]
             for y in [-1, 1]
                 for z in [-1, 1]
@@ -53,7 +77,7 @@ class CollisionHelper
 
 
     raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
-        vertex = @cube.position.clone()
+        vertex = @player.position().clone()
         vertex.x += vertexX * 25
         vertex.y += vertexY * 25
         vertex.z += vertexZ * 25
@@ -72,7 +96,7 @@ class CollisionHelper
         return cubes
 
     withRange: (func) ->
-        p = @cube.position
+        p = @player.position()
         minx = @min p.x
         miny = @min p.y
         minz = @min p.z
@@ -105,9 +129,9 @@ class Game
         @pause = off
         @renderer = @createRenderer()
         @camera = @createCamera()
-        @cube = @createPlayer()
+        @player = new Player()
         @scene = new Scene()
-        @scene.add @cube
+        @player.addToScene @scene
         @scene.add @createFloor()
         @scene.add @camera
         @populateWorld()
@@ -158,16 +182,6 @@ class Game
         mesh.matrixAutoUpdate = false
 
 
-
-    createPlayer: ->
-        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
-            # THREE.MeshLambertMaterial(color: 0xCC0000))
-        r = 50
-        cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
-        cube.geometry.dynamic = true
-        cube.position.set 800, 100, 450
-        cube.name = "player"
-        cube
 
     createCamera: ->
         camera = new PerspectiveCamera(45, 800 / 600, 1, 10000)
@@ -226,26 +240,15 @@ class Game
         for key in "wasd".split('').concat('space')
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
-        $(document).bind 'keydown', 'r', => @changeColors()
         $(document).bind 'keydown', 'p', => @pause = !@pause
 
-    changeColors: ->
-        if @cube.material instanceof MeshNormalMaterial
-            @cube.material = new MeshLambertMaterial(color: 0x0000FF)
-        else
-            @cube.material = new MeshNormalMaterial()
 
-    collides: -> new CollisionHelper(@cube, @grid, @scene).collides()
+    collides: -> new CollisionHelper(@player, @grid).collides()
 
     start: ->
-        @now = @old = new Date().getTime()
         animate = =>
-            try
-                @tick() unless @pause
-                requestAnimationFrame animate, @renderer.domElement
-            catch e
-                $("#debug").append "<pre>#{e.stack}</pre>"
-
+            @tick() unless @pause
+            requestAnimationFrame animate, @renderer.domElement
         animate()
 
     axes: ['x', 'y', 'z']
@@ -259,10 +262,10 @@ class Game
             ivel[axis] = @move[axis] / @iterationCount
         while iterationCount-- > 0
             for axis in @axes when ivel[axis] isnt 0
-                originalpos = @cube.position[axis]
-                @cube.position[axis] += ivel[axis]
+                originalpos = @player.position(axis)
+                @player.incPosition axis, ivel[axis]
                 if @collides()
-                    @cube.position[axis] -= ivel[axis]
+                    @player.setPosition axis, originalpos
                     @touchesGround() if axis is 'y' and ivel.y < 0
                     @move[axis] = 0
                     ivel[axis] = 0
@@ -297,23 +300,22 @@ class Game
     applyGravity: -> @move.y -= 0.3 unless @move.y < -20
 
     tick: ->
-        @now = new Date().getTime()
-        raise "Cube is way below ground level" if @cube.position.y < 0
+        raise "Cube is way below ground level" if @player.position 'y' < 0
         @defineMove()
         @moveCube()
         @renderer.clear()
         @renderer.render @scene, @camera
         @debug()
-        @old = @now
         return
 
     debug: ->
         for axis in @axes
-            $('#pos' + axis).html String @cube.position[axis]
+            $('#pos' + axis).html String @player.position axis
 
-    diff: -> @now - @old
 
 
 
 
 init_web_app = -> new Game().start()
+
+

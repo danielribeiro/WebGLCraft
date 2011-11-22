@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CollisionHelper, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, eachRange, init_web_app, vec;
+  var AmbientLight, CollisionHelper, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -27,14 +27,35 @@
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
-  eachRange = function(initial, final, func) {
-    var i;
-    i = initial;
-    while (i <= final) {
-      func(i);
-      i++;
+  Player = function() {
+    this._cube = this.createCube();
+    return this;
+  };
+  Player.prototype.position = function(axis) {
+    if (!(typeof axis !== "undefined" && axis !== null)) {
+      return this._cube.position;
     }
+    return this._cube.position[axis];
+  };
+  Player.prototype.incPosition = function(axis, val) {
+    this._cube.position[axis] += val;
     return null;
+  };
+  Player.prototype.setPosition = function(axis, val) {
+    this._cube.position[axis] = val;
+    return null;
+  };
+  Player.prototype.addToScene = function(scene) {
+    return scene.add(this._cube);
+  };
+  Player.prototype.createCube = function() {
+    var cube, r;
+    r = 50;
+    cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
+    cube.geometry.dynamic = true;
+    cube.position.set(800, 100, 450);
+    cube.name = "player";
+    return cube;
   };
   Grid = function(_arg) {
     this.size = _arg;
@@ -60,17 +81,16 @@
   Grid.prototype.put = function(x, y, z, val) {
     return (this.matrix[x][y][z] = val);
   };
-  CollisionHelper = function(_arg, _arg2, _arg3) {
-    this.scene = _arg3;
+  CollisionHelper = function(_arg, _arg2) {
     this.grid = _arg2;
-    this.cube = _arg;
+    this.player = _arg;
     return null;
     return this;
   };
   CollisionHelper.prototype.rad = 50;
   CollisionHelper.prototype.collides = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
-    if (this.cube.position.y < 25) {
+    if (this.player.position('y') < 25) {
       return true;
     }
     _ref2 = [-1, 1];
@@ -109,7 +129,7 @@
   };
   CollisionHelper.prototype.raysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
     var _i, _len, _ref2, dir, dirs, vertex;
-    vertex = this.cube.position.clone();
+    vertex = this.player.position().clone();
     vertex.x += vertexX * 25;
     vertex.y += vertexY * 25;
     vertex.z += vertexZ * 25;
@@ -138,7 +158,7 @@
   };
   CollisionHelper.prototype.withRange = function(func) {
     var minx, miny, minz, p, x, y, z;
-    p = this.cube.position;
+    p = this.player.position();
     minx = this.min(p.x);
     miny = this.min(p.y);
     minz = this.min(p.z);
@@ -179,9 +199,9 @@
     this.pause = false;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
-    this.cube = this.createPlayer();
+    this.player = new Player();
     this.scene = new Scene();
-    this.scene.add(this.cube);
+    this.player.addToScene(this.scene);
     this.scene.add(this.createFloor());
     this.scene.add(this.camera);
     this.populateWorld();
@@ -251,15 +271,6 @@
     this.scene.add(mesh);
     mesh.updateMatrix();
     return (mesh.matrixAutoUpdate = false);
-  };
-  Game.prototype.createPlayer = function() {
-    var cube, r;
-    r = 50;
-    cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
-    cube.geometry.dynamic = true;
-    cube.position.set(800, 100, 450);
-    cube.name = "player";
-    return cube;
   };
   Game.prototype.createCamera = function() {
     var camera;
@@ -345,33 +356,20 @@
         }, this));
       }).call(this);
     }
-    $(document).bind('keydown', 'r', __bind(function() {
-      return this.changeColors();
-    }, this));
     return $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
     }, this));
   };
-  Game.prototype.changeColors = function() {
-    return this.cube.material instanceof MeshNormalMaterial ? (this.cube.material = new MeshLambertMaterial({
-      color: 0x0000FF
-    })) : (this.cube.material = new MeshNormalMaterial());
-  };
   Game.prototype.collides = function() {
-    return new CollisionHelper(this.cube, this.grid, this.scene).collides();
+    return new CollisionHelper(this.player, this.grid).collides();
   };
   Game.prototype.start = function() {
     var animate;
-    this.now = (this.old = new Date().getTime());
     animate = __bind(function() {
-      try {
-        if (!(this.pause)) {
-          this.tick();
-        }
-        return requestAnimationFrame(animate, this.renderer.domElement);
-      } catch (e) {
-        return $("#debug").append("<pre>" + (e.stack) + "</pre>");
+      if (!(this.pause)) {
+        this.tick();
       }
+      return requestAnimationFrame(animate, this.renderer.domElement);
     }, this);
     return animate();
   };
@@ -391,10 +389,10 @@
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         axis = _ref2[_i];
         if (ivel[axis] !== 0) {
-          originalpos = this.cube.position[axis];
-          this.cube.position[axis] += ivel[axis];
+          originalpos = this.player.position(axis);
+          this.player.incPosition(axis, ivel[axis]);
           if (this.collides()) {
-            this.cube.position[axis] -= ivel[axis];
+            this.player.setPosition(axis, originalpos);
             if (axis === 'y' && ivel.y < 0) {
               this.touchesGround();
             }
@@ -448,8 +446,7 @@
     }
   };
   Game.prototype.tick = function() {
-    this.now = new Date().getTime();
-    if (this.cube.position.y < 0) {
+    if (this.player.position('y' < 0)) {
       raise("Cube is way below ground level");
     }
     this.defineMove();
@@ -457,7 +454,6 @@
     this.renderer.clear();
     this.renderer.render(this.scene, this.camera);
     this.debug();
-    this.old = this.now;
     return null;
   };
   Game.prototype.debug = function() {
@@ -465,12 +461,9 @@
     _result = []; _ref2 = this.axes;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       axis = _ref2[_i];
-      _result.push($('#pos' + axis).html(String(this.cube.position[axis])));
+      _result.push($('#pos' + axis).html(String(this.player.position(axis))));
     }
     return _result;
-  };
-  Game.prototype.diff = function() {
-    return this.now - this.old;
   };
   init_web_app = function() {
     return new Game().start();
@@ -488,13 +481,13 @@ window.MeshNormalMaterial = MeshNormalMaterial
 window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera
 window.PlaneGeometry = PlaneGeometry
+window.Player = Player
 window.PointLight = PointLight
 window.Ray = Ray
 window.Scene = Scene
 window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
-window.eachRange = eachRange
 window.init_web_app = init_web_app
 window.vec = vec
 }).call(this);
