@@ -46,7 +46,7 @@ class Player
         vmax = @vertex 1, 1, 1
         return {vmin: vmin, vmax: vmax}
 
-    anyCollides: (intersections, direction) ->
+    _depranyCollides: (intersections, direction) ->
         closest = @_getClosest(intersections)
         return false unless closest
         return closest.distance <= @_directionLength(direction)
@@ -91,22 +91,35 @@ class Grid
 class CollisionHelper
     constructor: (@player, @grid)-> return
     rad: 50
+    halfRad: 25
 
     collides: ->
         return true if @player.collidesWithGround()
-        for x in [-1, 1]
-            for y in [-1, 1]
-                for z in [-1, 1]
-                    return true if @raysFromVertexCollide x, y, z
+        playerBox = @player.boundingBox()
+        for cube in @possibleCubes()
+            return true if @collideWithCube playerBox, cube
         return false
 
-    rayCollides: (vertex, direction) ->
+    _addToPosition: (position, value) ->
+        pos = position.clone()
+        pos.x += value
+        pos.y += value
+        pos.z += value
+        return pos
+
+    collideWithCube: (playerBox, cube) ->
+        vmin = @_addToPosition cube.position, -@halfRad
+        vmax = @_addToPosition cube.position, @halfRad
+        cubeBox = {vmin, vmax}
+        return CollisionUtils.testCubeCollision playerBox, cubeBox
+
+    _deprrayCollides: (vertex, direction) ->
         objs = @possibleCubes()
         intersections = new Ray(vertex, direction).intersectObjects objs
         return @player.anyCollides intersections, direction
 
 
-    raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
+    _deprraysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
         vertex = @player.vertex vertexX, vertexY, vertexZ
         dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
         for dir in dirs

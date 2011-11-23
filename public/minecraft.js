@@ -74,7 +74,7 @@
       vmax: vmax
     };
   };
-  Player.prototype.anyCollides = function(intersections, direction) {
+  Player.prototype._depranyCollides = function(intersections, direction) {
     var closest;
     closest = this._getClosest(intersections);
     if (!(closest)) {
@@ -139,35 +139,47 @@
     return this;
   };
   CollisionHelper.prototype.rad = 50;
+  CollisionHelper.prototype.halfRad = 25;
   CollisionHelper.prototype.collides = function() {
-    var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
+    var _i, _len, _ref2, cube, playerBox;
     if (this.player.collidesWithGround()) {
       return true;
     }
-    _ref2 = [-1, 1];
+    playerBox = this.player.boundingBox();
+    _ref2 = this.possibleCubes();
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      x = _ref2[_i];
-      _ref3 = [-1, 1];
-      for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
-        y = _ref3[_j];
-        _ref4 = [-1, 1];
-        for (_k = 0, _len3 = _ref4.length; _k < _len3; _k++) {
-          z = _ref4[_k];
-          if (this.raysFromVertexCollide(x, y, z)) {
-            return true;
-          }
-        }
+      cube = _ref2[_i];
+      if (this.collideWithCube(playerBox, cube)) {
+        return true;
       }
     }
     return false;
   };
-  CollisionHelper.prototype.rayCollides = function(vertex, direction) {
+  CollisionHelper.prototype._addToPosition = function(position, value) {
+    var pos;
+    pos = position.clone();
+    pos.x += value;
+    pos.y += value;
+    pos.z += value;
+    return pos;
+  };
+  CollisionHelper.prototype.collideWithCube = function(playerBox, cube) {
+    var cubeBox, vmax, vmin;
+    vmin = this._addToPosition(cube.position, -this.halfRad);
+    vmax = this._addToPosition(cube.position, this.halfRad);
+    cubeBox = {
+      vmin: vmin,
+      vmax: vmax
+    };
+    return CollisionUtils.testCubeCollision(playerBox, cubeBox);
+  };
+  CollisionHelper.prototype._deprrayCollides = function(vertex, direction) {
     var intersections, objs;
     objs = this.possibleCubes();
     intersections = new Ray(vertex, direction).intersectObjects(objs);
     return this.player.anyCollides(intersections, direction);
   };
-  CollisionHelper.prototype.raysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
+  CollisionHelper.prototype._deprraysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
     var _i, _len, _ref2, dir, dirs, vertex;
     vertex = this.player.vertex(vertexX, vertexY, vertexZ);
     dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)];

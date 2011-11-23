@@ -16,6 +16,7 @@
                     jasmine.include('./javascripts/' + arg + '.js', true);
                 }
             }
+            jasmine.include('../public/lib/rbcoffee.js', true);
             jasmine.include('../public/collision.js', true);
             include('specBrowserAdapter', 'applicationSpec');
         </script>
