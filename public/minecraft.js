@@ -28,9 +28,15 @@
     return new Vector3(x, y, z);
   };
   Player = function() {
-    this._cube = this.createCube();
+    this.halfHeight = this.height / 2;
+    this.halfWidth = this.width / 2;
+    this.halfDepth = this.depth / 2;
+    this._cube = this._createCube();
     return this;
   };
+  Player.prototype.width = 25;
+  Player.prototype.depth = 25;
+  Player.prototype.height = 80;
   Player.prototype.position = function(axis) {
     if (!(typeof axis !== "undefined" && axis !== null)) {
       return this._cube.position;
@@ -48,14 +54,65 @@
   Player.prototype.addToScene = function(scene) {
     return scene.add(this._cube);
   };
-  Player.prototype.createCube = function() {
-    var cube, r;
-    r = 50;
-    cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial());
+  Player.prototype.collidesWithGround = function() {
+    return this.position('y') < this.halfHeight;
+  };
+  Player.prototype.vertex = function(vertexX, vertexY, vertexZ) {
+    var vertex;
+    vertex = this.position().clone();
+    vertex.x += vertexX * this.halfWidth;
+    vertex.y += vertexY * this.halfHeight;
+    vertex.z += vertexZ * this.halfDepth;
+    return vertex;
+  };
+  Player.prototype.boundingBox = function() {
+    var vmax, vmin;
+    vmin = this.vertex(-1, -1, -1);
+    vmax = this.vertex(1, 1, 1);
+    return {
+      vmin: vmin,
+      vmax: vmax
+    };
+  };
+  Player.prototype.anyCollides = function(intersections, direction) {
+    var closest;
+    closest = this._getClosest(intersections);
+    if (!(closest)) {
+      return false;
+    }
+    return closest.distance <= this._directionLength(direction);
+  };
+  Player.prototype._directionLength = function(direction) {
+    if (direction.x !== 0) {
+      return this.width;
+    }
+    if (direction.y !== 0) {
+      return this.height;
+    }
+    if (direction.z !== 0) {
+      return this.depth;
+    }
+    return raise("Invalid Direction: 0, 0 ,0");
+  };
+  Player.prototype._createCube = function() {
+    var cube, geo;
+    geo = new CubeGeometry(this.width, this.height, this.depth);
+    cube = new Mesh(geo, new MeshNormalMaterial());
     cube.geometry.dynamic = true;
     cube.position.set(800, 100, 450);
     cube.name = "player";
     return cube;
+  };
+  Player.prototype._getClosest = function(intersections) {
+    var _i, _len, _ref2, _ref3, i;
+    _ref2 = intersections;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      i = _ref2[_i];
+      if (!(('player' === (_ref3 = i.object.name) || 'floor' === _ref3))) {
+        return i;
+      }
+    }
+    return null;
   };
   Grid = function(_arg) {
     this.size = _arg;
@@ -70,12 +127,6 @@
     return this;
   };
   Grid.prototype.get = function(x, y, z) {
-    if (!((x >= 0) && (y >= 0) && (z >= 0))) {
-      return null;
-    }
-    if (!(x < this.size && y < this.size && z < this.size)) {
-      return null;
-    }
     return this.matrix[x][y][z];
   };
   Grid.prototype.put = function(x, y, z, val) {
@@ -90,7 +141,7 @@
   CollisionHelper.prototype.rad = 50;
   CollisionHelper.prototype.collides = function() {
     var _i, _j, _k, _len, _len2, _len3, _ref2, _ref3, _ref4, x, y, z;
-    if (this.player.position('y') < 25) {
+    if (this.player.collidesWithGround()) {
       return true;
     }
     _ref2 = [-1, 1];
@@ -111,28 +162,14 @@
     return false;
   };
   CollisionHelper.prototype.rayCollides = function(vertex, direction) {
-    var _ref2, _ref3, intersections, objs;
+    var intersections, objs;
     objs = this.possibleCubes();
     intersections = new Ray(vertex, direction).intersectObjects(objs);
-    return ((typeof (_ref3 = ((_ref2 = this.getClosest(intersections)))) === "undefined" || _ref3 === null) ? undefined : _ref3.distance) <= 50;
-  };
-  CollisionHelper.prototype.getClosest = function(intersections) {
-    var _i, _len, _ref2, _ref3, i;
-    _ref2 = intersections;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      i = _ref2[_i];
-      if (!(('player' === (_ref3 = i.object.name) || 'floor' === _ref3))) {
-        return i;
-      }
-    }
-    return null;
+    return this.player.anyCollides(intersections, direction);
   };
   CollisionHelper.prototype.raysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
     var _i, _len, _ref2, dir, dirs, vertex;
-    vertex = this.player.position().clone();
-    vertex.x += vertexX * 25;
-    vertex.y += vertexY * 25;
-    vertex.z += vertexZ * 25;
+    vertex = this.player.vertex(vertexX, vertexY, vertexZ);
     dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)];
     _ref2 = dirs;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
@@ -157,17 +194,22 @@
     return cubes;
   };
   CollisionHelper.prototype.withRange = function(func) {
-    var minx, miny, minz, p, x, y, z;
-    p = this.player.position();
-    minx = this.min(p.x);
-    miny = this.min(p.y);
-    minz = this.min(p.z);
+    var _ref2, maxx, maxy, maxz, minx, miny, minz, vmax, vmin, x, y, z;
+    _ref2 = this.player.boundingBox();
+    vmin = _ref2.vmin;
+    vmax = _ref2.vmax;
+    minx = this.toGrid(vmin.x);
+    miny = this.toGrid(vmin.y);
+    minz = this.toGrid(vmin.z);
+    maxx = this.toGrid(vmax.x) + 1;
+    maxy = this.toGrid(vmax.y) + 1;
+    maxz = this.toGrid(vmax.z) + 1;
     x = minx;
-    while (x <= minx + 2) {
+    while (x <= maxx) {
       y = miny;
-      while (y <= miny + 2) {
+      while (y <= maxy) {
         z = minz;
-        while (z <= minz + 2) {
+        while (z <= maxz) {
           func(x, y, z);
           z++;
         }
@@ -177,10 +219,16 @@
     }
     return null;
   };
-  CollisionHelper.prototype.min = function(positionAxis) {
-    var val;
-    val = positionAxis;
-    return Math.floor(val / this.rad) - 1;
+  CollisionHelper.prototype.toGrid = function(val) {
+    var ret;
+    ret = Math.floor(val / this.rad);
+    if (ret < 0) {
+      return 0;
+    }
+    if (ret > this.grid.size) {
+      return this.grid.size;
+    }
+    return ret;
   };
   Game = function() {
     this.rad = 50;

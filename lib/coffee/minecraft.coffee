@@ -7,8 +7,15 @@
 vec = (x, y, z) -> new Vector3 x, y, z
 
 class Player
+    width: 25
+    depth: 25
+    height: 80
+
     constructor: ->
-        @_cube = @createCube()
+        @halfHeight = @height / 2
+        @halfWidth = @width / 2
+        @halfDepth = @depth / 2
+        @_cube = @_createCube()
 
 
     position: (axis) ->
@@ -25,15 +32,46 @@ class Player
 
     addToScene: (scene) -> scene.add @_cube
 
-    createCube: ->
-        # @cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new
-            # THREE.MeshLambertMaterial(color: 0xCC0000))
-        r = 50
-        cube = new Mesh(new CubeGeometry(r, r, r), new MeshNormalMaterial())
+    collidesWithGround: -> @position('y') < @halfHeight
+
+    vertex: (vertexX, vertexY, vertexZ) ->
+        vertex = @position().clone()
+        vertex.x += vertexX * @halfWidth
+        vertex.y += vertexY * @halfHeight
+        vertex.z += vertexZ * @halfDepth
+        return vertex
+
+    boundingBox: ->
+        vmin = @vertex(-1, -1, -1)
+        vmax = @vertex 1, 1, 1
+        return {vmin: vmin, vmax: vmax}
+
+    anyCollides: (intersections, direction) ->
+        closest = @_getClosest(intersections)
+        return false unless closest
+        return closest.distance <= @_directionLength(direction)
+
+    _directionLength: (direction) ->
+        return @width if direction.x != 0
+        return @height if direction.y != 0
+        return @depth if direction.z != 0
+        raise "Invalid Direction: 0, 0 ,0"
+
+
+    _createCube: ->
+        geo = new CubeGeometry(@width, @height, @depth)
+        cube = new Mesh(geo, new MeshNormalMaterial())
         cube.geometry.dynamic = true
         cube.position.set 800, 100, 450
         cube.name = "player"
         cube
+
+    _getClosest: (intersections) ->
+        for i in intersections
+            return i unless i.object.name in ['player', 'floor']
+        return
+
+
 
 
 class Grid
@@ -45,10 +83,7 @@ class Grid
             @size.times (j) =>
                 @matrix[i][j] = []
 
-    get: (x, y, z) ->
-        return unless x >= 0 and y >= 0 and z >= 0
-        return unless x < @size and y < @size and z < @size
-        @matrix[x][y][z]
+    get: (x, y, z) -> @matrix[x][y][z]
 
     put: (x, y, z, val) -> @matrix[x][y][z] = val
 
@@ -58,7 +93,7 @@ class CollisionHelper
     rad: 50
 
     collides: ->
-        return true if @player.position('y') < 25
+        return true if @player.collidesWithGround()
         for x in [-1, 1]
             for y in [-1, 1]
                 for z in [-1, 1]
@@ -68,19 +103,11 @@ class CollisionHelper
     rayCollides: (vertex, direction) ->
         objs = @possibleCubes()
         intersections = new Ray(vertex, direction).intersectObjects objs
-        return @getClosest(intersections)?.distance <= 50
-
-    getClosest: (intersections) ->
-        for i in intersections
-            return i unless i.object.name in ['player', 'floor']
-        return
+        return @player.anyCollides intersections, direction
 
 
     raysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
-        vertex = @player.position().clone()
-        vertex.x += vertexX * 25
-        vertex.y += vertexY * 25
-        vertex.z += vertexZ * 25
+        vertex = @player.vertex vertexX, vertexY, vertexZ
         dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
         for dir in dirs
             return true if @rayCollides vertex, dir
@@ -96,25 +123,31 @@ class CollisionHelper
         return cubes
 
     withRange: (func) ->
-        p = @player.position()
-        minx = @min p.x
-        miny = @min p.y
-        minz = @min p.z
+        {vmin, vmax} = @player.boundingBox()
+        minx = @toGrid(vmin.x)
+        miny = @toGrid(vmin.y)
+        minz = @toGrid(vmin.z)
+
+        maxx = @toGrid(vmax.x) + 1
+        maxy = @toGrid(vmax.y) + 1
+        maxz = @toGrid(vmax.z) + 1
         x = minx
-        while x <= minx + 2
+        while x <= maxx
             y = miny
-            while y <= miny + 2
+            while y <= maxy
                 z = minz
-                while z <= minz + 2
+                while z <= maxz
                     func x, y, z
                     z++
                 y++
             x++
         return
 
-    min: (positionAxis) ->
-        val = positionAxis
-        return Math.floor(val / @rad) - 1
+    toGrid: (val) ->
+        ret = Math.floor(val / @rad)
+        return 0 if ret < 0
+        return @grid.size if ret > @grid.size
+        return ret
 
 
 class Game
