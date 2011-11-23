@@ -4,3 +4,13 @@ CollisionUtils =
         return true if s1 == s2
         return f1 >= s2 if s1 < s2
         return f2 >= s1
+
+    #Cubes are objects with vmax, vmin (the vertices with greatest/smallest values)
+    #properties. Assumes unrotated cubes.
+    testCubeCollision: (cube1, cube2) ->
+        fcol = CollisionUtils.testIntervalCollision
+        for axis in ['x', 'y', 'z']
+            collides = fcol cube1.vmin[axis], cube1.vmax[axis]
+            , cube2.vmin[axis], cube2.vmax[axis]
+            return false unless collides
+        return true
