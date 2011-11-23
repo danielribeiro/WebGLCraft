@@ -46,11 +46,6 @@ class Player
         vmax = @vertex 1, 1, 1
         return {vmin: vmin, vmax: vmax}
 
-    _depranyCollides: (intersections, direction) ->
-        closest = @_getClosest(intersections)
-        return false unless closest
-        return closest.distance <= @_directionLength(direction)
-
     _directionLength: (direction) ->
         return @width if direction.x != 0
         return @height if direction.y != 0
@@ -112,20 +107,6 @@ class CollisionHelper
         vmax = @_addToPosition cube.position, @halfRad
         cubeBox = {vmin, vmax}
         return CollisionUtils.testCubeCollision playerBox, cubeBox
-
-    _deprrayCollides: (vertex, direction) ->
-        objs = @possibleCubes()
-        intersections = new Ray(vertex, direction).intersectObjects objs
-        return @player.anyCollides intersections, direction
-
-
-    _deprraysFromVertexCollide: (vertexX, vertexY, vertexZ) ->
-        vertex = @player.vertex vertexX, vertexY, vertexZ
-        dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)]
-        for dir in dirs
-            return true if @rayCollides vertex, dir
-        return false
-
 
     possibleCubes: ->
         cubes = []

@@ -74,14 +74,6 @@
       vmax: vmax
     };
   };
-  Player.prototype._depranyCollides = function(intersections, direction) {
-    var closest;
-    closest = this._getClosest(intersections);
-    if (!(closest)) {
-      return false;
-    }
-    return closest.distance <= this._directionLength(direction);
-  };
   Player.prototype._directionLength = function(direction) {
     if (direction.x !== 0) {
       return this.width;
@@ -172,25 +164,6 @@
       vmax: vmax
     };
     return CollisionUtils.testCubeCollision(playerBox, cubeBox);
-  };
-  CollisionHelper.prototype._deprrayCollides = function(vertex, direction) {
-    var intersections, objs;
-    objs = this.possibleCubes();
-    intersections = new Ray(vertex, direction).intersectObjects(objs);
-    return this.player.anyCollides(intersections, direction);
-  };
-  CollisionHelper.prototype._deprraysFromVertexCollide = function(vertexX, vertexY, vertexZ) {
-    var _i, _len, _ref2, dir, dirs, vertex;
-    vertex = this.player.vertex(vertexX, vertexY, vertexZ);
-    dirs = [vec(-vertexX, 0, 0), vec(0, -vertexY, 0), vec(0, 0, -vertexZ)];
-    _ref2 = dirs;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      dir = _ref2[_i];
-      if (this.rayCollides(vertex, dir)) {
-        return true;
-      }
-    }
-    return false;
   };
   CollisionHelper.prototype.possibleCubes = function() {
     var cubes, grid;
