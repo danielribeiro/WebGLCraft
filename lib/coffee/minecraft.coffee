@@ -62,7 +62,7 @@ class Player
         geo = new CubeGeometry(@width, @height, @depth)
         cube = new Mesh(geo, new MeshNormalMaterial())
         cube.geometry.dynamic = true
-        cube.position.set 800, 100, 450
+        cube.position.set 850, 100, 35
         cube.name = "player"
         cube
 
@@ -203,6 +203,8 @@ class Game
             for j in [size..(2*size)]
                 @cubeAt 200 + @rad * i, 75 + 150, @rad * j
 
+        @cubeAt 800, 75, 50
+
 
     cubeAt: (x, y, z) ->
         mesh = new Mesh(@geo, @mat)
@@ -215,10 +217,9 @@ class Game
         mesh.matrixAutoUpdate = false
 
 
-
     createCamera: ->
         camera = new PerspectiveCamera(45, 800 / 600, 1, 10000)
-        camera.position.set 900, 400, 1500
+        camera.position.set 1500, 400, 800
         camera.lookAt vec 0, 0, 0
         camera
 

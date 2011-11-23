@@ -99,7 +99,7 @@
     geo = new CubeGeometry(this.width, this.height, this.depth);
     cube = new Mesh(geo, new MeshNormalMaterial());
     cube.geometry.dynamic = true;
-    cube.position.set(800, 100, 450);
+    cube.position.set(850, 100, 35);
     cube.name = "player";
     return cube;
   };
@@ -281,7 +281,7 @@
     return this.grid.put.apply(this.grid, args);
   };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, _result, _result2, i, j, size;
+    var _ref2, _ref3, i, j, size;
     size = 5;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
@@ -297,17 +297,14 @@
         this.cubeAt(200 + this.rad * i, 75, this.rad * j);
       }
     }
-    _result = []; _ref2 = (2 * size);
+    _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
-      _result.push((function() {
-        _result2 = []; _ref3 = (2 * size);
-        for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(200 + this.rad * i, 75 + 150, this.rad * j));
-        }
-        return _result2;
-      }).call(this));
+      _ref3 = (2 * size);
+      for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
+        this.cubeAt(200 + this.rad * i, 75 + 150, this.rad * j);
+      }
     }
-    return _result;
+    return this.cubeAt(800, 75, 50);
   };
   Game.prototype.cubeAt = function(x, y, z) {
     var mesh;
@@ -323,7 +320,7 @@
   Game.prototype.createCamera = function() {
     var camera;
     camera = new PerspectiveCamera(45, 800 / 600, 1, 10000);
-    camera.position.set(900, 400, 1500);
+    camera.position.set(1500, 400, 800);
     camera.lookAt(vec(0, 0, 0));
     return camera;
   };

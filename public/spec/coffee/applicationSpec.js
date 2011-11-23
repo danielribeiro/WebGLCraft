@@ -1,5 +1,5 @@
 (function() {
-  var importAll, negative, positive, same;
+  var importAll, isFalse, isTrue, same;
   var __hasProp = Object.prototype.hasOwnProperty;
   importAll = function(from) {
     var _i, _ref, _result, i;
@@ -14,54 +14,27 @@
   same = function(thi, that) {
     return expect(thi).toEqual(that);
   };
-  positive = function(val) {
-    return expect(val).toBeGreaterThan(0);
+  isTrue = function(val) {
+    return same(val, true);
   };
-  negative = function(val) {
-    return expect(val).toBeLessThan(0);
+  isFalse = function(val) {
+    return same(val, false);
   };
   require('specBrowserAdapter');
   require('collision');
-  describe("Collision", function() {
-    it("returns the normal vector, given the collision edges of floor", function() {
-      var normal, vector;
-      vector = {
-        'x+y-': true,
-        'x-y-': true,
-        'y-z-': true,
-        'y-z-': true
-      };
-      normal = Collision.normals(vector);
-      same(normal.x, 0);
-      positive(normal.y);
-      return same(normal.z, 0);
-    });
-    it("the normal vector affects two directions if an edge is\
-    the sole edge of both planes that make it", function() {
-      var normal, vector;
-      vector = {
-        'x-z-': true
-      };
-      normal = Collision.normals(vector);
-      positive(normal.x, 0);
-      same(normal.y, 0);
-      return positive(normal.z);
-    });
-    return xit("works on real world:", function() {
-      var normal, vector;
-      vector = {
-        'x+y+': true,
-        'x+z-': true,
-        'y+z-': true
-      };
-      normal = Collision.normals(vector);
-      negative(normal.x, 0);
-      same(normal.y, 0);
-      return positive(normal.z);
+  describe("Intersection utils", function() {
+    return it("can decide interval collision", function() {
+      var c;
+      c = CollisionUtils;
+      isTrue(c.testIntervalCollision(0, 9, 6, 12));
+      isTrue(c.testIntervalCollision(1, 5, 2, 3));
+      isTrue(c.testIntervalCollision(1, 5, 1, 10));
+      isFalse(c.testIntervalCollision(1, 5, 6, 10));
+      return isFalse(c.testIntervalCollision(6, 10, 1, 5));
     });
   });
 window.importAll = importAll
-window.negative = negative
-window.positive = positive
+window.isFalse = isFalse
+window.isTrue = isTrue
 window.same = same
 }).call(this);
