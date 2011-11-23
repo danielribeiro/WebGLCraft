@@ -57,7 +57,7 @@ class Player
         geo = new CubeGeometry(@width, @height, @depth)
         cube = new Mesh(geo, new MeshNormalMaterial())
         cube.geometry.dynamic = true
-        cube.position.set 850, 100, 35
+        cube.position.set 850, 300, 35
         cube.name = "player"
         cube
 
@@ -65,8 +65,6 @@ class Player
         for i in intersections
             return i unless i.object.name in ['player', 'floor']
         return
-
-
 
 
 class Grid
@@ -147,7 +145,20 @@ class CollisionHelper
 class Game
     constructor: ->
         @rad = 50
-        @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
+        # @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
+
+        grass_dirt = @loadTexture("./textures/grass_dirt.png")
+        grass = @loadTexture("./textures/grass.png")
+        dirt = @loadTexture("./textures/dirt.png")
+        materials = [grass_dirt, #right
+            grass_dirt, # left
+            grass, # top
+            dirt, # bottom
+            grass_dirt, # back
+            grass_dirt]  #front
+        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials, { px: true, nx: true, py: true, ny: false, pz: true, nz: true})
+
+
         @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
@@ -165,6 +176,7 @@ class Game
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
+
 
     posFromGrid: (position) ->
         {x, y, z} = position
@@ -197,11 +209,12 @@ class Game
             for j in [size..(2*size)]
                 @cubeAt 200 + @rad * i, 75 + 150, @rad * j
 
-        @cubeAt 800, 75, 50
+        for i in [0..10]
+            @cubeAt 800 + i * 50, 75 + i * 50, 50
 
 
     cubeAt: (x, y, z) ->
-        mesh = new Mesh(@geo, @mat)
+        mesh = new Mesh(@geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
         mesh.name = "red block at #{x} #{y} #{z}"
@@ -220,7 +233,7 @@ class Game
     createRenderer: ->
         renderer = new WebGLRenderer(antialias: true)
         renderer.setSize 800, 600
-        renderer.setClearColorHex(0x999999, 1.0)
+        renderer.setClearColorHex(0xBFD1E5, 1.0)
         renderer.clear()
         $('#container').append(renderer.domElement)
         renderer
@@ -237,15 +250,15 @@ class Game
         return plane
 
     addLights: (scene) ->
-        # ambientLight = new AmbientLight(0xcccccc)
-        # scene.add ambientLight
-        # directionalLight = new DirectionalLight(0xffffff, 1.5)
-        # directionalLight.position.set 1, 1, 0.5
-        # directionalLight.position.normalize()
-        # scene.add directionalLight
-        p = new PointLight(0xffffff, 1.5)
-        p.position.set 200, 200, 300
-        scene.add p
+        ambientLight = new AmbientLight(0xcccccc)
+        scene.add ambientLight
+        directionalLight = new DirectionalLight(0xffffff, 1.5)
+        directionalLight.position.set 1, 1, 0.5
+        directionalLight.position.normalize()
+        scene.add directionalLight
+        # p = new PointLight(0xffffff, 1.5)
+        # p.position.set 200, 200, 300
+        # scene.add p
 
     cameraKeys:
         8: 'z-'
@@ -297,7 +310,6 @@ class Game
                     @touchesGround() if axis is 'y' and ivel.y < 0
                     @move[axis] = 0
                     ivel[axis] = 0
-
         return
 
     touchesGround: ->
@@ -341,6 +353,13 @@ class Game
             $('#pos' + axis).html String @player.position axis
 
 
+
+    loadTexture: (path) ->
+        image = new Image()
+        image.src = path
+        texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter)
+        image.onload = -> texture.needsUpdate = true
+        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
 
 
 

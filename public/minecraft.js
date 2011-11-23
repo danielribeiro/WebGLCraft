@@ -91,7 +91,7 @@
     geo = new CubeGeometry(this.width, this.height, this.depth);
     cube = new Mesh(geo, new MeshNormalMaterial());
     cube.geometry.dynamic = true;
-    cube.position.set(850, 100, 35);
+    cube.position.set(850, 300, 35);
     cube.name = "player";
     return cube;
   };
@@ -216,8 +216,20 @@
     return ret;
   };
   Game = function() {
+    var dirt, grass, grass_dirt, materials;
     this.rad = 50;
-    this.geo = new CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1);
+    grass_dirt = this.loadTexture("./textures/grass_dirt.png");
+    grass = this.loadTexture("./textures/grass.png");
+    dirt = this.loadTexture("./textures/dirt.png");
+    materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
+    this.geo = new THREE.CubeGeometry(50, 50, 50, 1, 1, 1, materials, {
+      px: true,
+      nx: true,
+      py: true,
+      ny: false,
+      pz: true,
+      nz: true
+    });
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
     });
@@ -266,7 +278,7 @@
     return this.grid.put.apply(this.grid, args);
   };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, i, j, size;
+    var _ref2, _ref3, _result, i, j, size;
     size = 5;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
@@ -289,11 +301,15 @@
         this.cubeAt(200 + this.rad * i, 75 + 150, this.rad * j);
       }
     }
-    return this.cubeAt(800, 75, 50);
+    _result = [];
+    for (i = 0; i <= 10; i++) {
+      _result.push(this.cubeAt(800 + i * 50, 75 + i * 50, 50));
+    }
+    return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
     var mesh;
-    mesh = new Mesh(this.geo, this.mat);
+    mesh = new Mesh(this.geo, new THREE.MeshFaceMaterial());
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
     mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
@@ -315,7 +331,7 @@
       antialias: true
     });
     renderer.setSize(800, 600);
-    renderer.setClearColorHex(0x999999, 1.0);
+    renderer.setClearColorHex(0xBFD1E5, 1.0);
     renderer.clear();
     $('#container').append(renderer.domElement);
     return renderer;
@@ -333,10 +349,13 @@
     return plane;
   };
   Game.prototype.addLights = function(scene) {
-    var p;
-    p = new PointLight(0xffffff, 1.5);
-    p.position.set(200, 200, 300);
-    return scene.add(p);
+    var ambientLight, directionalLight;
+    ambientLight = new AmbientLight(0xcccccc);
+    scene.add(ambientLight);
+    directionalLight = new DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(1, 1, 0.5);
+    directionalLight.position.normalize();
+    return scene.add(directionalLight);
   };
   Game.prototype.cameraKeys = {
     8: 'z-',
@@ -494,6 +513,19 @@
       _result.push($('#pos' + axis).html(String(this.player.position(axis))));
     }
     return _result;
+  };
+  Game.prototype.loadTexture = function(path) {
+    var image, texture;
+    image = new Image();
+    image.src = path;
+    texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter);
+    image.onload = function() {
+      return (texture.needsUpdate = true);
+    };
+    return new THREE.MeshLambertMaterial({
+      map: texture,
+      ambient: 0xbbbbbb
+    });
   };
   init_web_app = function() {
     return new Game().start();
