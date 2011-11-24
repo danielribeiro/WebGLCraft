@@ -156,8 +156,8 @@ class Game
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials, { px: true, nx: true, py: true, ny: false, pz: true, nz: true})
-
+        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials, { px: true, nx: true, py: true, ny: true, pz: true, nz: true})
+        @planeMat = @simpleTexture("./textures/dirt.png")
 
         @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
@@ -240,9 +240,9 @@ class Game
 
 
     createFloor: ->
-        planeGeo = new PlaneGeometry(4000, 2000, 10, 10)
-        planeMat = new MeshLambertMaterial(color: 0x00FF00)
-        plane = new Mesh(planeGeo, planeMat)
+        planeGeo = new PlaneGeometry(4000, 2000, 1, 1)
+        # planeMat = new MeshLambertMaterial(color: 0x00FF00)
+        plane = new Mesh(planeGeo, @planeMat)
         plane.position.y = -1
         plane.rotation.x = -Math.PI / 2
         # plane.receiveShadow = true
@@ -324,7 +324,7 @@ class Game
     shouldJump: -> @keysDown.space and @onGround
 
     defineMove: ->
-        baseVel = 5
+        baseVel = 10
         @move.x = 0
         @move.z = 0
         for key, action of @playerKeys
@@ -333,11 +333,11 @@ class Game
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
             @onGround = false
-            @move.y += 7
+            @move.y += 17
         @applyGravity()
         return
 
-    applyGravity: -> @move.y -= 0.3 unless @move.y < -20
+    applyGravity: -> @move.y -= 1.5 unless @move.y < -20
 
     tick: ->
         raise "Cube is way below ground level" if @player.position 'y' < 0
@@ -361,6 +361,15 @@ class Game
         image.onload = -> texture.needsUpdate = true
         new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
 
+
+    simpleTexture: (path) ->
+        image = new Image()
+        image.src = path
+        texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter)
+        texture.repeat.x = 100
+        texture.repeat.y = 100
+        image.onload = -> texture.needsUpdate = true
+        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
 
 
 init_web_app = -> new Game().start()

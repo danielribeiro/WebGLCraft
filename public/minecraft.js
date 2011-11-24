@@ -226,10 +226,11 @@
       px: true,
       nx: true,
       py: true,
-      ny: false,
+      ny: true,
       pz: true,
       nz: true
     });
+    this.planeMat = this.simpleTexture("./textures/dirt.png");
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
     });
@@ -337,12 +338,9 @@
     return renderer;
   };
   Game.prototype.createFloor = function() {
-    var plane, planeGeo, planeMat;
-    planeGeo = new PlaneGeometry(4000, 2000, 10, 10);
-    planeMat = new MeshLambertMaterial({
-      color: 0x00FF00
-    });
-    plane = new Mesh(planeGeo, planeMat);
+    var plane, planeGeo;
+    planeGeo = new PlaneGeometry(4000, 2000, 1, 1);
+    plane = new Mesh(planeGeo, this.planeMat);
     plane.position.y = -1;
     plane.rotation.x = -Math.PI / 2;
     plane.name = 'floor';
@@ -467,7 +465,7 @@
   };
   Game.prototype.defineMove = function() {
     var _ref2, _ref3, action, axis, baseVel, key, operation, vel;
-    baseVel = 5;
+    baseVel = 10;
     this.move.x = 0;
     this.move.z = 0;
     _ref2 = this.playerKeys;
@@ -484,14 +482,14 @@
     }
     if (this.shouldJump()) {
       this.onGround = false;
-      this.move.y += 7;
+      this.move.y += 17;
     }
     this.applyGravity();
     return null;
   };
   Game.prototype.applyGravity = function() {
     if (!(this.move.y < -20)) {
-      return this.move.y -= 0.3;
+      return this.move.y -= 1.5;
     }
   };
   Game.prototype.tick = function() {
@@ -519,6 +517,21 @@
     image = new Image();
     image.src = path;
     texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter);
+    image.onload = function() {
+      return (texture.needsUpdate = true);
+    };
+    return new THREE.MeshLambertMaterial({
+      map: texture,
+      ambient: 0xbbbbbb
+    });
+  };
+  Game.prototype.simpleTexture = function(path) {
+    var image, texture;
+    image = new Image();
+    image.src = path;
+    texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter);
+    texture.repeat.x = 100;
+    texture.repeat.y = 100;
     image.onload = function() {
       return (texture.needsUpdate = true);
     };
