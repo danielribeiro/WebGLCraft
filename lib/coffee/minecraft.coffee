@@ -169,7 +169,7 @@ class Floor
     constructor: (width, height) ->
         repeatX = width / 50
         repeatY = height / 50
-        material = TextureHelper.tileTexture("./textures/dirt.png", repeatX, repeatY)
+        material = TextureHelper.tileTexture("./textures/bedrock.png", repeatX, repeatY)
         planeGeo = new PlaneGeometry(width, height, 1, 1)
         plane = new Mesh(planeGeo, material)
         plane.position.y = -1
@@ -204,10 +204,12 @@ class Game
         @pause = off
         @renderer = @createRenderer()
         @camera = @createCamera()
+        @controls = new Controls @camera, @renderer.domElement
+        @controls.lookSpeed = 0.125 * 0.016
         @player = new Player()
         @scene = new Scene()
         @player.addToScene @scene
-        new Floor(8000, 6000).addToScene @scene
+        new Floor(50000, 50000).addToScene @scene
         @scene.add @camera
         @populateWorld()
         @addLights @scene
@@ -367,6 +369,7 @@ class Game
         @defineMove()
         @moveCube()
         @renderer.clear()
+        @controls.update()
         @renderer.render @scene, @camera
         @debug()
         return
@@ -379,5 +382,3 @@ class Game
 
 
 init_web_app = -> new Game().start()
-
-

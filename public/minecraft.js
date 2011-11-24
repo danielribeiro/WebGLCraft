@@ -258,7 +258,7 @@
     var material, plane, planeGeo, repeatX, repeatY;
     repeatX = width / 50;
     repeatY = height / 50;
-    material = TextureHelper.tileTexture("./textures/dirt.png", repeatX, repeatY);
+    material = TextureHelper.tileTexture("./textures/bedrock.png", repeatX, repeatY);
     planeGeo = new PlaneGeometry(width, height, 1, 1);
     plane = new Mesh(planeGeo, material);
     plane.position.y = -1;
@@ -292,10 +292,12 @@
     this.pause = false;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
+    this.controls = new Controls(this.camera, this.renderer.domElement);
+    this.controls.lookSpeed = 0.125 * 0.016;
     this.player = new Player();
     this.scene = new Scene();
     this.player.addToScene(this.scene);
-    new Floor(8000, 6000).addToScene(this.scene);
+    new Floor(50000, 50000).addToScene(this.scene);
     this.scene.add(this.camera);
     this.populateWorld();
     this.addLights(this.scene);
@@ -537,6 +539,7 @@
     this.defineMove();
     this.moveCube();
     this.renderer.clear();
+    this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.debug();
     return null;
