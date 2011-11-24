@@ -7,12 +7,7 @@
     this.object = object;
     this.target = new THREE.Vector3(0, 0, 0);
     this.domElement = domElement || document;
-    this.movementSpeed = 1.0;
-    this.lookSpeed = 0.005;
-    this.heightCoef = 1.0;
-    this.heightMin = 0.0;
-    this.verticalMin = 0;
-    this.verticalMax = Math.PI;
+    this.lookSpeed = 0.01;
     this.mouseX = 0;
     this.mouseY = 0;
     this.lat = 0;
@@ -20,14 +15,11 @@
     this.phi = 0;
     this.theta = 0;
     this.mouseDragOn = false;
-    if (this.domElement === document) {
-      this.viewHalfX = window.innerWidth / 2;
-      this.viewHalfY = window.innerHeight / 2;
-    } else {
-      this.viewHalfX = this.domElement.offsetWidth / 2;
-      this.viewHalfY = this.domElement.offsetHeight / 2;
-      this.domElement.setAttribute("tabindex", -1);
-    }
+    this.setViewHalf();
+    this.defineBindings();
+    return this;
+  };
+  Controls.prototype.defineBindings = function() {
     $(this.domElement).mousemove(__bind(function(e) {
       return this.onMouseMove(e);
     }, this));
@@ -37,10 +29,20 @@
     $(this.domElement).mouseup(__bind(function(e) {
       return this.onMouseUp(e);
     }, this));
-    $(this.domElement).bind("contextmenu", function() {
+    return $(this.domElement).bind("contextmenu", function() {
       return false;
     });
-    return this;
+  };
+  Controls.prototype.setViewHalf = function() {
+    if (this.domElement === document) {
+      this.viewHalfX = window.innerWidth / 2;
+      this.viewHalfY = window.innerHeight / 2;
+    } else {
+      this.viewHalfX = this.domElement.offsetWidth / 2 + this.domElement.offsetLeft;
+      this.viewHalfY = this.domElement.offsetHeight / 2 + this.domElement.offsetTop;
+      this.domElement.setAttribute("tabindex", -1);
+    }
+    return null;
   };
   Controls.prototype.onMouseDown = function(event) {
     if (this.domElement !== document) {
@@ -54,35 +56,31 @@
     return false;
   };
   Controls.prototype.onMouseMove = function(event) {
-    if (this.domElement === document) {
-      this.mouseX = event.pageX - this.viewHalfX;
-      this.mouseY = event.pageY - this.viewHalfY;
-    } else {
-      this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-      this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
-    }
+    this.mouseX = event.pageX - this.viewHalfX;
+    this.mouseY = event.pageY - this.viewHalfY;
     return null;
   };
+  Controls.prototype.halfCircle = Math.PI / 180;
   Controls.prototype.update = function() {
-    var position;
+    var _ref, cos, max, min, p, sin;
+    _ref = Math;
+    sin = _ref.sin;
+    cos = _ref.cos;
+    max = _ref.max;
+    min = _ref.min;
     if (!(this.mouseDragOn)) {
       return null;
     }
     this.lon += this.mouseX * this.lookSpeed;
     this.lat -= this.mouseY * this.lookSpeed;
-    this.lat = Math.max(-85, Math.min(85, this.lat));
-    this.phi = (90 - this.lat) * Math.PI / 180;
-    this.theta = this.lon * Math.PI / 180;
-    this.lon += this.mouseX * this.lookSpeed;
-    this.lat -= this.mouseY * this.lookSpeed;
-    this.lat = Math.max(-85, Math.min(85, this.lat));
-    this.phi = (90 - this.lat) * Math.PI / 180;
-    this.theta = this.lon * Math.PI / 180;
-    position = this.object.position;
+    this.lat = max(-85, min(85, this.lat));
+    this.phi = (90 - this.lat) * this.halfCircle;
+    this.theta = this.lon * this.halfCircle;
+    p = this.object.position;
     assoc(this.target, {
-      x: position.x + 100 * Math.sin(this.phi) * Math.cos(this.theta),
-      y: position.y + 100 * Math.cos(this.phi),
-      z: position.z + 100 * Math.sin(this.phi) * Math.sin(this.theta)
+      x: p.x + 100 * sin(this.phi) * cos(this.theta),
+      y: p.y + 100 * cos(this.phi),
+      z: p.z + 100 * sin(this.phi) * sin(this.theta)
     });
     this.object.lookAt(this.target);
     return null;

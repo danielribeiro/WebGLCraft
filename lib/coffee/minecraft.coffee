@@ -205,7 +205,7 @@ class Game
         @renderer = @createRenderer()
         @camera = @createCamera()
         @controls = new Controls @camera, @renderer.domElement
-        @controls.lookSpeed = 0.125 * 0.016
+        @controls.lookSpeed = 0.5 * 0.016
         @player = new Player()
         @scene = new Scene()
         @player.addToScene @scene

@@ -293,7 +293,7 @@
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.controls = new Controls(this.camera, this.renderer.domElement);
-    this.controls.lookSpeed = 0.125 * 0.016;
+    this.controls.lookSpeed = 0.5 * 0.016;
     this.player = new Player();
     this.scene = new Scene();
     this.player.addToScene(this.scene);
