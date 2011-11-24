@@ -15,7 +15,8 @@
     this.phi = 0;
     this.theta = 0;
     this.mouseDragOn = false;
-    this.setViewHalf();
+    this.anchorx = null;
+    this.anchory = null;
     this.defineBindings();
     return this;
   };
@@ -33,21 +34,14 @@
       return false;
     });
   };
-  Controls.prototype.setViewHalf = function() {
-    if (this.domElement === document) {
-      this.viewHalfX = window.innerWidth / 2;
-      this.viewHalfY = window.innerHeight / 2;
-    } else {
-      this.viewHalfX = this.domElement.offsetWidth / 2 + this.domElement.offsetLeft;
-      this.viewHalfY = this.domElement.offsetHeight / 2 + this.domElement.offsetTop;
-      this.domElement.setAttribute("tabindex", -1);
-    }
-    return null;
-  };
   Controls.prototype.onMouseDown = function(event) {
     if (this.domElement !== document) {
       this.domElement.focus();
     }
+    this.anchorx = event.pageX;
+    this.anchory = event.pageY;
+    this.mouseX = 0;
+    this.mouseY = 0;
     this.mouseDragOn = true;
     return false;
   };
@@ -56,21 +50,25 @@
     return false;
   };
   Controls.prototype.onMouseMove = function(event) {
-    this.mouseX = event.pageX - this.viewHalfX;
-    this.mouseY = event.pageY - this.viewHalfY;
+    if (!(this.mouseDragOn)) {
+      return null;
+    }
+    this.mouseX = event.pageX - this.anchorx;
+    this.mouseY = event.pageY - this.anchory;
+    puts("are: ", [this.mouseX, this.mouseY]);
     return null;
   };
   Controls.prototype.halfCircle = Math.PI / 180;
   Controls.prototype.update = function() {
     var _ref, cos, max, min, p, sin;
+    if (!(this.mouseDragOn)) {
+      return null;
+    }
     _ref = Math;
     sin = _ref.sin;
     cos = _ref.cos;
     max = _ref.max;
     min = _ref.min;
-    if (!(this.mouseDragOn)) {
-      return null;
-    }
     this.lon += this.mouseX * this.lookSpeed;
     this.lat -= this.mouseY * this.lookSpeed;
     this.lat = max(-85, min(85, this.lat));
