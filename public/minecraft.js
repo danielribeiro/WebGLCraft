@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, CollisionHelper, CubeGeometry, DirectionalLight, Game, Grid, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, Scene, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -24,6 +24,15 @@
   _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
+  _ref = THREE;
+  Texture = _ref.Texture;
+  UVMapping = _ref.UVMapping;
+  RepeatWrapping = _ref.RepeatWrapping;
+  RepeatWrapping = _ref.RepeatWrapping;
+  NearestFilter = _ref.NearestFilter;
+  _ref = THREE;
+  LinearMipMapLinearFilter = _ref.LinearMipMapLinearFilter;
+  ClampToEdgeWrapping = _ref.ClampToEdgeWrapping;
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
@@ -215,22 +224,60 @@
     }
     return ret;
   };
+  TextureHelper = {
+    loadTexture: function(path) {
+      var image, texture;
+      image = new Image();
+      image.src = path;
+      texture = new Texture(image, new UVMapping(), ClampToEdgeWrapping, ClampToEdgeWrapping, NearestFilter, LinearMipMapLinearFilter);
+      image.onload = function() {
+        return (texture.needsUpdate = true);
+      };
+      return new THREE.MeshLambertMaterial({
+        map: texture,
+        ambient: 0xbbbbbb
+      });
+    },
+    tileTexture: function(path, repeatx, repeaty) {
+      var image, texture;
+      image = new Image();
+      image.src = path;
+      texture = new Texture(image, new UVMapping(), RepeatWrapping, RepeatWrapping, NearestFilter, LinearMipMapLinearFilter);
+      texture.repeat.x = repeatx;
+      texture.repeat.y = repeaty;
+      image.onload = function() {
+        return (texture.needsUpdate = true);
+      };
+      return new THREE.MeshLambertMaterial({
+        map: texture,
+        ambient: 0xbbbbbb
+      });
+    }
+  };
+  Floor = function(width, height) {
+    var material, plane, planeGeo, repeatX, repeatY;
+    repeatX = width / 50;
+    repeatY = height / 50;
+    material = TextureHelper.tileTexture("./textures/dirt.png", repeatX, repeatY);
+    planeGeo = new PlaneGeometry(width, height, 1, 1);
+    plane = new Mesh(planeGeo, material);
+    plane.position.y = -1;
+    plane.rotation.x = -Math.PI / 2;
+    plane.name = 'floor';
+    this.plane = plane;
+    return this;
+  };
+  Floor.prototype.addToScene = function(scene) {
+    return scene.add(this.plane);
+  };
   Game = function() {
     var dirt, grass, grass_dirt, materials;
     this.rad = 50;
-    grass_dirt = this.loadTexture("./textures/grass_dirt.png");
-    grass = this.loadTexture("./textures/grass.png");
-    dirt = this.loadTexture("./textures/dirt.png");
+    grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
+    grass = TextureHelper.loadTexture("./textures/grass.png");
+    dirt = TextureHelper.loadTexture("./textures/dirt.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
-    this.geo = new THREE.CubeGeometry(50, 50, 50, 1, 1, 1, materials, {
-      px: true,
-      nx: true,
-      py: true,
-      ny: true,
-      pz: true,
-      nz: true
-    });
-    this.planeMat = this.simpleTexture("./textures/dirt.png");
+    this.geo = new THREE.CubeGeometry(50, 50, 50, 1, 1, 1, materials);
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
     });
@@ -248,7 +295,7 @@
     this.player = new Player();
     this.scene = new Scene();
     this.player.addToScene(this.scene);
-    this.scene.add(this.createFloor());
+    new Floor(8000, 6000).addToScene(this.scene);
     this.scene.add(this.camera);
     this.populateWorld();
     this.addLights(this.scene);
@@ -313,7 +360,7 @@
     mesh = new Mesh(this.geo, new THREE.MeshFaceMaterial());
     mesh.geometry.dynamic = false;
     mesh.position.set(x, y, z);
-    mesh.name = ("red block at " + (x) + " " + (y) + " " + (z));
+    mesh.name = "world block";
     this.intoGrid(x, y, z, mesh);
     this.scene.add(mesh);
     mesh.updateMatrix();
@@ -336,15 +383,6 @@
     renderer.clear();
     $('#container').append(renderer.domElement);
     return renderer;
-  };
-  Game.prototype.createFloor = function() {
-    var plane, planeGeo;
-    planeGeo = new PlaneGeometry(4000, 2000, 1, 1);
-    plane = new Mesh(planeGeo, this.planeMat);
-    plane.position.y = -1;
-    plane.rotation.x = -Math.PI / 2;
-    plane.name = 'floor';
-    return plane;
   };
   Game.prototype.addLights = function(scene) {
     var ambientLight, directionalLight;
@@ -512,54 +550,34 @@
     }
     return null;
   };
-  Game.prototype.loadTexture = function(path) {
-    var image, texture;
-    image = new Image();
-    image.src = path;
-    texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter);
-    image.onload = function() {
-      return (texture.needsUpdate = true);
-    };
-    return new THREE.MeshLambertMaterial({
-      map: texture,
-      ambient: 0xbbbbbb
-    });
-  };
-  Game.prototype.simpleTexture = function(path) {
-    var image, texture;
-    image = new Image();
-    image.src = path;
-    texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter);
-    texture.repeat.x = 100;
-    texture.repeat.y = 100;
-    image.onload = function() {
-      return (texture.needsUpdate = true);
-    };
-    return new THREE.MeshLambertMaterial({
-      map: texture,
-      ambient: 0xbbbbbb
-    });
-  };
   init_web_app = function() {
     return new Game().start();
   };
 window.AmbientLight = AmbientLight
+window.ClampToEdgeWrapping = ClampToEdgeWrapping
 window.CollisionHelper = CollisionHelper
 window.CubeGeometry = CubeGeometry
 window.DirectionalLight = DirectionalLight
+window.Floor = Floor
 window.Game = Game
 window.Grid = Grid
+window.LinearMipMapLinearFilter = LinearMipMapLinearFilter
 window.Matrix4 = Matrix4
 window.Mesh = Mesh
 window.MeshLambertMaterial = MeshLambertMaterial
 window.MeshNormalMaterial = MeshNormalMaterial
+window.NearestFilter = NearestFilter
 window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera
 window.PlaneGeometry = PlaneGeometry
 window.Player = Player
 window.PointLight = PointLight
 window.Ray = Ray
+window.RepeatWrapping = RepeatWrapping
 window.Scene = Scene
+window.Texture = Texture
+window.TextureHelper = TextureHelper
+window.UVMapping = UVMapping
 window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref

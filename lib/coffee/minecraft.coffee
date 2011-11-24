@@ -3,6 +3,8 @@
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
 {AmbientLight, DirectionalLight, PointLight, Ray, Vector3} = THREE
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
+{Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
+{LinearMipMapLinearFilter, ClampToEdgeWrapping} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
 
@@ -142,22 +144,57 @@ class CollisionHelper
         return ret
 
 
+TextureHelper =
+    loadTexture: (path) ->
+        image = new Image()
+        image.src = path
+        texture = new Texture(image, new UVMapping(), ClampToEdgeWrapping, ClampToEdgeWrapping, NearestFilter, LinearMipMapLinearFilter)
+        image.onload = -> texture.needsUpdate = true
+        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
+
+
+    tileTexture: (path, repeatx, repeaty) ->
+        image = new Image()
+        image.src = path
+        texture = new Texture(image, new UVMapping(), RepeatWrapping,
+        RepeatWrapping, NearestFilter, LinearMipMapLinearFilter)
+        texture.repeat.x = repeatx
+        texture.repeat.y = repeaty
+        image.onload = -> texture.needsUpdate = true
+        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
+
+
+
+class Floor
+    constructor: (width, height) ->
+        repeatX = width / 50
+        repeatY = height / 50
+        material = TextureHelper.tileTexture("./textures/dirt.png", repeatX, repeatY)
+        planeGeo = new PlaneGeometry(width, height, 1, 1)
+        plane = new Mesh(planeGeo, material)
+        plane.position.y = -1
+        plane.rotation.x = -Math.PI / 2
+        plane.name = 'floor'
+        @plane = plane
+
+    addToScene: (scene) -> scene.add @plane
+
+
 class Game
     constructor: ->
         @rad = 50
         # @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
 
-        grass_dirt = @loadTexture("./textures/grass_dirt.png")
-        grass = @loadTexture("./textures/grass.png")
-        dirt = @loadTexture("./textures/dirt.png")
+        grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
+        grass = TextureHelper.loadTexture "./textures/grass.png"
+        dirt = TextureHelper.loadTexture "./textures/dirt.png"
         materials = [grass_dirt, #right
             grass_dirt, # left
             grass, # top
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials, { px: true, nx: true, py: true, ny: true, pz: true, nz: true})
-        @planeMat = @simpleTexture("./textures/dirt.png")
+        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials)
 
         @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
@@ -170,7 +207,7 @@ class Game
         @player = new Player()
         @scene = new Scene()
         @player.addToScene @scene
-        @scene.add @createFloor()
+        new Floor(8000, 6000).addToScene @scene
         @scene.add @camera
         @populateWorld()
         @addLights @scene
@@ -217,7 +254,7 @@ class Game
         mesh = new Mesh(@geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
         mesh.position.set x, y, z
-        mesh.name = "red block at #{x} #{y} #{z}"
+        mesh.name = "world block"
         @intoGrid x, y, z, mesh
         @scene.add mesh
         mesh.updateMatrix()
@@ -238,17 +275,6 @@ class Game
         $('#container').append(renderer.domElement)
         renderer
 
-
-    createFloor: ->
-        planeGeo = new PlaneGeometry(4000, 2000, 1, 1)
-        # planeMat = new MeshLambertMaterial(color: 0x00FF00)
-        plane = new Mesh(planeGeo, @planeMat)
-        plane.position.y = -1
-        plane.rotation.x = -Math.PI / 2
-        # plane.receiveShadow = true
-        plane.name = 'floor'
-        return plane
-
     addLights: (scene) ->
         ambientLight = new AmbientLight(0xcccccc)
         scene.add ambientLight
@@ -256,9 +282,6 @@ class Game
         directionalLight.position.set 1, 1, 0.5
         directionalLight.position.normalize()
         scene.add directionalLight
-        # p = new PointLight(0xffffff, 1.5)
-        # p.position.set 200, 200, 300
-        # scene.add p
 
     cameraKeys:
         8: 'z-'
@@ -353,24 +376,6 @@ class Game
             $('#pos' + axis).html String @player.position axis
         return
 
-
-
-    loadTexture: (path) ->
-        image = new Image()
-        image.src = path
-        texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter)
-        image.onload = -> texture.needsUpdate = true
-        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
-
-
-    simpleTexture: (path) ->
-        image = new Image()
-        image.src = path
-        texture = new THREE.Texture(image, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping, THREE.NearestFilter, THREE.LinearMipMapLinearFilter)
-        texture.repeat.x = 100
-        texture.repeat.y = 100
-        image.onload = -> texture.needsUpdate = true
-        new THREE.MeshLambertMaterial(map: texture, ambient: 0xbbbbbb)
 
 
 init_web_app = -> new Game().start()
