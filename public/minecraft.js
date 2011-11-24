@@ -461,7 +461,7 @@
     d: 'x+'
   };
   Game.prototype.shouldJump = function() {
-    return this.keysDown.space && this.onGround;
+    return this.keysDown.space && this.onGround && this.move.y === 0;
   };
   Game.prototype.defineMove = function() {
     var _ref2, _ref3, action, axis, baseVel, key, operation, vel;
@@ -504,13 +504,13 @@
     return null;
   };
   Game.prototype.debug = function() {
-    var _i, _len, _ref2, _result, axis;
-    _result = []; _ref2 = this.axes;
+    var _i, _len, _ref2, axis;
+    _ref2 = this.axes;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       axis = _ref2[_i];
-      _result.push($('#pos' + axis).html(String(this.player.position(axis))));
+      $('#pos' + axis).html(String(this.player.position(axis)));
     }
-    return _result;
+    return null;
   };
   Game.prototype.loadTexture = function(path) {
     var image, texture;

@@ -321,7 +321,7 @@ class Game
         a: 'x-'
         d: 'x+'
 
-    shouldJump: -> @keysDown.space and @onGround
+    shouldJump: -> @keysDown.space and @onGround and @move.y == 0
 
     defineMove: ->
         baseVel = 10
@@ -351,6 +351,7 @@ class Game
     debug: ->
         for axis in @axes
             $('#pos' + axis).html String @player.position axis
+        return
 
 
 
