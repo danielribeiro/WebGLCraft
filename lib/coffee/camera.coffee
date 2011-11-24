@@ -3,7 +3,7 @@ class Controls
         @object = object
         @target = new THREE.Vector3 0, 0, 0
         @domElement = domElement or document
-        @lookSpeed = 0.01
+        @lookSpeed = 0.2
         @mouseX = 0
         @mouseY = 0
         @lat = 0
@@ -18,40 +18,41 @@ class Controls
     defineBindings: ->
         $(@domElement).mousemove (e) => @onMouseMove e
         $(@domElement).mousedown (e) => @onMouseDown e
-        $(@domElement).mouseup (e) => @onMouseUp e
+        $(@domElement).mouseup => @onMouseUp()
         $(@domElement).bind "contextmenu", -> false
+        $(@domElement).mouseleave => @onMouseUp()
 
     onMouseDown: (event) ->
         @domElement.focus() if @domElement isnt document
         @anchorx = event.pageX
         @anchory = event.pageY
-        @mouseX = 0
-        @mouseY = 0
+        @setMouse event
         @mouseDragOn = true
         return false
 
-    onMouseUp: (event) ->
+    onMouseUp: ->
         @mouseDragOn = false
         return false
 
+    setMouse: (event) ->
+        @mouseX = event.pageX
+        @mouseY = event.pageY
+
     onMouseMove: (event) ->
         return unless @mouseDragOn
-        @mouseX = event.pageX - @anchorx
-        @mouseY = event.pageY - @anchory
-        puts "are: ", [@mouseX, @mouseY]
+        @setMouse event
         return
 
     halfCircle:  Math.PI / 180
 
     update: ->
         return unless @mouseDragOn
+        return if @mouseX is @anchorx and @mouseY is @anchory
         {sin, cos, max, min} = Math
-        @lon += @mouseX * @lookSpeed
-        @lat -= @mouseY * @lookSpeed
-        # @anchorx = @mouseX
-        # @anchory = @mouseY
-        # @mouseX = 0
-        # @mouseY = 0
+        @lon += (@mouseX - @anchorx) * @lookSpeed
+        @lat -= (@mouseY - @anchory) * @lookSpeed
+        @anchorx = @mouseX
+        @anchory = @mouseY
         @lat = max(-85, min(85, @lat))
         @phi = (90 - @lat) * @halfCircle
         @theta = @lon * @halfCircle

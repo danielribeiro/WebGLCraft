@@ -293,7 +293,6 @@
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
     this.controls = new Controls(this.camera, this.renderer.domElement);
-    this.controls.lookSpeed = 0.5 * 0.016;
     this.player = new Player();
     this.scene = new Scene();
     this.player.addToScene(this.scene);
@@ -428,8 +427,7 @@
   Game.prototype.defineControls = function() {
     var _i, _len, _ref2;
     this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
-      this.camera.position[axis] += vel;
-      return this.camera.lookAt(vec(0, 0, 0));
+      return this.camera.position[axis] += vel;
     }, this));
     _ref2 = "wasd".split('').concat('space');
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {

@@ -205,7 +205,6 @@ class Game
         @renderer = @createRenderer()
         @camera = @createCamera()
         @controls = new Controls @camera, @renderer.domElement
-        @controls.lookSpeed = 0.5 * 0.016
         @player = new Player()
         @scene = new Scene()
         @player.addToScene @scene
@@ -302,7 +301,6 @@ class Game
     defineControls: ->
         @_setBinds 30, @cameraKeys, (axis, vel) =>
             @camera.position[axis] += vel
-            @camera.lookAt vec 0, 0, 0
         for key in "wasd".split('').concat('space')
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
