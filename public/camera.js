@@ -11,13 +11,12 @@
     this.lookSpeed = 0.005;
     this.heightCoef = 1.0;
     this.heightMin = 0.0;
-    this.constrainVertical = false;
     this.verticalMin = 0;
     this.verticalMax = Math.PI;
     this.mouseX = 0;
     this.mouseY = 0;
     this.lat = 0;
-    this.lon = 0;
+    this.lon = 220;
     this.phi = 0;
     this.theta = 0;
     this.mouseDragOn = false;
@@ -65,7 +64,7 @@
     return null;
   };
   Controls.prototype.update = function() {
-    var position, targetPosition, verticalLookRatio;
+    var position;
     if (!(this.mouseDragOn)) {
       return null;
     }
@@ -74,29 +73,18 @@
     this.lat = Math.max(-85, Math.min(85, this.lat));
     this.phi = (90 - this.lat) * Math.PI / 180;
     this.theta = this.lon * Math.PI / 180;
-    targetPosition = this.target;
-    position = this.object.position;
-    targetPosition.x = position.x + 100 * Math.sin(this.phi) * Math.cos(this.theta);
-    targetPosition.y = position.y + 100 * Math.cos(this.phi);
-    targetPosition.z = position.z + 100 * Math.sin(this.phi) * Math.sin(this.theta);
-    verticalLookRatio = 1;
-    if (this.constrainVertical) {
-      verticalLookRatio = Math.PI / (this.verticalMax - this.verticalMin);
-    }
     this.lon += this.mouseX * this.lookSpeed;
-    this.lat -= this.mouseY * this.lookSpeed * verticalLookRatio;
+    this.lat -= this.mouseY * this.lookSpeed;
     this.lat = Math.max(-85, Math.min(85, this.lat));
     this.phi = (90 - this.lat) * Math.PI / 180;
     this.theta = this.lon * Math.PI / 180;
-    if (this.constrainVertical) {
-      this.phi = map_linear(this.phi, 0, Math.PI, this.verticalMin, this.verticalMax);
-    }
-    targetPosition = this.target;
     position = this.object.position;
-    targetPosition.x = position.x + 100 * Math.sin(this.phi) * Math.cos(this.theta);
-    targetPosition.y = position.y + 100 * Math.cos(this.phi);
-    targetPosition.z = position.z + 100 * Math.sin(this.phi) * Math.sin(this.theta);
-    this.object.lookAt(targetPosition);
+    assoc(this.target, {
+      x: position.x + 100 * Math.sin(this.phi) * Math.cos(this.theta),
+      y: position.y + 100 * Math.cos(this.phi),
+      z: position.z + 100 * Math.sin(this.phi) * Math.sin(this.theta)
+    });
+    this.object.lookAt(this.target);
     return null;
   };
 window.Controls = Controls

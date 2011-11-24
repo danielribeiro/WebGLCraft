@@ -7,13 +7,12 @@ class Controls
         @lookSpeed = 0.005
         @heightCoef = 1.0
         @heightMin = 0.0
-        @constrainVertical = false
         @verticalMin = 0
         @verticalMax = Math.PI
         @mouseX = 0
         @mouseY = 0
         @lat = 0
-        @lon = 0
+        @lon = 220
         @phi = 0
         @theta = 0
         @mouseDragOn = false
@@ -56,23 +55,15 @@ class Controls
         @lat = Math.max(-85, Math.min(85, @lat))
         @phi = (90 - @lat) * Math.PI / 180
         @theta = @lon * Math.PI / 180
-        targetPosition = @target
-        position = @object.position
-        targetPosition.x = position.x + 100 * Math.sin(@phi) * Math.cos(@theta)
-        targetPosition.y = position.y + 100 * Math.cos(@phi)
-        targetPosition.z = position.z + 100 * Math.sin(@phi) * Math.sin(@theta)
-        verticalLookRatio = 1
-        verticalLookRatio = Math.PI / (@verticalMax - @verticalMin)  if @constrainVertical
         @lon += @mouseX * @lookSpeed
-        @lat -= @mouseY * @lookSpeed * verticalLookRatio
+        @lat -= @mouseY * @lookSpeed
         @lat = Math.max(-85, Math.min(85, @lat))
         @phi = (90 - @lat) * Math.PI / 180
         @theta = @lon * Math.PI / 180
-        @phi = map_linear(@phi, 0, Math.PI, @verticalMin, @verticalMax)  if @constrainVertical
-        targetPosition = @target
         position = @object.position
-        targetPosition.x = position.x + 100 * Math.sin(@phi) * Math.cos(@theta)
-        targetPosition.y = position.y + 100 * Math.cos(@phi)
-        targetPosition.z = position.z + 100 * Math.sin(@phi) * Math.sin(@theta)
-        @object.lookAt targetPosition
+        assoc @target,
+            x: position.x + 100 * Math.sin(@phi) * Math.cos(@theta)
+            y: position.y + 100 * Math.cos(@phi)
+            z: position.z + 100 * Math.sin(@phi) * Math.sin(@theta)
+        @object.lookAt @target
         return
