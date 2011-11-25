@@ -1,7 +1,7 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, PointLight, Ray, Vector3} = THREE
+{AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
 {MeshLambertMaterial, MeshNormalMaterial} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
 {LinearMipMapLinearFilter, ClampToEdgeWrapping} = THREE
@@ -339,10 +339,10 @@ class Game
         @onGround = true
 
     playerKeys:
-        w: 'z-'
-        s: 'z+'
-        a: 'x-'
-        d: 'x+'
+        w: 'z+'
+        s: 'z-'
+        a: 'x+'
+        d: 'x-'
 
     shouldJump: -> @keysDown.space and @onGround and @move.y == 0
 
@@ -357,8 +357,20 @@ class Game
         if @shouldJump()
             @onGround = false
             @move.y += 17
+        @projectMoveOnCamera()
         @applyGravity()
         return
+
+    projectMoveOnCamera: ->
+        {x, z} = @controls.viewDirection()
+        frontDir = new Vector2(x, z).normalize()
+        rightDir = new Vector2(frontDir.y, -frontDir.x)
+        frontDir.multiplyScalar @move.z
+        rightDir.multiplyScalar @move.x
+        @move.x = frontDir.x + rightDir.x
+        @move.z = frontDir.y + rightDir.y
+
+
 
     applyGravity: -> @move.y -= 1.5 unless @move.y < -20
 

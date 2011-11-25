@@ -45,6 +45,8 @@ class Controls
 
     halfCircle:  Math.PI / 180
 
+    viewDirection: -> @target.clone().subSelf(@object.position)
+
     update: ->
         return unless @mouseDragOn
         return if @mouseX is @anchorx and @mouseY is @anchory

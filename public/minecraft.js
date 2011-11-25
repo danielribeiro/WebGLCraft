@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -21,6 +21,7 @@
   PointLight = _ref.PointLight;
   Ray = _ref.Ray;
   Vector3 = _ref.Vector3;
+  Vector2 = _ref.Vector2;
   _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
@@ -493,10 +494,10 @@
     return (this.onGround = true);
   };
   Game.prototype.playerKeys = {
-    w: 'z-',
-    s: 'z+',
-    a: 'x-',
-    d: 'x+'
+    w: 'z+',
+    s: 'z-',
+    a: 'x+',
+    d: 'x-'
   };
   Game.prototype.shouldJump = function() {
     return this.keysDown.space && this.onGround && this.move.y === 0;
@@ -522,8 +523,21 @@
       this.onGround = false;
       this.move.y += 17;
     }
+    this.projectMoveOnCamera();
     this.applyGravity();
     return null;
+  };
+  Game.prototype.projectMoveOnCamera = function() {
+    var _ref2, frontDir, rightDir, x, z;
+    _ref2 = this.controls.viewDirection();
+    x = _ref2.x;
+    z = _ref2.z;
+    frontDir = new Vector2(x, z).normalize();
+    rightDir = new Vector2(frontDir.y, -frontDir.x);
+    frontDir.multiplyScalar(this.move.z);
+    rightDir.multiplyScalar(this.move.x);
+    this.move.x = frontDir.x + rightDir.x;
+    return (this.move.z = frontDir.y + rightDir.y);
   };
   Game.prototype.applyGravity = function() {
     if (!(this.move.y < -20)) {
@@ -579,6 +593,7 @@ window.Scene = Scene
 window.Texture = Texture
 window.TextureHelper = TextureHelper
 window.UVMapping = UVMapping
+window.Vector2 = Vector2
 window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref

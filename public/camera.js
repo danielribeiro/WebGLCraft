@@ -63,6 +63,9 @@
     return null;
   };
   Controls.prototype.halfCircle = Math.PI / 180;
+  Controls.prototype.viewDirection = function() {
+    return this.target.clone().subSelf(this.object.position);
+  };
   Controls.prototype.update = function() {
     var _ref, cos, max, min, p, sin;
     if (!(this.mouseDragOn)) {
