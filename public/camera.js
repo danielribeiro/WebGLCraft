@@ -66,6 +66,22 @@
   Controls.prototype.viewDirection = function() {
     return this.target.clone().subSelf(this.object.position);
   };
+  Controls.prototype.move = function(newPosition) {
+    var _ref, cos, max, min, p, sin;
+    _ref = Math;
+    sin = _ref.sin;
+    cos = _ref.cos;
+    max = _ref.max;
+    min = _ref.min;
+    this.object.position = newPosition;
+    p = this.object.position;
+    assoc(this.target, {
+      x: p.x + 100 * sin(this.phi) * cos(this.theta),
+      y: p.y + 100 * cos(this.phi),
+      z: p.z + 100 * sin(this.phi) * sin(this.theta)
+    });
+    return null;
+  };
   Controls.prototype.update = function() {
     var _ref, cos, max, min, p, sin;
     if (!(this.mouseDragOn)) {

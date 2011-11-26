@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -37,28 +37,40 @@
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
+  CubeSize = 50;
   Player = function() {
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
     this.halfDepth = this.depth / 2;
+    this.pos = vec(850, 300, 35);
     this._cube = this._createCube();
+    this.eyesDelta = this.halfHeight * 0.75;
     return this;
   };
   Player.prototype.width = 25;
   Player.prototype.depth = 25;
   Player.prototype.height = 80;
+  Player.prototype.showCube = function() {
+    return (this._cube.position = this.pos.clone());
+  };
+  Player.prototype.eyesPosition = function() {
+    var ret;
+    ret = this.pos.clone();
+    ret.y += this.eyesDelta;
+    return ret;
+  };
   Player.prototype.position = function(axis) {
     if (!(typeof axis !== "undefined" && axis !== null)) {
-      return this._cube.position;
+      return this.pos;
     }
-    return this._cube.position[axis];
+    return this.pos[axis];
   };
   Player.prototype.incPosition = function(axis, val) {
-    this._cube.position[axis] += val;
+    this.pos[axis] += val;
     return null;
   };
   Player.prototype.setPosition = function(axis, val) {
-    this._cube.position[axis] = val;
+    this.pos[axis] = val;
     return null;
   };
   Player.prototype.addToScene = function(scene) {
@@ -140,8 +152,8 @@
     return null;
     return this;
   };
-  CollisionHelper.prototype.rad = 50;
-  CollisionHelper.prototype.halfRad = 25;
+  CollisionHelper.prototype.rad = CubeSize;
+  CollisionHelper.prototype.halfRad = CubeSize / 2;
   CollisionHelper.prototype.collides = function() {
     var _i, _len, _ref2, cube, playerBox;
     if (this.player.collidesWithGround()) {
@@ -257,8 +269,8 @@
   };
   Floor = function(width, height) {
     var material, plane, planeGeo, repeatX, repeatY;
-    repeatX = width / 50;
-    repeatY = height / 50;
+    repeatX = width / CubeSize;
+    repeatY = height / CubeSize;
     material = TextureHelper.tileTexture("./textures/bedrock.png", repeatX, repeatY);
     planeGeo = new PlaneGeometry(width, height, 1, 1);
     plane = new Mesh(planeGeo, material);
@@ -273,12 +285,12 @@
   };
   Game = function() {
     var dirt, grass, grass_dirt, materials;
-    this.rad = 50;
+    this.rad = CubeSize;
     grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
     grass = TextureHelper.loadTexture("./textures/grass.png");
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
-    this.geo = new THREE.CubeGeometry(50, 50, 50, 1, 1, 1, materials);
+    this.geo = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
     });
@@ -328,32 +340,33 @@
     return this.grid.put.apply(this.grid, args);
   };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, _result, i, j, size;
+    var _ref2, _ref3, _result, halfSize, i, j, size;
     size = 5;
+    halfSize = CubeSize / 2;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = 0; (0 <= _ref3 ? j <= _ref3 : j >= _ref3); (0 <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(200 + this.rad * i, 25, this.rad * j);
+        this.cubeAt((4 * CubeSize) + this.rad * i, halfSize, this.rad * j);
       }
     }
     _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(200 + this.rad * i, 75, this.rad * j);
+        this.cubeAt(4 * CubeSize + this.rad * i, CubeSize * 1.5, this.rad * j);
       }
     }
     _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(200 + this.rad * i, 75 + 150, this.rad * j);
+        this.cubeAt(4 * CubeSize + this.rad * i, CubeSize * 4.5, this.rad * j);
       }
     }
     _result = [];
     for (i = 0; i <= 10; i++) {
-      _result.push(this.cubeAt(800 + i * 50, 75 + i * 50, 50));
+      _result.push(this.cubeAt((16 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize));
     }
     return _result;
   };
@@ -442,8 +455,11 @@
         }, this));
       }).call(this);
     }
-    return $(document).bind('keydown', 'p', __bind(function() {
+    $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
+    }, this));
+    return $(document).bind('keydown', 'r', __bind(function() {
+      return this.player.showCube();
     }, this));
   };
   Game.prototype.collides = function() {
@@ -503,8 +519,9 @@
     return this.keysDown.space && this.onGround && this.move.y === 0;
   };
   Game.prototype.defineMove = function() {
-    var _ref2, _ref3, action, axis, baseVel, key, operation, vel;
-    baseVel = 10;
+    var _ref2, _ref3, action, axis, baseVel, jumpSpeed, key, operation, vel;
+    baseVel = 7;
+    jumpSpeed = 12;
     this.move.x = 0;
     this.move.z = 0;
     _ref2 = this.playerKeys;
@@ -521,7 +538,7 @@
     }
     if (this.shouldJump()) {
       this.onGround = false;
-      this.move.y += 17;
+      this.move.y += jumpSpeed;
     }
     this.projectMoveOnCamera();
     this.applyGravity();
@@ -541,7 +558,7 @@
   };
   Game.prototype.applyGravity = function() {
     if (!(this.move.y < -20)) {
-      return this.move.y -= 1.5;
+      return this.move.y -= 1;
     }
   };
   Game.prototype.tick = function() {
@@ -552,6 +569,11 @@
     this.moveCube();
     this.renderer.clear();
     this.controls.update();
+    if (!(this.thirdPerson)) {
+      this.controls.move(this.player.eyesPosition());
+    } else {
+      this.player.showCube();
+    }
     this.renderer.render(this.scene, this.camera);
     this.debug();
     return null;
@@ -572,6 +594,7 @@ window.AmbientLight = AmbientLight
 window.ClampToEdgeWrapping = ClampToEdgeWrapping
 window.CollisionHelper = CollisionHelper
 window.CubeGeometry = CubeGeometry
+window.CubeSize = CubeSize
 window.DirectionalLight = DirectionalLight
 window.Floor = Floor
 window.Game = Game

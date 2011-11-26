@@ -47,6 +47,16 @@ class Controls
 
     viewDirection: -> @target.clone().subSelf(@object.position)
 
+    move: (newPosition) ->
+        {sin, cos, max, min} = Math
+        @object.position = newPosition
+        p = @object.position
+        assoc @target,
+            x: p.x + 100 * sin(@phi) * cos(@theta)
+            y: p.y + 100 * cos(@phi)
+            z: p.z + 100 * sin(@phi) * sin(@theta)
+        return
+
     update: ->
         return unless @mouseDragOn
         return if @mouseX is @anchorx and @mouseY is @anchory

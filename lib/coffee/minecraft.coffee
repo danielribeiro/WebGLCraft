@@ -8,6 +8,8 @@
 
 vec = (x, y, z) -> new Vector3 x, y, z
 
+CubeSize = 50
+
 class Player
     width: 25
     depth: 25
@@ -17,19 +19,29 @@ class Player
         @halfHeight = @height / 2
         @halfWidth = @width / 2
         @halfDepth = @depth / 2
+        @pos = vec 850, 300, 35
         @_cube = @_createCube()
+        @eyesDelta = @halfHeight * 0.75
+
+    #todo: remove
+    showCube: -> @_cube.position = @pos.clone()
+
+    eyesPosition: ->
+        ret = @pos.clone()
+        ret.y += @eyesDelta
+        return ret
 
 
     position: (axis) ->
-        return @_cube.position unless axis?
-        return @_cube.position[axis]
+        return @pos unless axis?
+        return @pos[axis]
 
     incPosition: (axis, val) ->
-        @_cube.position[axis] += val
+        @pos[axis] += val
         return
 
     setPosition: (axis, val) ->
-        @_cube.position[axis] = val
+        @pos[axis] = val
         return
 
     addToScene: (scene) -> scene.add @_cube
@@ -85,8 +97,8 @@ class Grid
 
 class CollisionHelper
     constructor: (@player, @grid)-> return
-    rad: 50
-    halfRad: 25
+    rad: CubeSize
+    halfRad: CubeSize / 2
 
     collides: ->
         return true if @player.collidesWithGround()
@@ -167,8 +179,8 @@ TextureHelper =
 
 class Floor
     constructor: (width, height) ->
-        repeatX = width / 50
-        repeatY = height / 50
+        repeatX = width / CubeSize
+        repeatY = height / CubeSize
         material = TextureHelper.tileTexture("./textures/bedrock.png", repeatX, repeatY)
         planeGeo = new PlaneGeometry(width, height, 1, 1)
         plane = new Mesh(planeGeo, material)
@@ -182,7 +194,7 @@ class Floor
 
 class Game
     constructor: ->
-        @rad = 50
+        @rad = CubeSize
         # @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
 
         grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
@@ -194,7 +206,7 @@ class Game
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        @geo = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materials)
+        @geo = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
 
         @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
@@ -235,20 +247,21 @@ class Game
 
     populateWorld: ->
         size = 5
+        halfSize = CubeSize / 2
         for i in [0..(2 * size)]
             for j in [0..(2 * size)]
-                @cubeAt 200 + @rad * i, 25, @rad * j
+                @cubeAt (4 * CubeSize) + @rad * i, halfSize, @rad * j
 
         for i in [size..(2*size)]
             for j in [size..(2*size)]
-                @cubeAt 200 + @rad * i, 75, @rad * j
+                @cubeAt 4 * CubeSize + @rad * i, CubeSize * 1.5, @rad * j
 
         for i in [size..(2*size)]
             for j in [size..(2*size)]
-                @cubeAt 200 + @rad * i, 75 + 150, @rad * j
+                @cubeAt 4 * CubeSize + @rad * i, CubeSize * 4.5, @rad * j
 
         for i in [0..10]
-            @cubeAt 800 + i * 50, 75 + i * 50, 50
+            @cubeAt (16 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize
 
 
     cubeAt: (x, y, z) ->
@@ -305,6 +318,8 @@ class Game
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
         $(document).bind 'keydown', 'p', => @pause = !@pause
+        #todo: remove
+        $(document).bind 'keydown', 'r', => @player.showCube()
 
 
     collides: -> new CollisionHelper(@player, @grid).collides()
@@ -347,7 +362,8 @@ class Game
     shouldJump: -> @keysDown.space and @onGround and @move.y == 0
 
     defineMove: ->
-        baseVel = 10
+        baseVel = 7
+        jumpSpeed = 12
         @move.x = 0
         @move.z = 0
         for key, action of @playerKeys
@@ -356,7 +372,7 @@ class Game
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
             @onGround = false
-            @move.y += 17
+            @move.y += jumpSpeed
         @projectMoveOnCamera()
         @applyGravity()
         return
@@ -372,7 +388,7 @@ class Game
 
 
 
-    applyGravity: -> @move.y -= 1.5 unless @move.y < -20
+    applyGravity: -> @move.y -= 1 unless @move.y < -20
 
     tick: ->
         raise "Cube is way below ground level" if @player.position 'y' < 0
@@ -380,6 +396,10 @@ class Game
         @moveCube()
         @renderer.clear()
         @controls.update()
+        unless @thirdPerson
+            @controls.move @player.eyesPosition()
+        else
+            @player.showCube()
         @renderer.render @scene, @camera
         @debug()
         return
