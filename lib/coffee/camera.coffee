@@ -3,7 +3,7 @@ class Controls
         @object = object
         @target = new THREE.Vector3 0, 0, 0
         @domElement = domElement or document
-        @lookSpeed = 0.2
+        @lookSpeed = 0.20
         @mouseX = 0
         @mouseY = 0
         @lat = 0
@@ -18,9 +18,13 @@ class Controls
     defineBindings: ->
         $(@domElement).mousemove (e) => @onMouseMove e
         $(@domElement).mousedown (e) => @onMouseDown e
-        $(@domElement).mouseup => @onMouseUp()
+        $(@domElement).mouseup (e) => @onMouseUp e
         $(@domElement).bind "contextmenu", -> false
-        $(@domElement).mouseleave => @onMouseUp()
+        $(@domElement).mouseenter (e) => @onMouserEnter e
+
+    onMouserEnter: (event) ->
+        isLeftButtonDown = event.button == 0 and event.which == 1
+        @onMouseUp(event) unless isLeftButtonDown
 
     onMouseDown: (event) ->
         @domElement.focus() if @domElement isnt document
@@ -30,7 +34,7 @@ class Controls
         @mouseDragOn = true
         return false
 
-    onMouseUp: ->
+    onMouseUp: (event) ->
         @mouseDragOn = false
         return false
 

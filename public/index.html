@@ -19,9 +19,10 @@
         <script src='./minecraft.js' type='text/javascript'></script>
         <script type='text/javascript'>$(function () {init_web_app({"environment":"production"})})</script>
         <style type="text/css">
-            #container {
-                margin: 0 auto;
-                width: 800px;
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
             }
             #debug {
                 position: absolute;
@@ -30,11 +31,11 @@
         </style>
     </head>
     <body>
-        <div id="debug">
+<!--        <div id="debug">
             <div>x: <span id="posx">0</span></div>
             <div>y: <span id="posy">0</span></div>
             <div>z: <span id="posz">0</span></div>
-        </div>
-        <div><div id="container"></div></div>
+        </div>-->
+        <div id="container"></div>
     </body>
 </html>

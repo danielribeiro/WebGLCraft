@@ -11,9 +11,9 @@ vec = (x, y, z) -> new Vector3 x, y, z
 CubeSize = 50
 
 class Player
-    width: 25
-    depth: 25
-    height: 80
+    width: CubeSize * 0.3
+    depth: CubeSize * 0.3
+    height: CubeSize * 1.63
 
     constructor: ->
         @halfHeight = @height / 2
@@ -21,7 +21,7 @@ class Player
         @halfDepth = @depth / 2
         @pos = vec 850, 300, 35
         @_cube = @_createCube()
-        @eyesDelta = @halfHeight * 0.75
+        @eyesDelta = @halfHeight * 0.9
 
     #todo: remove
     showCube: -> @_cube.position = @pos.clone()
@@ -196,6 +196,8 @@ class Game
     constructor: ->
         @rad = CubeSize
         # @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
+        @width = window.innerWidth
+        @height = window.innerHeight
 
         grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
         grass = TextureHelper.loadTexture "./textures/grass.png"
@@ -261,7 +263,7 @@ class Game
                 @cubeAt 4 * CubeSize + @rad * i, CubeSize * 4.5, @rad * j
 
         for i in [0..10]
-            @cubeAt (16 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize
+            @cubeAt (15 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize
 
 
     cubeAt: (x, y, z) ->
@@ -276,14 +278,14 @@ class Game
 
 
     createCamera: ->
-        camera = new PerspectiveCamera(45, 800 / 600, 1, 10000)
+        camera = new PerspectiveCamera(45, @width / @height, 1, 10000)
         camera.position.set 1500, 400, 800
         camera.lookAt vec 0, 0, 0
         camera
 
     createRenderer: ->
         renderer = new WebGLRenderer(antialias: true)
-        renderer.setSize 800, 600
+        renderer.setSize @width, @height
         renderer.setClearColorHex(0xBFD1E5, 1.0)
         renderer.clear()
         $('#container').append(renderer.domElement)
@@ -387,8 +389,16 @@ class Game
         @move.z = frontDir.y + rightDir.y
 
 
-
     applyGravity: -> @move.y -= 1 unless @move.y < -20
+
+    setCameraEyes: ->
+        pos = @player.eyesPosition()
+        @controls.move pos
+        eyesDelta = @controls.viewDirection().normalize().multiplyScalar(20)
+        eyesDelta.y = 0
+        pos.subSelf eyesDelta
+        return
+
 
     tick: ->
         raise "Cube is way below ground level" if @player.position 'y' < 0
@@ -397,11 +407,11 @@ class Game
         @renderer.clear()
         @controls.update()
         unless @thirdPerson
-            @controls.move @player.eyesPosition()
+            @setCameraEyes()
         else
             @player.showCube()
         @renderer.render @scene, @camera
-        @debug()
+        # @debug()
         return
 
     debug: ->

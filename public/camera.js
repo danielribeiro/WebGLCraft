@@ -7,7 +7,7 @@
     this.object = object;
     this.target = new THREE.Vector3(0, 0, 0);
     this.domElement = domElement || document;
-    this.lookSpeed = 0.2;
+    this.lookSpeed = 0.20;
     this.mouseX = 0;
     this.mouseY = 0;
     this.lat = 0;
@@ -27,15 +27,22 @@
     $(this.domElement).mousedown(__bind(function(e) {
       return this.onMouseDown(e);
     }, this));
-    $(this.domElement).mouseup(__bind(function() {
-      return this.onMouseUp();
+    $(this.domElement).mouseup(__bind(function(e) {
+      return this.onMouseUp(e);
     }, this));
     $(this.domElement).bind("contextmenu", function() {
       return false;
     });
-    return $(this.domElement).mouseleave(__bind(function() {
-      return this.onMouseUp();
+    return $(this.domElement).mouseenter(__bind(function(e) {
+      return this.onMouserEnter(e);
     }, this));
+  };
+  Controls.prototype.onMouserEnter = function(event) {
+    var isLeftButtonDown;
+    isLeftButtonDown = event.button === 0 && event.which === 1;
+    if (!(isLeftButtonDown)) {
+      return this.onMouseUp(event);
+    }
   };
   Controls.prototype.onMouseDown = function(event) {
     if (this.domElement !== document) {
@@ -47,7 +54,7 @@
     this.mouseDragOn = true;
     return false;
   };
-  Controls.prototype.onMouseUp = function() {
+  Controls.prototype.onMouseUp = function(event) {
     this.mouseDragOn = false;
     return false;
   };

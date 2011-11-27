@@ -44,12 +44,12 @@
     this.halfDepth = this.depth / 2;
     this.pos = vec(850, 300, 35);
     this._cube = this._createCube();
-    this.eyesDelta = this.halfHeight * 0.75;
+    this.eyesDelta = this.halfHeight * 0.9;
     return this;
   };
-  Player.prototype.width = 25;
-  Player.prototype.depth = 25;
-  Player.prototype.height = 80;
+  Player.prototype.width = CubeSize * 0.3;
+  Player.prototype.depth = CubeSize * 0.3;
+  Player.prototype.height = CubeSize * 1.63;
   Player.prototype.showCube = function() {
     return (this._cube.position = this.pos.clone());
   };
@@ -286,6 +286,8 @@
   Game = function() {
     var dirt, grass, grass_dirt, materials;
     this.rad = CubeSize;
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
     grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
     grass = TextureHelper.loadTexture("./textures/grass.png");
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
@@ -366,7 +368,7 @@
     }
     _result = [];
     for (i = 0; i <= 10; i++) {
-      _result.push(this.cubeAt((16 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize));
+      _result.push(this.cubeAt((15 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize));
     }
     return _result;
   };
@@ -383,7 +385,7 @@
   };
   Game.prototype.createCamera = function() {
     var camera;
-    camera = new PerspectiveCamera(45, 800 / 600, 1, 10000);
+    camera = new PerspectiveCamera(45, this.width / this.height, 1, 10000);
     camera.position.set(1500, 400, 800);
     camera.lookAt(vec(0, 0, 0));
     return camera;
@@ -393,7 +395,7 @@
     renderer = new WebGLRenderer({
       antialias: true
     });
-    renderer.setSize(800, 600);
+    renderer.setSize(this.width, this.height);
     renderer.setClearColorHex(0xBFD1E5, 1.0);
     renderer.clear();
     $('#container').append(renderer.domElement);
@@ -561,6 +563,15 @@
       return this.move.y -= 1;
     }
   };
+  Game.prototype.setCameraEyes = function() {
+    var eyesDelta, pos;
+    pos = this.player.eyesPosition();
+    this.controls.move(pos);
+    eyesDelta = this.controls.viewDirection().normalize().multiplyScalar(20);
+    eyesDelta.y = 0;
+    pos.subSelf(eyesDelta);
+    return null;
+  };
   Game.prototype.tick = function() {
     if (this.player.position('y' < 0)) {
       raise("Cube is way below ground level");
@@ -570,12 +581,11 @@
     this.renderer.clear();
     this.controls.update();
     if (!(this.thirdPerson)) {
-      this.controls.move(this.player.eyesPosition());
+      this.setCameraEyes();
     } else {
       this.player.showCube();
     }
     this.renderer.render(this.scene, this.camera);
-    this.debug();
     return null;
   };
   Game.prototype.debug = function() {
