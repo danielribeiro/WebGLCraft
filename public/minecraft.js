@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -25,6 +25,7 @@
   _ref = THREE;
   MeshLambertMaterial = _ref.MeshLambertMaterial;
   MeshNormalMaterial = _ref.MeshNormalMaterial;
+  Projector = _ref.Projector;
   _ref = THREE;
   Texture = _ref.Texture;
   UVMapping = _ref.UVMapping;
@@ -307,7 +308,8 @@
     this.pause = false;
     this.renderer = this.createRenderer();
     this.camera = this.createCamera();
-    this.controls = new Controls(this.camera, this.renderer.domElement);
+    this.canvas = this.renderer.domElement;
+    this.controls = new Controls(this.camera, this.canvas);
     this.player = new Player();
     this.scene = new Scene();
     this.player.addToScene(this.scene);
@@ -317,6 +319,8 @@
     this.addLights(this.scene);
     this.renderer.render(this.scene, this.camera);
     this.defineControls();
+    this.projector = new Projector();
+    this.castRay = null;
     return this;
   };
   Game.prototype.posFromGrid = function(position) {
@@ -460,9 +464,41 @@
     $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
     }, this));
-    return $(document).bind('keydown', 'r', __bind(function() {
+    $(document).bind('keydown', 'r', __bind(function() {
       return this.player.showCube();
     }, this));
+    return $(this.canvas).mousedown(__bind(function(e) {
+      if (!(MouseEvent.isRightButton(event))) {
+        return null;
+      }
+      return (this.castRay = [event.pageX, event.pageY]);
+    }, this));
+  };
+  Game.prototype.placeBlock = function(x, y) {
+    var _i, _len, _ref2, _result, i, ints, ray, todir, vector;
+    if (!(typeof (_ref2 = this.castRay) !== "undefined" && _ref2 !== null)) {
+      return null;
+    }
+    _ref2 = this.castRay;
+    x = _ref2[0];
+    y = _ref2[1];
+    x = (x / this.width) * 2 - 1;
+    y = (-y / this.height) * 2 + 1;
+    vector = vec(x, y, 1);
+    this.projector.unprojectVector(vector, this.camera);
+    todir = vector.subSelf(this.camera.position).normalize();
+    ray = new Ray(this.camera.position, todir);
+    ints = (function() {
+      _result = []; _ref2 = ray.intersectScene(this.scene);
+      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+        i = _ref2[_i];
+        _result.push(i.object.name);
+      }
+      return _result;
+    }).call(this);
+    puts("ray.intersects:", ints);
+    this.castRay = null;
+    return null;
   };
   Game.prototype.collides = function() {
     return new CollisionHelper(this.player, this.grid).collides();
@@ -576,6 +612,7 @@
     if (this.player.position('y' < 0)) {
       raise("Cube is way below ground level");
     }
+    this.placeBlock();
     this.defineMove();
     this.moveCube();
     this.renderer.clear();
@@ -620,6 +657,7 @@ window.PerspectiveCamera = PerspectiveCamera
 window.PlaneGeometry = PlaneGeometry
 window.Player = Player
 window.PointLight = PointLight
+window.Projector = Projector
 window.Ray = Ray
 window.RepeatWrapping = RepeatWrapping
 window.Scene = Scene

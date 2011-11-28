@@ -1,3 +1,9 @@
+MouseEvent =
+    isLeftButton: (event) -> event.which == 1
+    isRightButton: (event) -> event.which == 3
+
+    isLeftButtonDown: (event) -> event.button == 0 and @isLeftButton event
+
 class Controls
     constructor: (object, domElement) ->
         @object = object
@@ -23,10 +29,10 @@ class Controls
         $(@domElement).mouseenter (e) => @onMouserEnter e
 
     onMouserEnter: (event) ->
-        isLeftButtonDown = event.button == 0 and event.which == 1
-        @onMouseUp(event) unless isLeftButtonDown
+        @onMouseUp(event) unless MouseEvent.isLeftButtonDown event
 
     onMouseDown: (event) ->
+        return unless MouseEvent.isLeftButton event
         @domElement.focus() if @domElement isnt document
         @anchorx = event.pageX
         @anchory = event.pageY
@@ -60,6 +66,26 @@ class Controls
             y: p.y + 100 * cos(@phi)
             z: p.z + 100 * sin(@phi) * sin(@theta)
         return
+
+    update: ->
+        return unless @mouseDragOn
+        return if @mouseX is @anchorx and @mouseY is @anchory
+        {sin, cos, max, min} = Math
+        @lon += (@mouseX - @anchorx) * @lookSpeed
+        @lat -= (@mouseY - @anchory) * @lookSpeed
+        @anchorx = @mouseX
+        @anchory = @mouseY
+        @lat = max(-85, min(85, @lat))
+        @phi = (90 - @lat) * @halfCircle
+        @theta = @lon * @halfCircle
+        p = @object.position
+        assoc @target,
+            x: p.x + 100 * sin(@phi) * cos(@theta)
+            y: p.y + 100 * cos(@phi)
+            z: p.z + 100 * sin(@phi) * sin(@theta)
+        @object.lookAt @target
+        return
+
 
     update: ->
         return unless @mouseDragOn

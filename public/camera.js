@@ -1,7 +1,18 @@
 (function() {
-  var Controls;
+  var Controls, MouseEvent;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
+  };
+  MouseEvent = {
+    isLeftButton: function(event) {
+      return event.which === 1;
+    },
+    isRightButton: function(event) {
+      return event.which === 3;
+    },
+    isLeftButtonDown: function(event) {
+      return event.button === 0 && this.isLeftButton(event);
+    }
   };
   Controls = function(object, domElement) {
     this.object = object;
@@ -38,13 +49,14 @@
     }, this));
   };
   Controls.prototype.onMouserEnter = function(event) {
-    var isLeftButtonDown;
-    isLeftButtonDown = event.button === 0 && event.which === 1;
-    if (!(isLeftButtonDown)) {
+    if (!(MouseEvent.isLeftButtonDown(event))) {
       return this.onMouseUp(event);
     }
   };
   Controls.prototype.onMouseDown = function(event) {
+    if (!(MouseEvent.isLeftButton(event))) {
+      return null;
+    }
     if (this.domElement !== document) {
       this.domElement.focus();
     }
@@ -118,5 +130,35 @@
     this.object.lookAt(this.target);
     return null;
   };
+  Controls.prototype.update = function() {
+    var _ref, cos, max, min, p, sin;
+    if (!(this.mouseDragOn)) {
+      return null;
+    }
+    if (this.mouseX === this.anchorx && this.mouseY === this.anchory) {
+      return null;
+    }
+    _ref = Math;
+    sin = _ref.sin;
+    cos = _ref.cos;
+    max = _ref.max;
+    min = _ref.min;
+    this.lon += (this.mouseX - this.anchorx) * this.lookSpeed;
+    this.lat -= (this.mouseY - this.anchory) * this.lookSpeed;
+    this.anchorx = this.mouseX;
+    this.anchory = this.mouseY;
+    this.lat = max(-85, min(85, this.lat));
+    this.phi = (90 - this.lat) * this.halfCircle;
+    this.theta = this.lon * this.halfCircle;
+    p = this.object.position;
+    assoc(this.target, {
+      x: p.x + 100 * sin(this.phi) * cos(this.theta),
+      y: p.y + 100 * cos(this.phi),
+      z: p.z + 100 * sin(this.phi) * sin(this.theta)
+    });
+    this.object.lookAt(this.target);
+    return null;
+  };
 window.Controls = Controls
+window.MouseEvent = MouseEvent
 }).call(this);

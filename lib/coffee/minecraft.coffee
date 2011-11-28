@@ -2,7 +2,7 @@
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
 {AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
-{MeshLambertMaterial, MeshNormalMaterial} = THREE
+{MeshLambertMaterial, MeshNormalMaterial, Projector} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
 {LinearMipMapLinearFilter, ClampToEdgeWrapping} = THREE
 
@@ -218,7 +218,8 @@ class Game
         @pause = off
         @renderer = @createRenderer()
         @camera = @createCamera()
-        @controls = new Controls @camera, @renderer.domElement
+        @canvas = @renderer.domElement
+        @controls = new Controls @camera, @canvas
         @player = new Player()
         @scene = new Scene()
         @player.addToScene @scene
@@ -228,6 +229,8 @@ class Game
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
+        @projector= new Projector()
+        @castRay = null
 
 
     posFromGrid: (position) ->
@@ -314,6 +317,7 @@ class Game
             $(document).bind 'keydown', key, -> incFunction(axis, vel)
 
     defineControls: ->
+        # todo: remove
         @_setBinds 30, @cameraKeys, (axis, vel) =>
             @camera.position[axis] += vel
         for key in "wasd".split('').concat('space')
@@ -322,6 +326,24 @@ class Game
         $(document).bind 'keydown', 'p', => @pause = !@pause
         #todo: remove
         $(document).bind 'keydown', 'r', => @player.showCube()
+        $(@canvas).mousedown (e) =>
+            return unless MouseEvent.isRightButton event
+            @castRay = [event.pageX, event.pageY]
+
+    placeBlock: (x, y) ->
+        return unless @castRay?
+        [x, y] = @castRay
+        x = (x / @width) * 2 - 1
+        y = (-y / @height) * 2 + 1
+        vector = vec x, y, 1
+        @projector.unprojectVector vector, @camera
+        todir = vector.subSelf(@camera.position).normalize()
+        ray = new Ray @camera.position, todir
+        # puts "todir is", [todir.x, todir.y, todir.z]
+        ints = i.object.name for i in ray.intersectScene @scene
+        puts "ray.intersects:", ints
+        @castRay = null
+        return
 
 
     collides: -> new CollisionHelper(@player, @grid).collides()
@@ -402,6 +424,7 @@ class Game
 
     tick: ->
         raise "Cube is way below ground level" if @player.position 'y' < 0
+        @placeBlock()
         @defineMove()
         @moveCube()
         @renderer.clear()
