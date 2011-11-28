@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, vec;
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -37,6 +37,9 @@
   ClampToEdgeWrapping = _ref.ClampToEdgeWrapping;
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
+  };
+  pvec = function(v) {
+    return [v.x, v.y, v.z].toString();
   };
   CubeSize = 50;
   Player = function() {
@@ -140,6 +143,9 @@
       }, this));
     }, this));
     return this;
+  };
+  Grid.prototype.insideGrid = function(x, y, z) {
+    return (0 <= x) && (x < this.size) && (0 <= y) && (y < this.size) && (0 <= z) && (z < this.size);
   };
   Grid.prototype.get = function(x, y, z) {
     return this.matrix[x][y][z];
@@ -323,17 +329,6 @@
     this.castRay = null;
     return this;
   };
-  Game.prototype.posFromGrid = function(position) {
-    var _ref2, x, y, z;
-    _ref2 = position;
-    x = _ref2.x;
-    y = _ref2.y;
-    z = _ref2.z;
-    return this.fromGrid(x, y, z);
-  };
-  Game.prototype.fromGrid = function(x, y, z) {
-    return this.grid.get.apply(this.grid, this.gridCoords(x, y, z));
-  };
   Game.prototype.gridCoords = function(x, y, z) {
     x = Math.floor(x / this.rad);
     y = Math.floor(y / this.rad);
@@ -346,43 +341,43 @@
     return this.grid.put.apply(this.grid, args);
   };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, _result, halfSize, i, j, size;
+    var _ref2, _ref3, _result, i, j, size;
     size = 5;
-    halfSize = CubeSize / 2;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = 0; (0 <= _ref3 ? j <= _ref3 : j >= _ref3); (0 <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt((4 * CubeSize) + this.rad * i, halfSize, this.rad * j);
+        this.cubeAt(4 + i, 0, j);
       }
     }
     _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(4 * CubeSize + this.rad * i, CubeSize * 1.5, this.rad * j);
+        this.cubeAt(4 + i, 1, j);
       }
     }
     _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
       _ref3 = (2 * size);
       for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(4 * CubeSize + this.rad * i, CubeSize * 4.5, this.rad * j);
+        this.cubeAt(4 + i, 4, j);
       }
     }
     _result = [];
-    for (i = 0; i <= 10; i++) {
-      _result.push(this.cubeAt((15 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize));
+    for (i = 0; i <= 30; i++) {
+      _result.push(this.cubeAt(15 + i, 1 + i, 1));
     }
     return _result;
   };
   Game.prototype.cubeAt = function(x, y, z) {
-    var mesh;
+    var halfcube, mesh;
     mesh = new Mesh(this.geo, new THREE.MeshFaceMaterial());
     mesh.geometry.dynamic = false;
-    mesh.position.set(x, y, z);
-    mesh.name = "world block";
-    this.intoGrid(x, y, z, mesh);
+    halfcube = CubeSize / 2;
+    mesh.position.set(CubeSize * x, y * CubeSize + halfcube, CubeSize * z);
+    mesh.name = ("block at " + (x) + ", " + (y) + ", " + (z));
+    this.grid.put(x, y, z, mesh);
     this.scene.add(mesh);
     mesh.updateMatrix();
     return (mesh.matrixAutoUpdate = false);
@@ -475,7 +470,7 @@
     }, this));
   };
   Game.prototype.placeBlock = function(x, y) {
-    var _i, _len, _ref2, _result, i, ints, ray, todir, vector;
+    var _ref2, todir, vector;
     if (!(typeof (_ref2 = this.castRay) !== "undefined" && _ref2 !== null)) {
       return null;
     }
@@ -487,17 +482,35 @@
     vector = vec(x, y, 1);
     this.projector.unprojectVector(vector, this.camera);
     todir = vector.subSelf(this.camera.position).normalize();
-    ray = new Ray(this.camera.position, todir);
-    ints = (function() {
-      _result = []; _ref2 = ray.intersectScene(this.scene);
-      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-        i = _ref2[_i];
-        _result.push(i.object.name);
-      }
-      return _result;
-    }).call(this);
-    puts("ray.intersects:", ints);
+    this.placeBlockInGrid(new Ray(this.camera.position, todir));
     this.castRay = null;
+    return null;
+  };
+  Game.prototype.placeBlockInGrid = function(ray) {
+    var _ref2, gridPos, normal, p, target, x, y, z;
+    target = ray.intersectScene(this.scene)[0];
+    if (!(typeof target !== "undefined" && target !== null)) {
+      return null;
+    }
+    if (target.object.name === 'floor') {
+      return null;
+    }
+    normal = target.face.normal.clone();
+    p = target.object.position.clone().addSelf(normal.multiplyScalar(CubeSize));
+    gridPos = this.gridCoords(p.x, p.y, p.z);
+    _ref2 = gridPos;
+    x = _ref2[0];
+    y = _ref2[1];
+    z = _ref2[2];
+    if (!(this.grid.insideGrid(x, y, z))) {
+      puts("outside grid", [x, y, z]);
+      return null;
+    }
+    if (typeof (_ref2 = this.grid.get(x, y, z)) !== "undefined" && _ref2 !== null) {
+      puts("there", [x, y, z]);
+      return null;
+    }
+    this.cubeAt(x, y, z);
     return null;
   };
   Game.prototype.collides = function() {
@@ -669,5 +682,6 @@ window.Vector3 = Vector3
 window.WebGLRenderer = WebGLRenderer
 window._ref = _ref
 window.init_web_app = init_web_app
+window.pvec = pvec
 window.vec = vec
 }).call(this);

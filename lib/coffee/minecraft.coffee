@@ -7,6 +7,7 @@
 {LinearMipMapLinearFilter, ClampToEdgeWrapping} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
+pvec = (v) -> [v.x, v.y, v.z].toString()
 
 CubeSize = 50
 
@@ -89,6 +90,8 @@ class Grid
             @matrix[i] = []
             @size.times (j) =>
                 @matrix[i][j] = []
+
+    insideGrid: (x, y, z) -> 0 <= x < @size and 0 <= y < @size and 0 <= z < @size
 
     get: (x, y, z) -> @matrix[x][y][z]
 
@@ -233,13 +236,6 @@ class Game
         @castRay = null
 
 
-    posFromGrid: (position) ->
-        {x, y, z} = position
-        return @fromGrid x, y, z
-
-    fromGrid: (x, y, z) ->
-        return @grid.get @gridCoords(x, y, z)...
-
     gridCoords: (x, y, z) ->
         x = Math.floor(x / @rad)
         y = Math.floor(y / @rad)
@@ -252,29 +248,30 @@ class Game
 
     populateWorld: ->
         size = 5
-        halfSize = CubeSize / 2
         for i in [0..(2 * size)]
             for j in [0..(2 * size)]
-                @cubeAt (4 * CubeSize) + @rad * i, halfSize, @rad * j
+                @cubeAt 4 + i, 0, j
 
         for i in [size..(2*size)]
             for j in [size..(2*size)]
-                @cubeAt 4 * CubeSize + @rad * i, CubeSize * 1.5, @rad * j
+                @cubeAt 4 + i, 1, j
 
         for i in [size..(2*size)]
             for j in [size..(2*size)]
-                @cubeAt 4 * CubeSize + @rad * i, CubeSize * 4.5, @rad * j
+                @cubeAt 4 + i, 4, j
 
-        for i in [0..10]
-            @cubeAt (15 * CubeSize) + i * CubeSize, CubeSize * 1.5 + i * CubeSize, CubeSize
+        for i in [0..30]
+            @cubeAt 15 + i, 1 + i, 1
 
 
     cubeAt: (x, y, z) ->
         mesh = new Mesh(@geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
-        mesh.position.set x, y, z
-        mesh.name = "world block"
-        @intoGrid x, y, z, mesh
+        halfcube = CubeSize / 2
+        mesh.position.set CubeSize * x, y * CubeSize + halfcube, CubeSize * z
+        mesh.name = "block at #{x}, #{y}, #{z}"
+        # @intoGrid x, y, z, mesh
+        @grid.put x, y, z, mesh
         @scene.add mesh
         mesh.updateMatrix()
         mesh.matrixAutoUpdate = false
@@ -338,11 +335,25 @@ class Game
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
         todir = vector.subSelf(@camera.position).normalize()
-        ray = new Ray @camera.position, todir
-        # puts "todir is", [todir.x, todir.y, todir.z]
-        ints = i.object.name for i in ray.intersectScene @scene
-        puts "ray.intersects:", ints
+        @placeBlockInGrid new Ray @camera.position, todir
         @castRay = null
+        return
+
+    placeBlockInGrid: (ray) ->
+        target = ray.intersectScene(@scene)[0]
+        return unless target?
+        return if target.object.name is 'floor' # todo: make it work with floor
+        normal = target.face.normal.clone()
+        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        gridPos = @gridCoords p.x, p.y, p.z
+        [x, y, z] = gridPos
+        unless @grid.insideGrid x, y, z
+            puts "outside grid", [x, y, z]
+            return
+        if @grid.get(x, y, z)?
+            puts "there", [x, y, z]
+            return
+        @cubeAt x, y, z
         return
 
 
