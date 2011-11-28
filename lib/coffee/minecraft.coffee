@@ -341,10 +341,20 @@ class Game
 
     placeBlockInGrid: (ray) ->
         target = ray.intersectScene(@scene)[0]
-        return unless target?
-        return if target.object.name is 'floor' # todo: make it work with floor
+        unless target?
+            puts "nothing"
+            ray.intersectScene(@scene)
+            return
         normal = target.face.normal.clone()
-        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        if target.object.name is 'floor'
+            matrix = target.object.matrixRotationWorld
+            p = vec().add target.point, matrix.multiplyVector3(normal.clone())
+            # p = target.point.clone().addSelf normal.multiplyScalar(CubeSize)
+            p.y += CubeSize / 2
+            p.z += CubeSize / 2
+            p.x += CubeSize / 2
+        else
+            p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
         gridPos = @gridCoords p.x, p.y, p.z
         [x, y, z] = gridPos
         unless @grid.insideGrid x, y, z

@@ -487,16 +487,23 @@
     return null;
   };
   Game.prototype.placeBlockInGrid = function(ray) {
-    var _ref2, gridPos, normal, p, target, x, y, z;
+    var _ref2, gridPos, matrix, normal, p, target, x, y, z;
     target = ray.intersectScene(this.scene)[0];
     if (!(typeof target !== "undefined" && target !== null)) {
-      return null;
-    }
-    if (target.object.name === 'floor') {
+      puts("nothing");
+      ray.intersectScene(this.scene);
       return null;
     }
     normal = target.face.normal.clone();
-    p = target.object.position.clone().addSelf(normal.multiplyScalar(CubeSize));
+    if (target.object.name === 'floor') {
+      matrix = target.object.matrixRotationWorld;
+      p = vec().add(target.point, matrix.multiplyVector3(normal.clone()));
+      p.y += CubeSize / 2;
+      p.z += CubeSize / 2;
+      p.x += CubeSize / 2;
+    } else {
+      p = target.object.position.clone().addSelf(normal.multiplyScalar(CubeSize));
+    }
     gridPos = this.gridCoords(p.x, p.y, p.z);
     _ref2 = gridPos;
     x = _ref2[0];
