@@ -21,11 +21,7 @@ class Player
         @halfWidth = @width / 2
         @halfDepth = @depth / 2
         @pos = vec 850, 300, 35
-        @_cube = @_createCube()
         @eyesDelta = @halfHeight * 0.9
-
-    #todo: remove
-    showCube: -> @_cube.position = @pos.clone()
 
     eyesPosition: ->
         ret = @pos.clone()
@@ -45,7 +41,6 @@ class Player
         @pos[axis] = val
         return
 
-    addToScene: (scene) -> scene.add @_cube
 
     collidesWithGround: -> @position('y') < @halfHeight
 
@@ -225,7 +220,6 @@ class Game
         @controls = new Controls @camera, @canvas
         @player = new Player()
         @scene = new Scene()
-        @player.addToScene @scene
         new Floor(50000, 50000).addToScene @scene
         @scene.add @camera
         @populateWorld()
@@ -234,6 +228,8 @@ class Game
         @defineControls()
         @projector= new Projector()
         @castRay = null
+        @moved = false
+        @toDelete = null
 
 
     gridCoords: (x, y, z) ->
@@ -299,35 +295,58 @@ class Game
         directionalLight.position.normalize()
         scene.add directionalLight
 
-    cameraKeys:
-        8: 'z-'
-        5: 'z+'
-        4: 'x-'
-        6: 'x+'
-        7: 'y+'
-        9: 'y-'
-
-    _setBinds: (baseVel, keys, incFunction)->
-        for key, action of keys
-            [axis, operation] = action
-            vel = if operation is '-' then -baseVel else baseVel
-            $(document).bind 'keydown', key, -> incFunction(axis, vel)
-
     defineControls: ->
-        # todo: remove
-        @_setBinds 30, @cameraKeys, (axis, vel) =>
-            @camera.position[axis] += vel
         for key in "wasd".split('').concat('space')
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
         $(document).bind 'keydown', 'p', => @pause = !@pause
-        #todo: remove
-        $(document).bind 'keydown', 'r', => @player.showCube()
-        $(@canvas).mousedown (e) =>
-            return unless MouseEvent.isRightButton event
-            @castRay = [event.pageX, event.pageY]
+        $(@canvas).mousedown (e) => @onMouseDown e
+        $(@canvas).mouseup (e) => @onMouseUp e
+        $(@canvas).mousemove (e) => @onMouseMove e
 
-    placeBlock: (x, y) ->
+    onMouseUp: (event) ->
+        if not @moved and MouseEvent.isLeftButton event
+            @toDelete = [event.pageX, event.pageY]
+        @moved = false
+
+    onMouseMove: (event) -> @moved = true
+
+    onMouseDown: (event) ->
+        @moved = false
+        return unless MouseEvent.isRightButton event
+        @castRay = [event.pageX, event.pageY]
+
+    deleteBlock: ->
+        return unless @toDelete?
+        [x, y] = @toDelete
+        x = (x / @width) * 2 - 1
+        y = (-y / @height) * 2 + 1
+        vector = vec x, y, 1
+        @projector.unprojectVector vector, @camera
+        todir = vector.subSelf(@camera.position).normalize()
+        @deleteBlockInGrid new Ray @camera.position, todir
+        @toDelete = null
+        return
+
+    findBlock: (ray) ->
+        for o in ray.intersectScene(@scene)
+            return o unless o.object.name in ['player', 'floor']
+        return null
+
+
+    deleteBlockInGrid: (ray) ->
+        target = @findBlock ray
+        return unless target?
+        mesh = target.object
+        @scene.remove mesh
+        {x, y, z} = mesh.position
+        puts "removing", mesh.name, "at", @gridCoords(x, y, z)
+        @intoGrid x, y, z, null
+        return
+
+
+
+    placeBlock: ->
         return unless @castRay?
         [x, y] = @castRay
         x = (x / @width) * 2 - 1
@@ -446,14 +465,12 @@ class Game
     tick: ->
         raise "Cube is way below ground level" if @player.position 'y' < 0
         @placeBlock()
+        @deleteBlock()
         @defineMove()
         @moveCube()
         @renderer.clear()
         @controls.update()
-        unless @thirdPerson
-            @setCameraEyes()
-        else
-            @player.showCube()
+        @setCameraEyes()
         @renderer.render @scene, @camera
         # @debug()
         return

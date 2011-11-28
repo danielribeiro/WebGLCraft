@@ -47,16 +47,12 @@
     this.halfWidth = this.width / 2;
     this.halfDepth = this.depth / 2;
     this.pos = vec(850, 300, 35);
-    this._cube = this._createCube();
     this.eyesDelta = this.halfHeight * 0.9;
     return this;
   };
   Player.prototype.width = CubeSize * 0.3;
   Player.prototype.depth = CubeSize * 0.3;
   Player.prototype.height = CubeSize * 1.63;
-  Player.prototype.showCube = function() {
-    return (this._cube.position = this.pos.clone());
-  };
   Player.prototype.eyesPosition = function() {
     var ret;
     ret = this.pos.clone();
@@ -76,9 +72,6 @@
   Player.prototype.setPosition = function(axis, val) {
     this.pos[axis] = val;
     return null;
-  };
-  Player.prototype.addToScene = function(scene) {
-    return scene.add(this._cube);
   };
   Player.prototype.collidesWithGround = function() {
     return this.position('y') < this.halfHeight;
@@ -318,7 +311,6 @@
     this.controls = new Controls(this.camera, this.canvas);
     this.player = new Player();
     this.scene = new Scene();
-    this.player.addToScene(this.scene);
     new Floor(50000, 50000).addToScene(this.scene);
     this.scene.add(this.camera);
     this.populateWorld();
@@ -327,6 +319,8 @@
     this.defineControls();
     this.projector = new Projector();
     this.castRay = null;
+    this.moved = false;
+    this.toDelete = null;
     return this;
   };
   Game.prototype.gridCoords = function(x, y, z) {
@@ -409,41 +403,8 @@
     directionalLight.position.normalize();
     return scene.add(directionalLight);
   };
-  Game.prototype.cameraKeys = {
-    8: 'z-',
-    5: 'z+',
-    4: 'x-',
-    6: 'x+',
-    7: 'y+',
-    9: 'y-'
-  };
-  Game.prototype._setBinds = function(baseVel, keys, incFunction) {
-    var _i, _ref2, _result, key;
-    _result = []; _ref2 = keys;
-    for (_i in _ref2) {
-      if (!__hasProp.call(_ref2, _i)) continue;
-      (function() {
-        var _ref3, axis, operation, vel;
-        var key = _i;
-        var action = _ref2[_i];
-        return _result.push((function() {
-          _ref3 = action;
-          axis = _ref3[0];
-          operation = _ref3[1];
-          vel = operation === '-' ? -baseVel : baseVel;
-          return $(document).bind('keydown', key, function() {
-            return incFunction(axis, vel);
-          });
-        })());
-      })();
-    }
-    return _result;
-  };
   Game.prototype.defineControls = function() {
     var _i, _len, _ref2;
-    this._setBinds(30, this.cameraKeys, __bind(function(axis, vel) {
-      return this.camera.position[axis] += vel;
-    }, this));
     _ref2 = "wasd".split('').concat('space');
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       (function() {
@@ -459,18 +420,78 @@
     $(document).bind('keydown', 'p', __bind(function() {
       return (this.pause = !this.pause);
     }, this));
-    $(document).bind('keydown', 'r', __bind(function() {
-      return this.player.showCube();
+    $(this.canvas).mousedown(__bind(function(e) {
+      return this.onMouseDown(e);
     }, this));
-    return $(this.canvas).mousedown(__bind(function(e) {
-      if (!(MouseEvent.isRightButton(event))) {
-        return null;
-      }
-      return (this.castRay = [event.pageX, event.pageY]);
+    $(this.canvas).mouseup(__bind(function(e) {
+      return this.onMouseUp(e);
+    }, this));
+    return $(this.canvas).mousemove(__bind(function(e) {
+      return this.onMouseMove(e);
     }, this));
   };
-  Game.prototype.placeBlock = function(x, y) {
-    var _ref2, todir, vector;
+  Game.prototype.onMouseUp = function(event) {
+    if (!this.moved && MouseEvent.isLeftButton(event)) {
+      this.toDelete = [event.pageX, event.pageY];
+    }
+    return (this.moved = false);
+  };
+  Game.prototype.onMouseMove = function(event) {
+    return (this.moved = true);
+  };
+  Game.prototype.onMouseDown = function(event) {
+    this.moved = false;
+    if (!(MouseEvent.isRightButton(event))) {
+      return null;
+    }
+    return (this.castRay = [event.pageX, event.pageY]);
+  };
+  Game.prototype.deleteBlock = function() {
+    var _ref2, todir, vector, x, y;
+    if (!(typeof (_ref2 = this.toDelete) !== "undefined" && _ref2 !== null)) {
+      return null;
+    }
+    _ref2 = this.toDelete;
+    x = _ref2[0];
+    y = _ref2[1];
+    x = (x / this.width) * 2 - 1;
+    y = (-y / this.height) * 2 + 1;
+    vector = vec(x, y, 1);
+    this.projector.unprojectVector(vector, this.camera);
+    todir = vector.subSelf(this.camera.position).normalize();
+    this.deleteBlockInGrid(new Ray(this.camera.position, todir));
+    this.toDelete = null;
+    return null;
+  };
+  Game.prototype.findBlock = function(ray) {
+    var _i, _len, _ref2, _ref3, o;
+    _ref2 = ray.intersectScene(this.scene);
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      o = _ref2[_i];
+      if (!(('player' === (_ref3 = o.object.name) || 'floor' === _ref3))) {
+        return o;
+      }
+    }
+    return null;
+  };
+  Game.prototype.deleteBlockInGrid = function(ray) {
+    var _ref2, mesh, target, x, y, z;
+    target = this.findBlock(ray);
+    if (!(typeof target !== "undefined" && target !== null)) {
+      return null;
+    }
+    mesh = target.object;
+    this.scene.remove(mesh);
+    _ref2 = mesh.position;
+    x = _ref2.x;
+    y = _ref2.y;
+    z = _ref2.z;
+    puts("removing", mesh.name, "at", this.gridCoords(x, y, z));
+    this.intoGrid(x, y, z, null);
+    return null;
+  };
+  Game.prototype.placeBlock = function() {
+    var _ref2, todir, vector, x, y;
     if (!(typeof (_ref2 = this.castRay) !== "undefined" && _ref2 !== null)) {
       return null;
     }
@@ -633,15 +654,12 @@
       raise("Cube is way below ground level");
     }
     this.placeBlock();
+    this.deleteBlock();
     this.defineMove();
     this.moveCube();
     this.renderer.clear();
     this.controls.update();
-    if (!(this.thirdPerson)) {
-      this.setCameraEyes();
-    } else {
-      this.player.showCube();
-    }
+    this.setCameraEyes();
     this.renderer.render(this.scene, this.camera);
     return null;
   };
