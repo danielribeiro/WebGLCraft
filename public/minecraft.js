@@ -181,7 +181,7 @@
     _ref2 = this.possibleCubes();
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       cube = _ref2[_i];
-      if (this.collideWithCube(playerBox, cube)) {
+      if (this._collideWithCube(playerBox, cube)) {
         return true;
       }
     }
@@ -195,7 +195,10 @@
     pos.z += value;
     return pos;
   };
-  CollisionHelper.prototype.collideWithCube = function(playerBox, cube) {
+  CollisionHelper.prototype.collideWithCube = function(cube) {
+    return this._collideWithCube(this.player.boundingBox(), cube);
+  };
+  CollisionHelper.prototype._collideWithCube = function(playerBox, cube) {
     var cubeBox, vmax, vmin;
     vmin = this._addToPosition(cube.position, -this.halfRad);
     vmax = this._addToPosition(cube.position, this.halfRad);
@@ -339,6 +342,7 @@
     this.castRay = null;
     this.moved = false;
     this.toDelete = null;
+    this.collisionHelper = new CollisionHelper(this.player, this.grid);
     return this;
   };
   Game.prototype.gridCoords = function(x, y, z) {
@@ -382,17 +386,23 @@
     }
     return _result;
   };
-  Game.prototype.cubeAt = function(x, y, z) {
+  Game.prototype.cubeAt = function(x, y, z, validatingFunction) {
     var halfcube, mesh;
     mesh = new Mesh(this.geo, new THREE.MeshFaceMaterial());
     mesh.geometry.dynamic = false;
     halfcube = CubeSize / 2;
     mesh.position.set(CubeSize * x, y * CubeSize + halfcube, CubeSize * z);
     mesh.name = ("block at " + (x) + ", " + (y) + ", " + (z));
+    if (typeof validatingFunction !== "undefined" && validatingFunction !== null) {
+      if (!(validatingFunction(mesh))) {
+        return null;
+      }
+    }
     this.grid.put(x, y, z, mesh);
     this.scene.add(mesh);
     mesh.updateMatrix();
-    return (mesh.matrixAutoUpdate = false);
+    mesh.matrixAutoUpdate = false;
+    return null;
   };
   Game.prototype.createCamera = function() {
     var camera;
@@ -559,6 +569,11 @@
     }
     return this.getAdjacentCubePosition(target);
   };
+  Game.prototype.createCubeAt = function(x, y, z) {
+    return this.cubeAt(x, y, z, __bind(function(cube) {
+      return !this.collisionHelper.collideWithCube(cube);
+    }, this));
+  };
   Game.prototype.placeBlockInGrid = function(ray) {
     var _ref2, gridPos, p, x, y, z;
     p = this.getNewCubePosition(ray);
@@ -576,11 +591,11 @@
     if (typeof (_ref2 = this.grid.get(x, y, z)) !== "undefined" && _ref2 !== null) {
       return null;
     }
-    this.cubeAt(x, y, z);
+    this.createCubeAt(x, y, z);
     return null;
   };
   Game.prototype.collides = function() {
-    return new CollisionHelper(this.player, this.grid).collides();
+    return this.collisionHelper.collides();
   };
   Game.prototype.start = function() {
     var animate;

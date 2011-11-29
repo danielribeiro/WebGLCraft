@@ -109,7 +109,7 @@ class CollisionHelper
         return true if @player.collidesWithGround()
         playerBox = @player.boundingBox()
         for cube in @possibleCubes()
-            return true if @collideWithCube playerBox, cube
+            return true if @_collideWithCube playerBox, cube
         return false
 
     _addToPosition: (position, value) ->
@@ -119,7 +119,9 @@ class CollisionHelper
         pos.z += value
         return pos
 
-    collideWithCube: (playerBox, cube) ->
+    collideWithCube: (cube) -> @_collideWithCube @player.boundingBox(), cube
+
+    _collideWithCube: (playerBox, cube) ->
         vmin = @_addToPosition cube.position, -@halfRad
         vmax = @_addToPosition cube.position, @halfRad
         cubeBox = {vmin, vmax}
@@ -237,6 +239,7 @@ class Game
         @castRay = null
         @moved = false
         @toDelete = null
+        @collisionHelper = new CollisionHelper(@player, @grid)
 
 
     gridCoords: (x, y, z) ->
@@ -267,18 +270,20 @@ class Game
             @cubeAt 15 + i, 1 + i, 1
 
 
-    cubeAt: (x, y, z) ->
+    cubeAt: (x, y, z, validatingFunction) ->
         mesh = new Mesh(@geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
         halfcube = CubeSize / 2
         mesh.position.set CubeSize * x, y * CubeSize + halfcube, CubeSize * z
         mesh.name = "block at #{x}, #{y}, #{z}"
         # @intoGrid x, y, z, mesh
+        if validatingFunction?
+            return unless validatingFunction(mesh)
         @grid.put x, y, z, mesh
         @scene.add mesh
         mesh.updateMatrix()
         mesh.matrixAutoUpdate = false
-
+        return
 
     createCamera: ->
         camera = new PerspectiveCamera(45, @width / @height, 1, 10000)
@@ -392,6 +397,9 @@ class Game
         return @getCubeOnFloorPosition ray unless target?
         return @getAdjacentCubePosition target
 
+    createCubeAt: (x, y, z) ->
+        @cubeAt x, y, z, (cube) => not @collisionHelper.collideWithCube cube
+
     placeBlockInGrid: (ray) ->
         p = @getNewCubePosition ray
         return unless p?
@@ -399,11 +407,11 @@ class Game
         [x, y, z] = gridPos
         return unless @grid.insideGrid x, y, z
         return if @grid.get(x, y, z)?
-        @cubeAt x, y, z
+        @createCubeAt x, y, z
         return
 
 
-    collides: -> new CollisionHelper(@player, @grid).collides()
+    collides: -> @collisionHelper.collides()
 
     start: ->
         animate = =>
