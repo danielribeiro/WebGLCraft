@@ -1,8 +1,8 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
-  var __bind = function(func, context) {
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, MethodTracer, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
+  var __hasProp = Object.prototype.hasOwnProperty, __slice = Array.prototype.slice, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
-  }, __hasProp = Object.prototype.hasOwnProperty;
+  };
   _ref = THREE;
   Object3D = _ref.Object3D;
   Matrix4 = _ref.Matrix4;
@@ -42,6 +42,56 @@
     return [v.x, v.y, v.z].toString();
   };
   CubeSize = 50;
+  MethodTracer = function() {
+    this.tracer = {};
+    return this;
+  };
+  MethodTracer.prototype.trace = function(clasname) {
+    var _i, _ref2, clas, name;
+    clas = eval(clasname);
+    _ref2 = clas.prototype;
+    for (_i in _ref2) {
+      if (!__hasProp.call(_ref2, _i)) continue;
+      (function() {
+        var tracer, uniqueId;
+        var name = _i;
+        var f = _ref2[_i];
+        if (typeof f === 'function') {
+          uniqueId = ("" + (clasname) + "#" + (name));
+          tracer = this.tracer;
+          tracer[uniqueId] = false;
+          return (clas.prototype[name] = function() {
+            var args;
+            args = __slice.call(arguments, 0);
+            tracer[uniqueId] = true;
+            return f.apply(this, args);
+          });
+        }
+      }).call(this);
+    }
+    return this;
+  };
+  MethodTracer.prototype.traceClasses = function(classNames) {
+    var _i, _len, _ref2, clas;
+    _ref2 = classNames.split(' ');
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      clas = _ref2[_i];
+      this.trace(clas);
+    }
+    return this;
+  };
+  MethodTracer.prototype.printUnused = function() {
+    var _ref2, id, used;
+    _ref2 = this.tracer;
+    for (id in _ref2) {
+      if (!__hasProp.call(_ref2, id)) continue;
+      used = _ref2[id];
+      if (!used) {
+        puts(id);
+      }
+    }
+    return this;
+  };
   Player = function() {
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
@@ -92,38 +142,6 @@
       vmin: vmin,
       vmax: vmax
     };
-  };
-  Player.prototype._directionLength = function(direction) {
-    if (direction.x !== 0) {
-      return this.width;
-    }
-    if (direction.y !== 0) {
-      return this.height;
-    }
-    if (direction.z !== 0) {
-      return this.depth;
-    }
-    return raise("Invalid Direction: 0, 0 ,0");
-  };
-  Player.prototype._createCube = function() {
-    var cube, geo;
-    geo = new CubeGeometry(this.width, this.height, this.depth);
-    cube = new Mesh(geo, new MeshNormalMaterial());
-    cube.geometry.dynamic = true;
-    cube.position.set(850, 300, 35);
-    cube.name = "player";
-    return cube;
-  };
-  Player.prototype._getClosest = function(intersections) {
-    var _i, _len, _ref2, _ref3, i;
-    _ref2 = intersections;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      i = _ref2[_i];
-      if (!(('player' === (_ref3 = i.object.name) || 'floor' === _ref3))) {
-        return i;
-      }
-    }
-    return null;
   };
   Grid = function(_arg) {
     this.size = _arg;
@@ -464,11 +482,11 @@
     return null;
   };
   Game.prototype.findBlock = function(ray) {
-    var _i, _len, _ref2, _ref3, o;
+    var _i, _len, _ref2, o;
     _ref2 = ray.intersectScene(this.scene);
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       o = _ref2[_i];
-      if (!(('player' === (_ref3 = o.object.name) || 'floor' === _ref3))) {
+      if (o.object.name !== 'floor') {
         return o;
       }
     }
@@ -486,7 +504,6 @@
     x = _ref2.x;
     y = _ref2.y;
     z = _ref2.z;
-    puts("removing", mesh.name, "at", this.gridCoords(x, y, z));
     this.intoGrid(x, y, z, null);
     return null;
   };
@@ -507,23 +524,46 @@
     this.castRay = null;
     return null;
   };
-  Game.prototype.placeBlockInGrid = function(ray) {
-    var _ref2, gridPos, matrix, normal, p, target, x, y, z;
-    target = ray.intersectScene(this.scene)[0];
-    if (!(typeof target !== "undefined" && target !== null)) {
-      puts("nothing");
-      ray.intersectScene(this.scene);
+  Game.prototype.getAdjacentCubePosition = function(target) {
+    var matrix, normal, p;
+    normal = target.face.normal.clone();
+    matrix = target.object.matrixRotationWorld;
+    p = vec().add(target.point, matrix.multiplyVector3(normal));
+    return this.addHalfCube(p);
+  };
+  Game.prototype.addHalfCube = function(p) {
+    p.y += CubeSize / 2;
+    p.z += CubeSize / 2;
+    p.x += CubeSize / 2;
+    return p;
+  };
+  Game.prototype.getCubeOnFloorPosition = function(ray) {
+    var o, ret, t, v;
+    if (ray.direction.y >= 0) {
       return null;
     }
-    normal = target.face.normal.clone();
-    if (target.object.name === 'floor') {
-      matrix = target.object.matrixRotationWorld;
-      p = vec().add(target.point, matrix.multiplyVector3(normal.clone()));
-      p.y += CubeSize / 2;
-      p.z += CubeSize / 2;
-      p.x += CubeSize / 2;
-    } else {
-      p = target.object.position.clone().addSelf(normal.multiplyScalar(CubeSize));
+    ret = vec();
+    o = ray.origin;
+    v = ray.direction;
+    t = (-o.y) / v.y;
+    ret.y = 0;
+    ret.x = o.x + t * v.x;
+    ret.z = o.z + t * v.z;
+    return this.addHalfCube(ret);
+  };
+  Game.prototype.getNewCubePosition = function(ray) {
+    var target;
+    target = this.findBlock(ray);
+    if (!(typeof target !== "undefined" && target !== null)) {
+      return this.getCubeOnFloorPosition(ray);
+    }
+    return this.getAdjacentCubePosition(target);
+  };
+  Game.prototype.placeBlockInGrid = function(ray) {
+    var _ref2, gridPos, p, x, y, z;
+    p = this.getNewCubePosition(ray);
+    if (!(typeof p !== "undefined" && p !== null)) {
+      return null;
     }
     gridPos = this.gridCoords(p.x, p.y, p.z);
     _ref2 = gridPos;
@@ -531,11 +571,9 @@
     y = _ref2[1];
     z = _ref2[2];
     if (!(this.grid.insideGrid(x, y, z))) {
-      puts("outside grid", [x, y, z]);
       return null;
     }
     if (typeof (_ref2 = this.grid.get(x, y, z)) !== "undefined" && _ref2 !== null) {
-      puts("there", [x, y, z]);
       return null;
     }
     this.cubeAt(x, y, z);
@@ -650,9 +688,6 @@
     return null;
   };
   Game.prototype.tick = function() {
-    if (this.player.position('y' < 0)) {
-      raise("Cube is way below ground level");
-    }
     this.placeBlock();
     this.deleteBlock();
     this.defineMove();
@@ -689,6 +724,7 @@ window.Matrix4 = Matrix4
 window.Mesh = Mesh
 window.MeshLambertMaterial = MeshLambertMaterial
 window.MeshNormalMaterial = MeshNormalMaterial
+window.MethodTracer = MethodTracer
 window.NearestFilter = NearestFilter
 window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera

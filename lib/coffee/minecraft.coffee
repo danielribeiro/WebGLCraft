@@ -11,6 +11,33 @@ pvec = (v) -> [v.x, v.y, v.z].toString()
 
 CubeSize = 50
 
+class MethodTracer
+    constructor: ->
+        @tracer = {}
+
+    trace: (clasname) ->
+        clas = eval(clasname)
+        for name, f of clas.prototype when typeof f is 'function'
+            uniqueId = "#{clasname}##{name}"
+            tracer = @tracer
+            tracer[uniqueId] = false
+            clas.prototype[name] = (args...) ->
+                tracer[uniqueId] = true
+                f(args...)
+        return @
+
+    traceClasses: (classNames) ->
+        for clas in classNames.split(' ')
+            @trace clas
+        return @
+
+    printUnused: ->
+        for id, used of @tracer when not used
+            puts id
+        return @
+
+
+
 class Player
     width: CubeSize * 0.3
     depth: CubeSize * 0.3
@@ -55,26 +82,6 @@ class Player
         vmin = @vertex(-1, -1, -1)
         vmax = @vertex 1, 1, 1
         return {vmin: vmin, vmax: vmax}
-
-    _directionLength: (direction) ->
-        return @width if direction.x != 0
-        return @height if direction.y != 0
-        return @depth if direction.z != 0
-        raise "Invalid Direction: 0, 0 ,0"
-
-
-    _createCube: ->
-        geo = new CubeGeometry(@width, @height, @depth)
-        cube = new Mesh(geo, new MeshNormalMaterial())
-        cube.geometry.dynamic = true
-        cube.position.set 850, 300, 35
-        cube.name = "player"
-        cube
-
-    _getClosest: (intersections) ->
-        for i in intersections
-            return i unless i.object.name in ['player', 'floor']
-        return
 
 
 class Grid
@@ -330,7 +337,7 @@ class Game
 
     findBlock: (ray) ->
         for o in ray.intersectScene(@scene)
-            return o unless o.object.name in ['player', 'floor']
+            return o unless o.object.name is 'floor'
         return null
 
 
@@ -340,7 +347,6 @@ class Game
         mesh = target.object
         @scene.remove mesh
         {x, y, z} = mesh.position
-        puts "removing", mesh.name, "at", @gridCoords(x, y, z)
         @intoGrid x, y, z, null
         return
 
@@ -358,30 +364,41 @@ class Game
         @castRay = null
         return
 
-    placeBlockInGrid: (ray) ->
-        target = ray.intersectScene(@scene)[0]
-        unless target?
-            puts "nothing"
-            ray.intersectScene(@scene)
-            return
+    getAdjacentCubePosition: (target) ->
         normal = target.face.normal.clone()
-        if target.object.name is 'floor'
-            matrix = target.object.matrixRotationWorld
-            p = vec().add target.point, matrix.multiplyVector3(normal.clone())
-            # p = target.point.clone().addSelf normal.multiplyScalar(CubeSize)
-            p.y += CubeSize / 2
-            p.z += CubeSize / 2
-            p.x += CubeSize / 2
-        else
-            p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        matrix = target.object.matrixRotationWorld
+        p = vec().add target.point, matrix.multiplyVector3(normal)
+        return @addHalfCube p
+
+    addHalfCube: (p) ->
+        p.y += CubeSize / 2
+        p.z += CubeSize / 2
+        p.x += CubeSize / 2
+        return p
+
+    getCubeOnFloorPosition: (ray) ->
+        return null if ray.direction.y >= 0
+        ret = vec()
+        o = ray.origin
+        v = ray.direction
+        t = (-o.y) / v.y
+        ret.y = 0
+        ret.x = o.x + t * v.x
+        ret.z = o.z + t * v.z
+        return @addHalfCube ret
+
+    getNewCubePosition: (ray) ->
+        target = @findBlock ray
+        return @getCubeOnFloorPosition ray unless target?
+        return @getAdjacentCubePosition target
+
+    placeBlockInGrid: (ray) ->
+        p = @getNewCubePosition ray
+        return unless p?
         gridPos = @gridCoords p.x, p.y, p.z
         [x, y, z] = gridPos
-        unless @grid.insideGrid x, y, z
-            puts "outside grid", [x, y, z]
-            return
-        if @grid.get(x, y, z)?
-            puts "there", [x, y, z]
-            return
+        return unless @grid.insideGrid x, y, z
+        return if @grid.get(x, y, z)?
         @cubeAt x, y, z
         return
 
@@ -463,7 +480,6 @@ class Game
 
 
     tick: ->
-        raise "Cube is way below ground level" if @player.position 'y' < 0
         @placeBlock()
         @deleteBlock()
         @defineMove()
@@ -483,3 +499,5 @@ class Game
 
 
 init_web_app = -> new Game().start()
+
+# window.Tracer = new MethodTracer().traceClasses 'Player Grid CollisionHelper TextureHelper Floor Game'
