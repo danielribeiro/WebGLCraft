@@ -371,9 +371,8 @@ class Game
 
     getAdjacentCubePosition: (target) ->
         normal = target.face.normal.clone()
-        matrix = target.object.matrixRotationWorld
-        p = vec().add target.point, matrix.multiplyVector3(normal)
-        return @addHalfCube p
+        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        return p
 
     addHalfCube: (p) ->
         p.y += CubeSize / 2

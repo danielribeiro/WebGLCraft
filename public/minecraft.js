@@ -535,11 +535,10 @@
     return null;
   };
   Game.prototype.getAdjacentCubePosition = function(target) {
-    var matrix, normal, p;
+    var normal, p;
     normal = target.face.normal.clone();
-    matrix = target.object.matrixRotationWorld;
-    p = vec().add(target.point, matrix.multiplyVector3(normal));
-    return this.addHalfCube(p);
+    p = target.object.position.clone().addSelf(normal.multiplyScalar(CubeSize));
+    return p;
   };
   Game.prototype.addHalfCube = function(p) {
     p.y += CubeSize / 2;
