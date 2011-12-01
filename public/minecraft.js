@@ -255,22 +255,23 @@
     return scene.add(this.plane);
   };
   Game = function() {
-    var bluewool, cobblestone, cobblestoneCube, dirt, grass, grass_dirt, materials, woolCube;
+    var _i, _len, _ref2, b, blocks, cube, dirt, grass, grass_dirt, materials, texture;
     this.rad = CubeSize;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
     grass = TextureHelper.loadTexture("./textures/grass.png");
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
-    bluewool = TextureHelper.loadTexture("./textures/bluewool.png");
-    cobblestone = TextureHelper.loadTexture("./textures/cobblestone.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
-    woolCube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, bluewool);
-    cobblestoneCube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, cobblestone);
-    this.cubeBlocks = {
-      cobblestone: cobblestoneCube,
-      bluewool: woolCube
-    };
+    this.cubeBlocks = {};
+    blocks = ["bluewool", "brick", "cobblestone", "diamond", "glowstone", "obsidian", "plank", "redwool", "whitewool"];
+    _ref2 = blocks;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      b = _ref2[_i];
+      texture = TextureHelper.loadTexture("./textures/" + (b) + ".png");
+      cube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, texture);
+      this.cubeBlocks[b] = cube;
+    }
     this.selectCubeBlock('cobblestone');
     this.geo = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
     this.mat = new MeshLambertMaterial({
@@ -686,13 +687,25 @@
     return null;
   };
   init_web_app = function() {
-    var blockImg, current, game;
+    var _i, _len, _ref2, _result, b, blockImg, blockList, blocks, current, game;
     game = new Game();
     blockImg = function(name) {
       return "<img width='32' height='32' src='./textures/" + (name) + "icon.png' id='" + (name) + "'/>";
     };
-    $("#blocks").append(blockImg('bluewool') + blockImg('cobblestone'));
+    blocks = ["bluewool", "brick", "cobblestone", "diamond", "glowstone", "obsidian", "plank", "redwool", "whitewool"];
+    blockList = (function() {
+      _result = []; _ref2 = blocks;
+      for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+        b = _ref2[_i];
+        _result.push(blockImg(b));
+      }
+      return _result;
+    })();
+    $("#blocks").append(blockList.join(''));
     current = $("#cobblestone");
+    current.css({
+      opacity: .9
+    });
     $("#blocks").mousedown(function(e) {
       var newone;
       if (e.target === this) {

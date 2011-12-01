@@ -182,17 +182,19 @@ class Game
         grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
         grass = TextureHelper.loadTexture "./textures/grass.png"
         dirt = TextureHelper.loadTexture "./textures/dirt.png"
-        bluewool = TextureHelper.loadTexture "./textures/bluewool.png"
-        cobblestone = TextureHelper.loadTexture "./textures/cobblestone.png"
         materials = [grass_dirt, #right
             grass_dirt, # left
             grass, # top
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        woolCube = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, bluewool)
-        cobblestoneCube = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, cobblestone)
-        @cubeBlocks = cobblestone: cobblestoneCube, bluewool: woolCube
+        @cubeBlocks = {}
+        blocks = ["bluewool", "brick", "cobblestone", "diamond",
+            "glowstone", "obsidian", "plank", "redwool", "whitewool"]
+        for b in blocks
+            texture = TextureHelper.loadTexture "./textures/#{b}.png"
+            cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, texture
+            @cubeBlocks[b] = cube
         @selectCubeBlock 'cobblestone'
         @geo = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
 
@@ -492,8 +494,12 @@ init_web_app = ->
     game = new Game()
     blockImg = (name) ->
         "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
-    $("#blocks").append(blockImg('bluewool') + blockImg('cobblestone'))
+    blocks = ["bluewool", "brick", "cobblestone", "diamond",
+        "glowstone", "obsidian", "plank", "redwool", "whitewool"]
+    blockList = (blockImg(b) for b in blocks)
+    $("#blocks").append(blockList.join(''))
     current = $("#cobblestone")
+    current.css(opacity: .9)
     $("#blocks").mousedown (e) ->
         return false if e.target == @
         game.selectCubeBlock e.target.id
