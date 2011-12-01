@@ -279,7 +279,7 @@ class Game
         renderer
 
     addLights: (scene) ->
-        ambientLight = new AmbientLight(0xcccccc)
+        ambientLight = new AmbientLight(0xaaaaaa)
         scene.add ambientLight
         directionalLight = new DirectionalLight(0xffffff, 1.5)
         directionalLight.position.set 1, 1, 0.5
