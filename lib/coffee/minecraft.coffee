@@ -11,33 +11,6 @@ pvec = (v) -> [v.x, v.y, v.z].toString()
 
 CubeSize = 50
 
-class MethodTracer
-    constructor: ->
-        @tracer = {}
-
-    trace: (clasname) ->
-        clas = eval(clasname)
-        for name, f of clas.prototype when typeof f is 'function'
-            uniqueId = "#{clasname}##{name}"
-            tracer = @tracer
-            tracer[uniqueId] = false
-            clas.prototype[name] = (args...) ->
-                tracer[uniqueId] = true
-                f(args...)
-        return @
-
-    traceClasses: (classNames) ->
-        for clas in classNames.split(' ')
-            @trace clas
-        return @
-
-    printUnused: ->
-        for id, used of @tracer when not used
-            puts id
-        return @
-
-
-
 class Player
     width: CubeSize * 0.3
     depth: CubeSize * 0.3
@@ -209,12 +182,18 @@ class Game
         grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
         grass = TextureHelper.loadTexture "./textures/grass.png"
         dirt = TextureHelper.loadTexture "./textures/dirt.png"
+        bluewool = TextureHelper.loadTexture "./textures/bluewool.png"
+        cobblestone = TextureHelper.loadTexture "./textures/cobblestone.png"
         materials = [grass_dirt, #right
             grass_dirt, # left
             grass, # top
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
+        woolCube = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, bluewool)
+        cobblestoneCube = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, cobblestone)
+        @cubeBlocks = cobblestone: cobblestoneCube, bluewool: woolCube
+        @selectCubeBlock 'cobblestone'
         @geo = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
 
         @mat = new MeshLambertMaterial(color: 0xCC0000)
@@ -266,17 +245,17 @@ class Game
             for j in [size..(2*size)]
                 @cubeAt 4 + i, 4, j
 
-        for i in [0..30]
+        for i in [0..50]
             @cubeAt 15 + i, 1 + i, 1
 
 
-    cubeAt: (x, y, z, validatingFunction) ->
-        mesh = new Mesh(@geo, new THREE.MeshFaceMaterial())
+    cubeAt: (x, y, z, geo, validatingFunction) ->
+        geo or=@geo
+        mesh = new Mesh(geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
         halfcube = CubeSize / 2
         mesh.position.set CubeSize * x, y * CubeSize + halfcube, CubeSize * z
-        mesh.name = "block at #{x}, #{y}, #{z}"
-        # @intoGrid x, y, z, mesh
+        mesh.name = "block"
         if validatingFunction?
             return unless validatingFunction(mesh)
         @grid.put x, y, z, mesh
@@ -391,13 +370,17 @@ class Game
         ret.z = o.z + t * v.z
         return @addHalfCube ret
 
+    selectCubeBlock: (name) ->
+        puts "selecting:", name
+        @currentCube = @cubeBlocks[name]
+
     getNewCubePosition: (ray) ->
         target = @findBlock ray
         return @getCubeOnFloorPosition ray unless target?
         return @getAdjacentCubePosition target
 
     createCubeAt: (x, y, z) ->
-        @cubeAt x, y, z, (cube) => not @collisionHelper.collideWithCube cube
+        @cubeAt x, y, z, @currentCube, (cube) => not @collisionHelper.collideWithCube cube
 
     placeBlockInGrid: (ray) ->
         p = @getNewCubePosition ray
@@ -505,6 +488,20 @@ class Game
 
 
 
-init_web_app = -> new Game().start()
+init_web_app = ->
+    game = new Game()
+    blockImg = (name) ->
+        "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
+    $("#blocks").append(blockImg('bluewool') + blockImg('cobblestone'))
+    current = $("#cobblestone")
+    $("#blocks").mousedown (e) ->
+        return false if e.target == @
+        game.selectCubeBlock e.target.id
+        newone = $(e.target)
+        newone.css(opacity: .9)
+        current.css(opacity: 1)
+        current = newone
+        return false
+    game.start()
 
 # window.Tracer = new MethodTracer().traceClasses 'Player Grid CollisionHelper TextureHelper Floor Game'

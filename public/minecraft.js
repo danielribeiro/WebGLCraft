@@ -1,8 +1,8 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, MethodTracer, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
-  var __hasProp = Object.prototype.hasOwnProperty, __slice = Array.prototype.slice, __bind = function(func, context) {
+  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
+  var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
-  };
+  }, __hasProp = Object.prototype.hasOwnProperty;
   _ref = THREE;
   Object3D = _ref.Object3D;
   Matrix4 = _ref.Matrix4;
@@ -42,56 +42,6 @@
     return [v.x, v.y, v.z].toString();
   };
   CubeSize = 50;
-  MethodTracer = function() {
-    this.tracer = {};
-    return this;
-  };
-  MethodTracer.prototype.trace = function(clasname) {
-    var _i, _ref2, clas, name;
-    clas = eval(clasname);
-    _ref2 = clas.prototype;
-    for (_i in _ref2) {
-      if (!__hasProp.call(_ref2, _i)) continue;
-      (function() {
-        var tracer, uniqueId;
-        var name = _i;
-        var f = _ref2[_i];
-        if (typeof f === 'function') {
-          uniqueId = ("" + (clasname) + "#" + (name));
-          tracer = this.tracer;
-          tracer[uniqueId] = false;
-          return (clas.prototype[name] = function() {
-            var args;
-            args = __slice.call(arguments, 0);
-            tracer[uniqueId] = true;
-            return f.apply(this, args);
-          });
-        }
-      }).call(this);
-    }
-    return this;
-  };
-  MethodTracer.prototype.traceClasses = function(classNames) {
-    var _i, _len, _ref2, clas;
-    _ref2 = classNames.split(' ');
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      clas = _ref2[_i];
-      this.trace(clas);
-    }
-    return this;
-  };
-  MethodTracer.prototype.printUnused = function() {
-    var _ref2, id, used;
-    _ref2 = this.tracer;
-    for (id in _ref2) {
-      if (!__hasProp.call(_ref2, id)) continue;
-      used = _ref2[id];
-      if (!used) {
-        puts(id);
-      }
-    }
-    return this;
-  };
   Player = function() {
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
@@ -305,14 +255,23 @@
     return scene.add(this.plane);
   };
   Game = function() {
-    var dirt, grass, grass_dirt, materials;
+    var bluewool, cobblestone, cobblestoneCube, dirt, grass, grass_dirt, materials, woolCube;
     this.rad = CubeSize;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
     grass = TextureHelper.loadTexture("./textures/grass.png");
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
+    bluewool = TextureHelper.loadTexture("./textures/bluewool.png");
+    cobblestone = TextureHelper.loadTexture("./textures/cobblestone.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
+    woolCube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, bluewool);
+    cobblestoneCube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, cobblestone);
+    this.cubeBlocks = {
+      cobblestone: cobblestoneCube,
+      bluewool: woolCube
+    };
+    this.selectCubeBlock('cobblestone');
     this.geo = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
     this.mat = new MeshLambertMaterial({
       color: 0xCC0000
@@ -381,18 +340,19 @@
       }
     }
     _result = [];
-    for (i = 0; i <= 30; i++) {
+    for (i = 0; i <= 50; i++) {
       _result.push(this.cubeAt(15 + i, 1 + i, 1));
     }
     return _result;
   };
-  Game.prototype.cubeAt = function(x, y, z, validatingFunction) {
+  Game.prototype.cubeAt = function(x, y, z, geo, validatingFunction) {
     var halfcube, mesh;
-    mesh = new Mesh(this.geo, new THREE.MeshFaceMaterial());
+    geo || (geo = this.geo);
+    mesh = new Mesh(geo, new THREE.MeshFaceMaterial());
     mesh.geometry.dynamic = false;
     halfcube = CubeSize / 2;
     mesh.position.set(CubeSize * x, y * CubeSize + halfcube, CubeSize * z);
-    mesh.name = ("block at " + (x) + ", " + (y) + ", " + (z));
+    mesh.name = "block";
     if (typeof validatingFunction !== "undefined" && validatingFunction !== null) {
       if (!(validatingFunction(mesh))) {
         return null;
@@ -560,6 +520,10 @@
     ret.z = o.z + t * v.z;
     return this.addHalfCube(ret);
   };
+  Game.prototype.selectCubeBlock = function(name) {
+    puts("selecting:", name);
+    return (this.currentCube = this.cubeBlocks[name]);
+  };
   Game.prototype.getNewCubePosition = function(ray) {
     var target;
     target = this.findBlock(ray);
@@ -569,7 +533,7 @@
     return this.getAdjacentCubePosition(target);
   };
   Game.prototype.createCubeAt = function(x, y, z) {
-    return this.cubeAt(x, y, z, __bind(function(cube) {
+    return this.cubeAt(x, y, z, this.currentCube, __bind(function(cube) {
       return !this.collisionHelper.collideWithCube(cube);
     }, this));
   };
@@ -722,7 +686,30 @@
     return null;
   };
   init_web_app = function() {
-    return new Game().start();
+    var blockImg, current, game;
+    game = new Game();
+    blockImg = function(name) {
+      return "<img width='32' height='32' src='./textures/" + (name) + "icon.png' id='" + (name) + "'/>";
+    };
+    $("#blocks").append(blockImg('bluewool') + blockImg('cobblestone'));
+    current = $("#cobblestone");
+    $("#blocks").mousedown(function(e) {
+      var newone;
+      if (e.target === this) {
+        return false;
+      }
+      game.selectCubeBlock(e.target.id);
+      newone = $(e.target);
+      newone.css({
+        opacity: .9
+      });
+      current.css({
+        opacity: 1
+      });
+      current = newone;
+      return false;
+    });
+    return game.start();
   };
 window.AmbientLight = AmbientLight
 window.ClampToEdgeWrapping = ClampToEdgeWrapping
@@ -738,7 +725,6 @@ window.Matrix4 = Matrix4
 window.Mesh = Mesh
 window.MeshLambertMaterial = MeshLambertMaterial
 window.MeshNormalMaterial = MeshNormalMaterial
-window.MethodTracer = MethodTracer
 window.NearestFilter = NearestFilter
 window.Object3D = Object3D
 window.PerspectiveCamera = PerspectiveCamera
