@@ -21,10 +21,8 @@
     this.lookSpeed = 0.20;
     this.mouseX = 0;
     this.mouseY = 0;
-    this.lat = 0;
-    this.lon = 220;
-    this.phi = 0;
-    this.theta = 0;
+    this.lat = 25;
+    this.lon = 312;
     this.mouseDragOn = false;
     this.anchorx = null;
     this.anchory = null;
@@ -86,23 +84,27 @@
     return this.target.clone().subSelf(this.object.position);
   };
   Controls.prototype.move = function(newPosition) {
-    var _ref, cos, max, min, p, sin;
-    _ref = Math;
-    sin = _ref.sin;
-    cos = _ref.cos;
-    max = _ref.max;
-    min = _ref.min;
     this.object.position = newPosition;
+    return this.updateLook();
+  };
+  Controls.prototype.updateLook = function() {
+    var _ref, cos, p, phi, sin, theta;
+    _ref = Math;
+    sin = _ref.sin;
+    cos = _ref.cos;
+    phi = (90 - this.lat) * this.halfCircle;
+    theta = this.lon * this.halfCircle;
     p = this.object.position;
     assoc(this.target, {
-      x: p.x + 100 * sin(this.phi) * cos(this.theta),
-      y: p.y + 100 * cos(this.phi),
-      z: p.z + 100 * sin(this.phi) * sin(this.theta)
+      x: p.x + 100 * sin(phi) * cos(theta),
+      y: p.y + 100 * cos(phi),
+      z: p.z + 100 * sin(phi) * sin(theta)
     });
+    this.object.lookAt(this.target);
     return null;
   };
   Controls.prototype.update = function() {
-    var _ref, cos, max, min, p, sin;
+    var _ref, max, min;
     if (!(this.mouseDragOn)) {
       return null;
     }
@@ -110,8 +112,6 @@
       return null;
     }
     _ref = Math;
-    sin = _ref.sin;
-    cos = _ref.cos;
     max = _ref.max;
     min = _ref.min;
     this.lon += (this.mouseX - this.anchorx) * this.lookSpeed;
@@ -119,44 +119,7 @@
     this.anchorx = this.mouseX;
     this.anchory = this.mouseY;
     this.lat = max(-85, min(85, this.lat));
-    this.phi = (90 - this.lat) * this.halfCircle;
-    this.theta = this.lon * this.halfCircle;
-    p = this.object.position;
-    assoc(this.target, {
-      x: p.x + 100 * sin(this.phi) * cos(this.theta),
-      y: p.y + 100 * cos(this.phi),
-      z: p.z + 100 * sin(this.phi) * sin(this.theta)
-    });
-    this.object.lookAt(this.target);
-    return null;
-  };
-  Controls.prototype.update = function() {
-    var _ref, cos, max, min, p, sin;
-    if (!(this.mouseDragOn)) {
-      return null;
-    }
-    if (this.mouseX === this.anchorx && this.mouseY === this.anchory) {
-      return null;
-    }
-    _ref = Math;
-    sin = _ref.sin;
-    cos = _ref.cos;
-    max = _ref.max;
-    min = _ref.min;
-    this.lon += (this.mouseX - this.anchorx) * this.lookSpeed;
-    this.lat -= (this.mouseY - this.anchory) * this.lookSpeed;
-    this.anchorx = this.mouseX;
-    this.anchory = this.mouseY;
-    this.lat = max(-85, min(85, this.lat));
-    this.phi = (90 - this.lat) * this.halfCircle;
-    this.theta = this.lon * this.halfCircle;
-    p = this.object.position;
-    assoc(this.target, {
-      x: p.x + 100 * sin(this.phi) * cos(this.theta),
-      y: p.y + 100 * cos(this.phi),
-      z: p.z + 100 * sin(this.phi) * sin(this.theta)
-    });
-    this.object.lookAt(this.target);
+    this.updateLook();
     return null;
   };
 window.Controls = Controls

@@ -22,7 +22,7 @@ class Player
         @halfHeight = @height / 2
         @halfWidth = @width / 2
         @halfDepth = @depth / 2
-        @pos = vec 750, 300, 35
+        @pos = vec 750, 300, 850
         @eyesDelta = @halfHeight * 0.9
 
     eyesPosition: ->
@@ -214,12 +214,11 @@ class Game
         @addLights @scene
         @renderer.render @scene, @camera
         @defineControls()
-        @projector= new Projector()
+        @projector = new Projector()
         @castRay = null
         @moved = false
         @toDelete = null
         @collisionHelper = new CollisionHelper(@player, @grid)
-
 
     gridCoords: (x, y, z) ->
         x = Math.floor(x / @rad)
@@ -246,7 +245,8 @@ class Game
                 @cubeAt 4 + i, 4, j
 
         for i in [0..50]
-            @cubeAt 15 + i, 1 + i, 1
+            for j in [0..10]
+                @cubeAt 15 + i, 1 + i, 1 + j
 
 
     cubeAt: (x, y, z, geo, validatingFunction) ->
@@ -266,7 +266,6 @@ class Game
 
     createCamera: ->
         camera = new PerspectiveCamera(45, @width / @height, 1, 10000)
-        camera.position.set 1500, 400, 800
         camera.lookAt vec 0, 0, 0
         camera
 
@@ -527,4 +526,3 @@ init_web_app = ->
     new BlockSelection(game).insert()
     game.start()
 
-# window.Tracer = new MethodTracer().traceClasses 'Player Grid CollisionHelper TextureHelper Floor Game'

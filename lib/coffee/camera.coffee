@@ -12,10 +12,8 @@ class Controls
         @lookSpeed = 0.20
         @mouseX = 0
         @mouseY = 0
-        @lat = 0
-        @lon = 220
-        @phi = 0
-        @theta = 0
+        @lat = 25
+        @lon = 312
         @mouseDragOn = false
         @anchorx = null
         @anchory = null
@@ -58,50 +56,29 @@ class Controls
     viewDirection: -> @target.clone().subSelf(@object.position)
 
     move: (newPosition) ->
-        {sin, cos, max, min} = Math
         @object.position = newPosition
+        @updateLook()
+
+    updateLook: ->
+        {sin, cos} = Math
+        phi = (90 - @lat) * @halfCircle
+        theta = @lon * @halfCircle
         p = @object.position
         assoc @target,
-            x: p.x + 100 * sin(@phi) * cos(@theta)
-            y: p.y + 100 * cos(@phi)
-            z: p.z + 100 * sin(@phi) * sin(@theta)
+            x: p.x + 100 * sin(phi) * cos(theta)
+            y: p.y + 100 * cos(phi)
+            z: p.z + 100 * sin(phi) * sin(theta)
+        @object.lookAt @target
         return
 
     update: ->
         return unless @mouseDragOn
         return if @mouseX is @anchorx and @mouseY is @anchory
-        {sin, cos, max, min} = Math
+        {max, min} = Math
         @lon += (@mouseX - @anchorx) * @lookSpeed
         @lat -= (@mouseY - @anchory) * @lookSpeed
         @anchorx = @mouseX
         @anchory = @mouseY
         @lat = max(-85, min(85, @lat))
-        @phi = (90 - @lat) * @halfCircle
-        @theta = @lon * @halfCircle
-        p = @object.position
-        assoc @target,
-            x: p.x + 100 * sin(@phi) * cos(@theta)
-            y: p.y + 100 * cos(@phi)
-            z: p.z + 100 * sin(@phi) * sin(@theta)
-        @object.lookAt @target
-        return
-
-
-    update: ->
-        return unless @mouseDragOn
-        return if @mouseX is @anchorx and @mouseY is @anchory
-        {sin, cos, max, min} = Math
-        @lon += (@mouseX - @anchorx) * @lookSpeed
-        @lat -= (@mouseY - @anchory) * @lookSpeed
-        @anchorx = @mouseX
-        @anchory = @mouseY
-        @lat = max(-85, min(85, @lat))
-        @phi = (90 - @lat) * @halfCircle
-        @theta = @lon * @halfCircle
-        p = @object.position
-        assoc @target,
-            x: p.x + 100 * sin(@phi) * cos(@theta)
-            y: p.y + 100 * cos(@phi)
-            z: p.z + 100 * sin(@phi) * sin(@theta)
-        @object.lookAt @target
+        @updateLook()
         return

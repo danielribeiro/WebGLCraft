@@ -47,7 +47,7 @@
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
     this.halfDepth = this.depth / 2;
-    this.pos = vec(750, 300, 35);
+    this.pos = vec(750, 300, 850);
     this.eyesDelta = this.halfHeight * 0.9;
     return this;
   };
@@ -314,7 +314,7 @@
     return this.grid.put.apply(this.grid, args);
   };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, _result, i, j, size;
+    var _ref2, _ref3, _result, _result2, i, j, size;
     size = 5;
     _ref2 = (2 * size);
     for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
@@ -339,7 +339,13 @@
     }
     _result = [];
     for (i = 0; i <= 50; i++) {
-      _result.push(this.cubeAt(15 + i, 1 + i, 1));
+      _result.push((function() {
+        _result2 = [];
+        for (j = 0; j <= 10; j++) {
+          _result2.push(this.cubeAt(15 + i, 1 + i, 1 + j));
+        }
+        return _result2;
+      }).call(this));
     }
     return _result;
   };
@@ -365,7 +371,6 @@
   Game.prototype.createCamera = function() {
     var camera;
     camera = new PerspectiveCamera(45, this.width / this.height, 1, 10000);
-    camera.position.set(1500, 400, 800);
     camera.lookAt(vec(0, 0, 0));
     return camera;
   };
