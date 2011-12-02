@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -35,6 +35,7 @@
   _ref = THREE;
   LinearMipMapLinearFilter = _ref.LinearMipMapLinearFilter;
   ClampToEdgeWrapping = _ref.ClampToEdgeWrapping;
+  Clock = _ref.Clock;
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
   };
@@ -300,6 +301,7 @@
     this.moved = false;
     this.toDelete = null;
     this.collisionHelper = new CollisionHelper(this.player, this.grid);
+    this.clock = new Clock();
     return this;
   };
   Game.prototype.gridCoords = function(x, y, z) {
@@ -409,7 +411,7 @@
       }).call(this);
     }
     $(document).bind('keydown', 'p', __bind(function() {
-      return (this.pause = !this.pause);
+      return this.togglePause();
     }, this));
     $(this.canvas).mousedown(__bind(function(e) {
       return this.onMouseDown(e);
@@ -420,6 +422,13 @@
     return $(this.canvas).mousemove(__bind(function(e) {
       return this.onMouseMove(e);
     }, this));
+  };
+  Game.prototype.togglePause = function() {
+    this.pause = !this.pause;
+    if (this.pause === false) {
+      this.clock.start();
+    }
+    return null;
   };
   Game.prototype.onMouseUp = function(event) {
     if (!this.moved && MouseEvent.isLeftButton(event)) {
@@ -574,8 +583,8 @@
   };
   Game.prototype.axes = ['x', 'y', 'z'];
   Game.prototype.iterationCount = 10;
-  Game.prototype.moveCube = function(axis) {
-    var _i, _len, _ref2, iterationCount, ivel, originalpos;
+  Game.prototype.moveCube = function() {
+    var _i, _len, _ref2, axis, iterationCount, ivel, originalpos;
     iterationCount = this.iterationCount;
     ivel = {};
     _ref2 = this.axes;
@@ -617,8 +626,8 @@
   };
   Game.prototype.defineMove = function() {
     var _ref2, _ref3, action, axis, baseVel, jumpSpeed, key, operation, vel;
-    baseVel = 7;
-    jumpSpeed = 12;
+    baseVel = 4;
+    jumpSpeed = 6;
     this.move.x = 0;
     this.move.z = 0;
     _ref2 = this.playerKeys;
@@ -654,8 +663,8 @@
     return (this.move.z = frontDir.y + rightDir.y);
   };
   Game.prototype.applyGravity = function() {
-    if (!(this.move.y < -20)) {
-      return this.move.y -= 1;
+    if (!(this.move.y < -10)) {
+      return this.move.y -= .3;
     }
   };
   Game.prototype.setCameraEyes = function() {
@@ -667,11 +676,16 @@
     pos.subSelf(eyesDelta);
     return null;
   };
+  Game.prototype.idealSpeed = 1 / 60;
   Game.prototype.tick = function() {
+    var speedRatio;
+    speedRatio = Math.round(this.clock.getDelta() / this.idealSpeed);
     this.placeBlock();
     this.deleteBlock();
-    this.defineMove();
-    this.moveCube();
+    speedRatio.times(__bind(function() {
+      this.defineMove();
+      return this.moveCube();
+    }, this));
     this.renderer.clear();
     this.controls.update();
     this.setCameraEyes();
@@ -754,6 +768,7 @@ window.AmbientLight = AmbientLight
 window.BlockSelection = BlockSelection
 window.Blocks = Blocks
 window.ClampToEdgeWrapping = ClampToEdgeWrapping
+window.Clock = Clock
 window.CollisionHelper = CollisionHelper
 window.CubeGeometry = CubeGeometry
 window.CubeSize = CubeSize

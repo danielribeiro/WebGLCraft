@@ -4,7 +4,7 @@
 {AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
 {MeshLambertMaterial, MeshNormalMaterial, Projector} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
-{LinearMipMapLinearFilter, ClampToEdgeWrapping} = THREE
+{LinearMipMapLinearFilter, ClampToEdgeWrapping, Clock} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
 pvec = (v) -> [v.x, v.y, v.z].toString()
@@ -219,6 +219,7 @@ class Game
         @moved = false
         @toDelete = null
         @collisionHelper = new CollisionHelper(@player, @grid)
+        @clock = new Clock()
 
     gridCoords: (x, y, z) ->
         x = Math.floor(x / @rad)
@@ -289,10 +290,15 @@ class Game
         for key in "wasd".split('').concat('space')
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
-        $(document).bind 'keydown', 'p', => @pause = !@pause
+        $(document).bind 'keydown', 'p', => @togglePause()
         $(@canvas).mousedown (e) => @onMouseDown e
         $(@canvas).mouseup (e) => @onMouseUp e
         $(@canvas).mousemove (e) => @onMouseMove e
+
+    togglePause: ->
+        @pause = !@pause
+        @clock.start() if @pause is off
+        return
 
     onMouseUp: (event) ->
         if not @moved and MouseEvent.isLeftButton event
@@ -403,7 +409,7 @@ class Game
     iterationCount: 10
 
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
-    moveCube: (axis) ->
+    moveCube: ->
         iterationCount = @iterationCount
         ivel = {}
         for axis in @axes
@@ -431,8 +437,8 @@ class Game
     shouldJump: -> @keysDown.space and @onGround and @move.y == 0
 
     defineMove: ->
-        baseVel = 7
-        jumpSpeed = 12
+        baseVel = 4
+        jumpSpeed = 6
         @move.x = 0
         @move.z = 0
         for key, action of @playerKeys
@@ -456,7 +462,7 @@ class Game
         @move.z = frontDir.y + rightDir.y
 
 
-    applyGravity: -> @move.y -= 1 unless @move.y < -20
+    applyGravity: -> @move.y -= .3 unless @move.y < -10
 
     setCameraEyes: ->
         pos = @player.eyesPosition()
@@ -466,12 +472,15 @@ class Game
         pos.subSelf eyesDelta
         return
 
+    idealSpeed: 1 / 60
 
     tick: ->
+        speedRatio = Math.round @clock.getDelta() / @idealSpeed
         @placeBlock()
         @deleteBlock()
-        @defineMove()
-        @moveCube()
+        speedRatio.times =>
+            @defineMove()
+            @moveCube()
         @renderer.clear()
         @controls.update()
         @setCameraEyes()
