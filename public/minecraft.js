@@ -497,6 +497,9 @@
     if (!(typeof target !== "undefined" && target !== null)) {
       return null;
     }
+    if (!(this.withinHandDistance(target.object.position))) {
+      return null;
+    }
     mesh = target.object;
     this.scene.remove(mesh);
     _ref2 = mesh.position;
@@ -565,6 +568,12 @@
       return !this.collisionHelper.collideWithCube(cube);
     }, this));
   };
+  Game.prototype.handLength = 7;
+  Game.prototype.withinHandDistance = function(pos) {
+    var dist;
+    dist = pos.distanceTo(this.player.position());
+    return dist <= CubeSize * this.handLength;
+  };
   Game.prototype.placeBlockInGrid = function(ray) {
     var _ref2, gridPos, p, x, y, z;
     p = this.getNewCubePosition(ray);
@@ -576,6 +585,9 @@
     x = _ref2[0];
     y = _ref2[1];
     z = _ref2[2];
+    if (!(this.withinHandDistance(p))) {
+      return null;
+    }
     if (!(this.grid.insideGrid(x, y, z))) {
       return null;
     }

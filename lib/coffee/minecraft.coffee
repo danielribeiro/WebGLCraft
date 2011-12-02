@@ -343,12 +343,12 @@ class Game
     deleteBlockInGrid: (ray) ->
         target = @findBlock ray
         return unless target?
+        return unless @withinHandDistance target.object.position
         mesh = target.object
         @scene.remove mesh
         {x, y, z} = mesh.position
         @intoGrid x, y, z, null
         return
-
 
 
     placeBlock: ->
@@ -396,11 +396,18 @@ class Game
     createCubeAt: (x, y, z) ->
         @cubeAt x, y, z, @currentCube, (cube) => not @collisionHelper.collideWithCube cube
 
+    handLength: 7
+
+    withinHandDistance: (pos) ->
+        dist = pos.distanceTo @player.position()
+        return dist <= CubeSize * @handLength
+
     placeBlockInGrid: (ray) ->
         p = @getNewCubePosition ray
         return unless p?
         gridPos = @gridCoords p.x, p.y, p.z
         [x, y, z] = gridPos
+        return unless @withinHandDistance p
         return unless @grid.insideGrid x, y, z
         return if @grid.get(x, y, z)?
         @createCubeAt x, y, z
