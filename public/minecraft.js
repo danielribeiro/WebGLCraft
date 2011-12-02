@@ -46,7 +46,7 @@
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
     this.halfDepth = this.depth / 2;
-    this.pos = vec(850, 300, 35);
+    this.pos = vec(750, 300, 35);
     this.eyesDelta = this.halfHeight * 0.9;
     return this;
   };
@@ -179,9 +179,9 @@
     minx = this.toGrid(vmin.x);
     miny = this.toGrid(vmin.y);
     minz = this.toGrid(vmin.z);
-    maxx = this.toGrid(vmax.x) + 1;
-    maxy = this.toGrid(vmax.y) + 1;
-    maxz = this.toGrid(vmax.z) + 1;
+    maxx = this.toGrid(vmax.x + this.rad);
+    maxy = this.toGrid(vmax.y + this.rad);
+    maxz = this.toGrid(vmax.z + this.rad);
     x = minx;
     while (x <= maxx) {
       y = miny;
@@ -203,8 +203,8 @@
     if (ret < 0) {
       return 0;
     }
-    if (ret > this.grid.size) {
-      return this.grid.size;
+    if (ret > this.grid.size - 1) {
+      return this.grid.size - 1;
     }
     return ret;
   };
@@ -264,7 +264,7 @@
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
     this.cubeBlocks = {};
-    blocks = ["bluewool", "brick", "cobblestone", "diamond", "glowstone", "obsidian", "plank", "redwool", "whitewool"];
+    blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
     _ref2 = blocks;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       b = _ref2[_i];
@@ -274,16 +274,13 @@
     }
     this.selectCubeBlock('cobblestone');
     this.geo = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
-    this.mat = new MeshLambertMaterial({
-      color: 0xCC0000
-    });
     this.move = {
       x: 0,
       z: 0,
       y: 0
     };
     this.keysDown = {};
-    this.grid = new Grid(200);
+    this.grid = new Grid(100);
     this.onGround = true;
     this.pause = false;
     this.renderer = this.createRenderer();
@@ -387,7 +384,7 @@
     var ambientLight, directionalLight;
     ambientLight = new AmbientLight(0xaaaaaa);
     scene.add(ambientLight);
-    directionalLight = new DirectionalLight(0xffffff, 1.5);
+    directionalLight = new DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 0.5);
     directionalLight.position.normalize();
     return scene.add(directionalLight);
@@ -692,7 +689,7 @@
     blockImg = function(name) {
       return "<img width='32' height='32' src='./textures/" + (name) + "icon.png' id='" + (name) + "'/>";
     };
-    blocks = ["bluewool", "brick", "cobblestone", "diamond", "glowstone", "obsidian", "plank", "redwool", "whitewool"];
+    blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
     blockList = (function() {
       _result = []; _ref2 = blocks;
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
@@ -702,8 +699,8 @@
       return _result;
     })();
     $("#blocks").append(blockList.join(''));
-    current = $("#cobblestone");
-    current.css({
+    current = "cobblestone";
+    $("#" + current).css({
       opacity: .9
     });
     $("#blocks").mousedown(function(e) {
@@ -716,11 +713,25 @@
       newone.css({
         opacity: .9
       });
-      current.css({
+      $("#" + current).css({
+        opacity: 1
+      });
+      current = e.target.id;
+      return false;
+    });
+    $("body").mousewheel(function(e, delta) {
+      var index, newone;
+      index = (blocks.indexOf(current) - delta).mod(blocks.length);
+      newone = blocks[index];
+      game.selectCubeBlock(newone);
+      $("#" + newone).css({
+        opacity: .9
+      });
+      $("#" + current).css({
         opacity: 1
       });
       current = newone;
-      return false;
+      return null;
     });
     return game.start();
   };

@@ -20,7 +20,7 @@ class Player
         @halfHeight = @height / 2
         @halfWidth = @width / 2
         @halfDepth = @depth / 2
-        @pos = vec 850, 300, 35
+        @pos = vec 750, 300, 35
         @eyesDelta = @halfHeight * 0.9
 
     eyesPosition: ->
@@ -114,9 +114,9 @@ class CollisionHelper
         miny = @toGrid(vmin.y)
         minz = @toGrid(vmin.z)
 
-        maxx = @toGrid(vmax.x) + 1
-        maxy = @toGrid(vmax.y) + 1
-        maxz = @toGrid(vmax.z) + 1
+        maxx = @toGrid(vmax.x + @rad)
+        maxy = @toGrid(vmax.y + @rad)
+        maxz = @toGrid(vmax.z + @rad)
         x = minx
         while x <= maxx
             y = miny
@@ -132,7 +132,7 @@ class CollisionHelper
     toGrid: (val) ->
         ret = Math.floor(val / @rad)
         return 0 if ret < 0
-        return @grid.size if ret > @grid.size
+        return @grid.size - 1 if ret > @grid.size - 1
         return ret
 
 
@@ -175,7 +175,6 @@ class Floor
 class Game
     constructor: ->
         @rad = CubeSize
-        # @geo = new CubeGeometry(@rad, @rad, @rad, 1, 1, 1)
         @width = window.innerWidth
         @height = window.innerHeight
 
@@ -189,8 +188,8 @@ class Game
             grass_dirt, # back
             grass_dirt]  #front
         @cubeBlocks = {}
-        blocks = ["bluewool", "brick", "cobblestone", "diamond",
-            "glowstone", "obsidian", "plank", "redwool", "whitewool"]
+        blocks = ["cobblestone", "plank", "brick", "diamond",
+            "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
         for b in blocks
             texture = TextureHelper.loadTexture "./textures/#{b}.png"
             cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, texture
@@ -198,10 +197,9 @@ class Game
         @selectCubeBlock 'cobblestone'
         @geo = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
 
-        @mat = new MeshLambertMaterial(color: 0xCC0000)
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
-        @grid = new Grid(200)
+        @grid = new Grid(100)
         @onGround = true
         @pause = off
         @renderer = @createRenderer()
@@ -283,7 +281,7 @@ class Game
     addLights: (scene) ->
         ambientLight = new AmbientLight(0xaaaaaa)
         scene.add ambientLight
-        directionalLight = new DirectionalLight(0xffffff, 1.5)
+        directionalLight = new DirectionalLight(0xffffff, 1)
         directionalLight.position.set 1, 1, 0.5
         directionalLight.position.normalize()
         scene.add directionalLight
@@ -494,20 +492,28 @@ init_web_app = ->
     game = new Game()
     blockImg = (name) ->
         "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
-    blocks = ["bluewool", "brick", "cobblestone", "diamond",
-        "glowstone", "obsidian", "plank", "redwool", "whitewool"]
+    blocks = ["cobblestone", "plank", "brick", "diamond",
+        "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
     blockList = (blockImg(b) for b in blocks)
     $("#blocks").append(blockList.join(''))
-    current = $("#cobblestone")
-    current.css(opacity: .9)
+    current = "cobblestone"
+    $("#" + current).css(opacity: .9)
     $("#blocks").mousedown (e) ->
         return false if e.target == @
         game.selectCubeBlock e.target.id
         newone = $(e.target)
         newone.css(opacity: .9)
-        current.css(opacity: 1)
-        current = newone
+        $("#" + current).css(opacity: 1)
+        current = e.target.id
         return false
+    $("body").mousewheel (e, delta) ->
+        index = (blocks.indexOf(current) - delta).mod(blocks.length)
+        newone = blocks[index]
+        game.selectCubeBlock newone
+        $("#" + newone).css(opacity: .9)
+        $("#" + current).css(opacity: 1)
+        current = newone
+        return
     game.start()
 
 # window.Tracer = new MethodTracer().traceClasses 'Player Grid CollisionHelper TextureHelper Floor Game'
