@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -42,6 +42,7 @@
     return [v.x, v.y, v.z].toString();
   };
   CubeSize = 50;
+  Blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
   Player = function() {
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
@@ -255,7 +256,7 @@
     return scene.add(this.plane);
   };
   Game = function() {
-    var _i, _len, _ref2, b, blocks, cube, dirt, grass, grass_dirt, materials, texture;
+    var _i, _len, _ref2, b, cube, dirt, grass, grass_dirt, materials, texture;
     this.rad = CubeSize;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
@@ -264,8 +265,7 @@
     dirt = TextureHelper.loadTexture("./textures/dirt.png");
     materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
     this.cubeBlocks = {};
-    blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
-    _ref2 = blocks;
+    _ref2 = Blocks;
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
       b = _ref2[_i];
       texture = TextureHelper.loadTexture("./textures/" + (b) + ".png");
@@ -519,7 +519,6 @@
     return this.addHalfCube(ret);
   };
   Game.prototype.selectCubeBlock = function(name) {
-    puts("selecting:", name);
     return (this.currentCube = this.cubeBlocks[name]);
   };
   Game.prototype.getNewCubePosition = function(ray) {
@@ -683,59 +682,72 @@
     }
     return null;
   };
-  init_web_app = function() {
-    var _i, _len, _ref2, _result, b, blockImg, blockList, blocks, current, game;
-    game = new Game();
-    blockImg = function(name) {
-      return "<img width='32' height='32' src='./textures/" + (name) + "icon.png' id='" + (name) + "'/>";
-    };
-    blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
+  BlockSelection = function(_arg) {
+    this.game = _arg;
+    this.current = "cobblestone";
+    return this;
+  };
+  BlockSelection.prototype.blockImg = function(name) {
+    return "<img width='32' height='32' src='./textures/" + (name) + "icon.png' id='" + (name) + "'/>";
+  };
+  BlockSelection.prototype.mousedown = function(e) {
+    if (e.target === this) {
+      return false;
+    }
+    this.select(e.target.id);
+    return false;
+  };
+  BlockSelection.prototype.mousewheel = function(delta) {
+    var index;
+    index = (Blocks.indexOf(this.current) - delta).mod(Blocks.length);
+    return this.select(Blocks[index]);
+  };
+  BlockSelection.prototype.ligthUp = function(target) {
+    return this._setOpacity(target, 0.8);
+  };
+  BlockSelection.prototype.lightOff = function(target) {
+    return this._setOpacity(target, 1);
+  };
+  BlockSelection.prototype.select = function(name) {
+    this.game.selectCubeBlock(name);
+    this.ligthUp(name);
+    this.lightOff(this.current);
+    return (this.current = name);
+  };
+  BlockSelection.prototype._setOpacity = function(target, val) {
+    return $("#" + target).css({
+      opacity: val
+    });
+  };
+  BlockSelection.prototype.insert = function() {
+    var _i, _len, _ref2, _result, b, blockList, domElement;
     blockList = (function() {
-      _result = []; _ref2 = blocks;
+      _result = []; _ref2 = Blocks;
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         b = _ref2[_i];
-        _result.push(blockImg(b));
+        _result.push(this.blockImg(b));
       }
       return _result;
-    })();
-    $("#blocks").append(blockList.join(''));
-    current = "cobblestone";
-    $("#" + current).css({
-      opacity: .9
-    });
-    $("#blocks").mousedown(function(e) {
-      var newone;
-      if (e.target === this) {
-        return false;
-      }
-      game.selectCubeBlock(e.target.id);
-      newone = $(e.target);
-      newone.css({
-        opacity: .9
-      });
-      $("#" + current).css({
-        opacity: 1
-      });
-      current = e.target.id;
-      return false;
-    });
-    $("body").mousewheel(function(e, delta) {
-      var index, newone;
-      index = (blocks.indexOf(current) - delta).mod(blocks.length);
-      newone = blocks[index];
-      game.selectCubeBlock(newone);
-      $("#" + newone).css({
-        opacity: .9
-      });
-      $("#" + current).css({
-        opacity: 1
-      });
-      current = newone;
-      return null;
-    });
+    }).call(this);
+    domElement = $("#blocks");
+    domElement.append(blockList.join(''));
+    this.ligthUp(this.current);
+    domElement.mousedown(__bind(function(e) {
+      return this.mousedown(e);
+    }, this));
+    return $(document).mousewheel(__bind(function(e, delta) {
+      return this.mousewheel(delta);
+    }, this));
+  };
+  init_web_app = function() {
+    var game;
+    game = new Game();
+    new BlockSelection(game).insert();
     return game.start();
   };
 window.AmbientLight = AmbientLight
+window.BlockSelection = BlockSelection
+window.Blocks = Blocks
 window.ClampToEdgeWrapping = ClampToEdgeWrapping
 window.CollisionHelper = CollisionHelper
 window.CubeGeometry = CubeGeometry

@@ -10,6 +10,8 @@ vec = (x, y, z) -> new Vector3 x, y, z
 pvec = (v) -> [v.x, v.y, v.z].toString()
 
 CubeSize = 50
+Blocks = ["cobblestone", "plank", "brick", "diamond",
+    "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
 
 class Player
     width: CubeSize * 0.3
@@ -188,9 +190,7 @@ class Game
             grass_dirt, # back
             grass_dirt]  #front
         @cubeBlocks = {}
-        blocks = ["cobblestone", "plank", "brick", "diamond",
-            "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
-        for b in blocks
+        for b in Blocks
             texture = TextureHelper.loadTexture "./textures/#{b}.png"
             cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, texture
             @cubeBlocks[b] = cube
@@ -371,7 +371,6 @@ class Game
         return @addHalfCube ret
 
     selectCubeBlock: (name) ->
-        puts "selecting:", name
         @currentCube = @cubeBlocks[name]
 
     getNewCubePosition: (ray) ->
@@ -487,33 +486,45 @@ class Game
         return
 
 
+class BlockSelection
+    constructor: (@game) ->
+        @current = "cobblestone"
+
+    blockImg: (name) ->
+        "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
+
+    mousedown: (e) ->
+        return false if e.target == @
+        @select e.target.id
+        return false
+
+    mousewheel: (delta) ->
+        index = (Blocks.indexOf(@current) - delta).mod(Blocks.length)
+        @select Blocks[index]
+
+    ligthUp: (target) -> @_setOpacity target, 0.8
+    lightOff:  (target) -> @_setOpacity target, 1
+
+    select: (name) ->
+        @game.selectCubeBlock name
+        @ligthUp name
+        @lightOff @current
+        @current = name
+
+    _setOpacity: (target, val) -> $("#" + target).css(opacity: val)
+
+    insert: ->
+        blockList = (@blockImg(b) for b in Blocks)
+        domElement = $("#blocks")
+        domElement.append blockList.join('')
+        @ligthUp @current
+        domElement.mousedown (e) => @mousedown e
+        $(document).mousewheel (e, delta) => @mousewheel delta
+
 
 init_web_app = ->
     game = new Game()
-    blockImg = (name) ->
-        "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
-    blocks = ["cobblestone", "plank", "brick", "diamond",
-        "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
-    blockList = (blockImg(b) for b in blocks)
-    $("#blocks").append(blockList.join(''))
-    current = "cobblestone"
-    $("#" + current).css(opacity: .9)
-    $("#blocks").mousedown (e) ->
-        return false if e.target == @
-        game.selectCubeBlock e.target.id
-        newone = $(e.target)
-        newone.css(opacity: .9)
-        $("#" + current).css(opacity: 1)
-        current = e.target.id
-        return false
-    $("body").mousewheel (e, delta) ->
-        index = (blocks.indexOf(current) - delta).mod(blocks.length)
-        newone = blocks[index]
-        game.selectCubeBlock newone
-        $("#" + newone).css(opacity: .9)
-        $("#" + current).css(opacity: 1)
-        current = newone
-        return
+    new BlockSelection(game).insert()
     game.start()
 
 # window.Tracer = new MethodTracer().traceClasses 'Player Grid CollisionHelper TextureHelper Floor Game'
