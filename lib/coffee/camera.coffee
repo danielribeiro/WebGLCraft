@@ -23,7 +23,6 @@ class Controls
         $(@domElement).mousemove (e) => @onMouseMove e
         $(@domElement).mousedown (e) => @onMouseDown e
         $(@domElement).mouseup (e) => @onMouseUp e
-        $(@domElement).bind "contextmenu", -> false
         $(@domElement).mouseenter (e) => @onMouserEnter e
 
     onMouserEnter: (event) ->

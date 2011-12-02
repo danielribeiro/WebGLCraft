@@ -155,7 +155,7 @@
     x = _ref2[0];
     y = _ref2[1];
     z = _ref2[2];
-    if (!(this.grid.insideGrid(x, y, z))) {
+    if (!(this.grid.insideGrid(x, 0, z))) {
       return true;
     }
   };
@@ -349,19 +349,12 @@
         this.cubeAt(4 + i, 1, j);
       }
     }
-    _ref2 = (2 * size);
+    _result = []; _ref2 = (2 * size);
     for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
-      _ref3 = (2 * size);
-      for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(4 + i, 4, j);
-      }
-    }
-    _result = [];
-    for (i = 0; i <= 50; i++) {
       _result.push((function() {
-        _result2 = [];
-        for (j = 0; j <= 10; j++) {
-          _result2.push(this.cubeAt(15 + i, 1 + i, 1 + j));
+        _result2 = []; _ref3 = (2 * size);
+        for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
+          _result2.push(this.cubeAt(4 + i, 4, j));
         }
         return _result2;
       }).call(this));
@@ -779,6 +772,9 @@
   };
   init_web_app = function() {
     var game;
+    $(document).bind("contextmenu", function() {
+      return false;
+    });
     if (!(Detector.webgl)) {
       return Detector.addGetWebGLMessage();
     }

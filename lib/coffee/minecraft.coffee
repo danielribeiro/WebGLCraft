@@ -97,7 +97,7 @@ class CollisionHelper
     beyondBounds: ->
         p = @player.position()
         [x, y, z] = @grid.gridCoords p.x, p.y, p.z
-        return true unless @grid.insideGrid x, y, z
+        return true unless @grid.insideGrid x, 0, z
 
 
     _addToPosition: (position, value) ->
@@ -255,9 +255,7 @@ class Game
             for j in [size..(2*size)]
                 @cubeAt 4 + i, 4, j
 
-        for i in [0..50]
-            for j in [0..10]
-                @cubeAt 15 + i, 1 + i, 1 + j
+
 
 
     cubeAt: (x, y, z, geo, validatingFunction) ->
@@ -425,7 +423,6 @@ class Game
     axes: ['x', 'y', 'z']
     iterationCount: 10
 
-    # tries to move the cube in the axis. returns true if and only if it doesn't collide
     moveCube: (speedRatio) ->
         @defineMove()
         iterationCount = Math.round(@iterationCount * speedRatio)
@@ -543,6 +540,7 @@ class BlockSelection
 
 
 init_web_app = ->
+    $(document).bind "contextmenu", -> false
     return Detector.addGetWebGLMessage() unless Detector.webgl
     game = new Game()
     new BlockSelection(game).insert()

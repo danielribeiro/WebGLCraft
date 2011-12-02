@@ -39,9 +39,6 @@
     $(this.domElement).mouseup(__bind(function(e) {
       return this.onMouseUp(e);
     }, this));
-    $(this.domElement).bind("contextmenu", function() {
-      return false;
-    });
     return $(this.domElement).mouseenter(__bind(function(e) {
       return this.onMouserEnter(e);
     }, this));
