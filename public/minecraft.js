@@ -583,37 +583,30 @@
   };
   Game.prototype.axes = ['x', 'y', 'z'];
   Game.prototype.iterationCount = 10;
-  Game.prototype.moveCube = function() {
-    var _i, _len, _ref2, axis, iterationCount, ivel, originalpos;
-    iterationCount = this.iterationCount;
-    ivel = {};
-    _ref2 = this.axes;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      axis = _ref2[_i];
-      ivel[axis] = this.move[axis] / this.iterationCount;
-    }
+  Game.prototype.moveCube = function(speedRatio) {
+    var _i, _len, _ref2, axis, iterationCount, originalpos;
+    this.defineMove();
+    iterationCount = Math.round(this.iterationCount * speedRatio);
     while (iterationCount-- > 0) {
+      this.applyGravity();
       _ref2 = this.axes;
       for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
         axis = _ref2[_i];
-        if (ivel[axis] !== 0) {
+        if (this.move[axis] !== 0) {
           originalpos = this.player.position(axis);
-          this.player.incPosition(axis, ivel[axis]);
+          this.player.incPosition(axis, this.move[axis]);
           if (this.collides()) {
             this.player.setPosition(axis, originalpos);
-            if (axis === 'y' && ivel.y < 0) {
-              this.touchesGround();
+            if (axis === 'y' && this.move.y < 0) {
+              this.onGround = true;
             }
-            this.move[axis] = 0;
-            ivel[axis] = 0;
+          } else if (axis === 'y' && (this.move.y <= 0)) {
+            this.onGround = false;
           }
         }
       }
     }
     return null;
-  };
-  Game.prototype.touchesGround = function() {
-    return (this.onGround = true);
   };
   Game.prototype.playerKeys = {
     w: 'z+',
@@ -622,12 +615,12 @@
     d: 'x-'
   };
   Game.prototype.shouldJump = function() {
-    return this.keysDown.space && this.onGround && this.move.y === 0;
+    return this.keysDown.space && this.onGround;
   };
   Game.prototype.defineMove = function() {
     var _ref2, _ref3, action, axis, baseVel, jumpSpeed, key, operation, vel;
-    baseVel = 4;
-    jumpSpeed = 6;
+    baseVel = .4;
+    jumpSpeed = .8;
     this.move.x = 0;
     this.move.z = 0;
     _ref2 = this.playerKeys;
@@ -644,10 +637,9 @@
     }
     if (this.shouldJump()) {
       this.onGround = false;
-      this.move.y += jumpSpeed;
+      this.move.y = jumpSpeed;
     }
     this.projectMoveOnCamera();
-    this.applyGravity();
     return null;
   };
   Game.prototype.projectMoveOnCamera = function() {
@@ -663,8 +655,8 @@
     return (this.move.z = frontDir.y + rightDir.y);
   };
   Game.prototype.applyGravity = function() {
-    if (!(this.move.y < -10)) {
-      return this.move.y -= .3;
+    if (!(this.move.y < -1)) {
+      return this.move.y -= .005;
     }
   };
   Game.prototype.setCameraEyes = function() {
@@ -679,13 +671,10 @@
   Game.prototype.idealSpeed = 1 / 60;
   Game.prototype.tick = function() {
     var speedRatio;
-    speedRatio = Math.round(this.clock.getDelta() / this.idealSpeed);
+    speedRatio = this.clock.getDelta() / this.idealSpeed;
     this.placeBlock();
     this.deleteBlock();
-    speedRatio.times(__bind(function() {
-      this.defineMove();
-      return this.moveCube();
-    }, this));
+    this.moveCube(speedRatio);
     this.renderer.clear();
     this.controls.update();
     this.setCameraEyes();

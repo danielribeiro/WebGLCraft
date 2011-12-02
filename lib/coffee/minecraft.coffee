@@ -409,24 +409,21 @@ class Game
     iterationCount: 10
 
     # tries to move the cube in the axis. returns true if and only if it doesn't collide
-    moveCube: ->
-        iterationCount = @iterationCount
-        ivel = {}
-        for axis in @axes
-            ivel[axis] = @move[axis] / @iterationCount
+    moveCube: (speedRatio) ->
+        @defineMove()
+        iterationCount = Math.round(@iterationCount * speedRatio)
         while iterationCount-- > 0
-            for axis in @axes when ivel[axis] isnt 0
+            @applyGravity()
+            for axis in @axes when @move[axis] isnt 0
                 originalpos = @player.position(axis)
-                @player.incPosition axis, ivel[axis]
+                @player.incPosition axis, @move[axis]
                 if @collides()
                     @player.setPosition axis, originalpos
-                    @touchesGround() if axis is 'y' and ivel.y < 0
-                    @move[axis] = 0
-                    ivel[axis] = 0
+                    @onGround = true if axis is 'y' and @move.y < 0
+                else if axis is 'y' and @move.y <= 0
+                    @onGround = false
         return
 
-    touchesGround: ->
-        @onGround = true
 
     playerKeys:
         w: 'z+'
@@ -434,11 +431,11 @@ class Game
         a: 'x+'
         d: 'x-'
 
-    shouldJump: -> @keysDown.space and @onGround and @move.y == 0
+    shouldJump: -> @keysDown.space and @onGround
 
     defineMove: ->
-        baseVel = 4
-        jumpSpeed = 6
+        baseVel = .4
+        jumpSpeed = .8
         @move.x = 0
         @move.z = 0
         for key, action of @playerKeys
@@ -447,9 +444,8 @@ class Game
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
             @onGround = false
-            @move.y += jumpSpeed
+            @move.y = jumpSpeed
         @projectMoveOnCamera()
-        @applyGravity()
         return
 
     projectMoveOnCamera: ->
@@ -462,7 +458,7 @@ class Game
         @move.z = frontDir.y + rightDir.y
 
 
-    applyGravity: -> @move.y -= .3 unless @move.y < -10
+    applyGravity: -> @move.y -= .005 unless @move.y < -1
 
     setCameraEyes: ->
         pos = @player.eyesPosition()
@@ -475,12 +471,10 @@ class Game
     idealSpeed: 1 / 60
 
     tick: ->
-        speedRatio = Math.round @clock.getDelta() / @idealSpeed
+        speedRatio = @clock.getDelta() / @idealSpeed
         @placeBlock()
         @deleteBlock()
-        speedRatio.times =>
-            @defineMove()
-            @moveCube()
+        @moveCube speedRatio
         @renderer.clear()
         @controls.update()
         @setCameraEyes()
