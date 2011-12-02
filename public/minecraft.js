@@ -720,15 +720,6 @@
     this.renderer.render(this.scene, this.camera);
     return null;
   };
-  Game.prototype.debug = function() {
-    var _i, _len, _ref2, axis;
-    _ref2 = this.axes;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      axis = _ref2[_i];
-      $('#pos' + axis).html(String(this.player.position(axis)));
-    }
-    return null;
-  };
   BlockSelection = function(_arg) {
     this.game = _arg;
     this.current = "cobblestone";

@@ -504,14 +504,7 @@ class Game
         @controls.update()
         @setCameraEyes()
         @renderer.render @scene, @camera
-        # @debug()
         return
-
-    debug: ->
-        for axis in @axes
-            $('#pos' + axis).html String @player.position axis
-        return
-
 
 class BlockSelection
     constructor: (@game) ->
