@@ -788,6 +788,9 @@
   };
   init_web_app = function() {
     var game;
+    if (!(Detector.webgl)) {
+      return Detector.addGetWebGLMessage();
+    }
     game = new Game();
     new BlockSelection(game).insert();
     return game.start();

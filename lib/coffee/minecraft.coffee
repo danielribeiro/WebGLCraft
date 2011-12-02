@@ -550,6 +550,7 @@ class BlockSelection
 
 
 init_web_app = ->
+    return Detector.addGetWebGLMessage() unless Detector.webgl
     game = new Game()
     new BlockSelection(game).insert()
     game.start()
