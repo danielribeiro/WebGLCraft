@@ -74,6 +74,12 @@ class Grid
 
     put: (x, y, z, val) -> @matrix[x][y][z] = val
 
+    gridCoords: (x, y, z) ->
+        x = Math.floor(x / CubeSize)
+        y = Math.floor(y / CubeSize)
+        z = Math.floor(z / CubeSize)
+        return [x, y, z]
+
 
 class CollisionHelper
     constructor: (@player, @grid)-> return
@@ -82,10 +88,17 @@ class CollisionHelper
 
     collides: ->
         return true if @player.collidesWithGround()
+        return true if @beyondBounds()
         playerBox = @player.boundingBox()
         for cube in @possibleCubes()
             return true if @_collideWithCube playerBox, cube
         return false
+
+    beyondBounds: ->
+        p = @player.position()
+        [x, y, z] = @grid.gridCoords p.x, p.y, p.z
+        return true unless @grid.insideGrid x, y, z
+
 
     _addToPosition: (position, value) ->
         pos = position.clone()
@@ -221,11 +234,8 @@ class Game
         @collisionHelper = new CollisionHelper(@player, @grid)
         @clock = new Clock()
 
-    gridCoords: (x, y, z) ->
-        x = Math.floor(x / @rad)
-        y = Math.floor(y / @rad)
-        z = Math.floor(z / @rad)
-        return [x, y, z]
+    gridCoords: (x, y, z) -> @grid.gridCoords x, y, z
+
 
     intoGrid: (x, y, z, val) ->
         args = @gridCoords(x, y, z).concat(val)
@@ -445,7 +455,15 @@ class Game
         if @shouldJump()
             @onGround = false
             @move.y = jumpSpeed
+        @garanteeXYNorm()
         @projectMoveOnCamera()
+        return
+
+    garanteeXYNorm: ->
+        if @move.x != 0 and @move.z != 0
+            ratio = Math.cos(Math.PI / 4)
+            @move.x *= ratio
+            @move.z *= ratio
         return
 
     projectMoveOnCamera: ->

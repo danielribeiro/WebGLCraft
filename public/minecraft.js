@@ -116,6 +116,12 @@
   Grid.prototype.put = function(x, y, z, val) {
     return (this.matrix[x][y][z] = val);
   };
+  Grid.prototype.gridCoords = function(x, y, z) {
+    x = Math.floor(x / CubeSize);
+    y = Math.floor(y / CubeSize);
+    z = Math.floor(z / CubeSize);
+    return [x, y, z];
+  };
   CollisionHelper = function(_arg, _arg2) {
     this.grid = _arg2;
     this.player = _arg;
@@ -129,6 +135,9 @@
     if (this.player.collidesWithGround()) {
       return true;
     }
+    if (this.beyondBounds()) {
+      return true;
+    }
     playerBox = this.player.boundingBox();
     _ref2 = this.possibleCubes();
     for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
@@ -138,6 +147,17 @@
       }
     }
     return false;
+  };
+  CollisionHelper.prototype.beyondBounds = function() {
+    var _ref2, p, x, y, z;
+    p = this.player.position();
+    _ref2 = this.grid.gridCoords(p.x, p.y, p.z);
+    x = _ref2[0];
+    y = _ref2[1];
+    z = _ref2[2];
+    if (!(this.grid.insideGrid(x, y, z))) {
+      return true;
+    }
   };
   CollisionHelper.prototype._addToPosition = function(position, value) {
     var pos;
@@ -305,10 +325,7 @@
     return this;
   };
   Game.prototype.gridCoords = function(x, y, z) {
-    x = Math.floor(x / this.rad);
-    y = Math.floor(y / this.rad);
-    z = Math.floor(z / this.rad);
-    return [x, y, z];
+    return this.grid.gridCoords(x, y, z);
   };
   Game.prototype.intoGrid = function(x, y, z, val) {
     var args;
@@ -639,7 +656,17 @@
       this.onGround = false;
       this.move.y = jumpSpeed;
     }
+    this.garanteeXYNorm();
     this.projectMoveOnCamera();
+    return null;
+  };
+  Game.prototype.garanteeXYNorm = function() {
+    var ratio;
+    if (this.move.x !== 0 && this.move.z !== 0) {
+      ratio = Math.cos(Math.PI / 4);
+      this.move.x *= ratio;
+      this.move.z *= ratio;
+    }
     return null;
   };
   Game.prototype.projectMoveOnCamera = function() {
