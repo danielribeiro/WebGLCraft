@@ -12,8 +12,8 @@ class Controls
         @lookSpeed = 0.20
         @mouseX = 0
         @mouseY = 0
-        @lat = 25
-        @lon = 312
+        @lat = 0
+        @lon = 0
         @mouseDragOn = false
         @anchorx = null
         @anchory = null

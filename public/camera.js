@@ -21,8 +21,8 @@
     this.lookSpeed = 0.20;
     this.mouseX = 0;
     this.mouseY = 0;
-    this.lat = 25;
-    this.lon = 312;
+    this.lat = 0;
+    this.lon = 0;
     this.mouseDragOn = false;
     this.anchorx = null;
     this.anchory = null;

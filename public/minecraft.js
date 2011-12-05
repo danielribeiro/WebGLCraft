@@ -48,7 +48,7 @@
     this.halfHeight = this.height / 2;
     this.halfWidth = this.width / 2;
     this.halfDepth = this.depth / 2;
-    this.pos = vec(750, 300, 850);
+    this.pos = vec();
     this.eyesDelta = this.halfHeight * 0.9;
     return this;
   };
@@ -332,34 +332,58 @@
     args = this.gridCoords(x, y, z).concat(val);
     return this.grid.put.apply(this.grid, args);
   };
+  Game.prototype.generateHeight = function() {
+    var data, heightFactor, perlin, quality, size, z;
+    size = 11;
+    data = [];
+    size.times(function(i) {
+      data[i] = [];
+      return size.times(function(j) {
+        return (data[i][j] = 0);
+      });
+    });
+    perlin = new ImprovedNoise();
+    heightFactor = 0.1;
+    quality = 2 * heightFactor;
+    z = Math.random() * 100;
+    (4).times(function(j) {
+      size.times(function(x) {
+        return size.times(function(y) {
+          var noise;
+          noise = perlin.noise(x / quality, y / quality, z);
+          return data[x][y] += noise * quality;
+        });
+      });
+      return quality *= 4;
+    });
+    return data;
+  };
   Game.prototype.populateWorld = function() {
-    var _ref2, _ref3, _result, _result2, i, j, size;
-    size = 5;
-    _ref2 = (2 * size);
-    for (i = 0; (0 <= _ref2 ? i <= _ref2 : i >= _ref2); (0 <= _ref2 ? i += 1 : i -= 1)) {
-      _ref3 = (2 * size);
-      for (j = 0; (0 <= _ref3 ? j <= _ref3 : j >= _ref3); (0 <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(4 + i, 0, j);
-      }
-    }
-    _ref2 = (2 * size);
-    for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
-      _ref3 = (2 * size);
-      for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-        this.cubeAt(4 + i, 1, j);
-      }
-    }
-    _result = []; _ref2 = (2 * size);
-    for (i = size; (size <= _ref2 ? i <= _ref2 : i >= _ref2); (size <= _ref2 ? i += 1 : i -= 1)) {
-      _result.push((function() {
-        _result2 = []; _ref3 = (2 * size);
-        for (j = size; (size <= _ref3 ? j <= _ref3 : j >= _ref3); (size <= _ref3 ? j += 1 : j -= 1)) {
-          _result2.push(this.cubeAt(4 + i, 4, j));
+    var _i, data, i, middle, middlePos;
+    middle = this.grid.size / 2;
+    data = this.generateHeight();
+    for (_i = -5; _i <= 5; _i++) {
+      (function() {
+        var _j, _result, j;
+        var i = _i;
+        _result = [];
+        for (_j = -5; _j <= 5; _j++) {
+          (function() {
+            var height;
+            var j = _j;
+            return _result.push((function() {
+              height = (Math.abs(Math.floor(data[i + 5][j + 5]))) + 1;
+              return height.times(__bind(function(k) {
+                return this.cubeAt(middle + i, k, middle + j);
+              }, this));
+            }).call(this));
+          }).call(this);
         }
-        return _result2;
-      }).call(this));
+        return _result;
+      }).call(this);
     }
-    return _result;
+    middlePos = middle * CubeSize;
+    return this.player.pos.set(middlePos, 300, middlePos);
   };
   Game.prototype.cubeAt = function(x, y, z, geo, validatingFunction) {
     var halfcube, mesh;
@@ -740,6 +764,9 @@
     return this._setOpacity(target, 1);
   };
   BlockSelection.prototype.select = function(name) {
+    if (this.current === name) {
+      return null;
+    }
     this.game.selectCubeBlock(name);
     this.ligthUp(name);
     this.lightOff(this.current);

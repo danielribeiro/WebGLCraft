@@ -22,7 +22,7 @@ class Player
         @halfHeight = @height / 2
         @halfWidth = @width / 2
         @halfDepth = @depth / 2
-        @pos = vec 750, 300, 850
+        @pos = vec()
         @eyesDelta = @halfHeight * 0.9
 
     eyesPosition: ->
@@ -241,22 +241,37 @@ class Game
         args = @gridCoords(x, y, z).concat(val)
         return @grid.put args...
 
+
+    generateHeight: ->
+        size = 11
+        data = []
+        size.times (i) ->
+            data[i] = []
+            size.times (j) ->
+                data[i][j] = 0
+        perlin = new ImprovedNoise()
+        heightFactor = 0.1
+        quality = 2 * heightFactor
+        z = Math.random() * 100
+        4.times (j) ->
+            size.times (x) ->
+                size.times (y) ->
+                    noise = perlin.noise(x / quality, y / quality, z)
+                    data[x][y] += noise * quality
+            quality *= 4
+        data
+
+
     populateWorld: ->
-        size = 5
-        for i in [0..(2 * size)]
-            for j in [0..(2 * size)]
-                @cubeAt 4 + i, 0, j
-
-        for i in [size..(2*size)]
-            for j in [size..(2*size)]
-                @cubeAt 4 + i, 1, j
-
-        for i in [size..(2*size)]
-            for j in [size..(2*size)]
-                @cubeAt 4 + i, 4, j
-
-
-
+        middle = @grid.size / 2
+        data = @generateHeight()
+        for i in [-5..5]
+            for j in [-5..5]
+                height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
+                height.times (k) =>
+                    @cubeAt middle + i , k, middle + j
+        middlePos = middle * CubeSize
+        @player.pos.set middlePos, 300, middlePos
 
     cubeAt: (x, y, z, geo, validatingFunction) ->
         geo or=@geo
@@ -523,6 +538,7 @@ class BlockSelection
     lightOff:  (target) -> @_setOpacity target, 1
 
     select: (name) ->
+        return if @current is name
         @game.selectCubeBlock name
         @ligthUp name
         @lightOff @current
