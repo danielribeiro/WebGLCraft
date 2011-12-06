@@ -5,10 +5,9 @@ require 'open3'
 
 
 class CoffeeCompiler
-  attr_reader :plugin, :force
+  attr_reader :force
 
-  def initialize(plugin = nil, force = false)
-    @plugin = plugin
+  def initialize(force = false)
     @force = force
   end
 
@@ -16,7 +15,6 @@ class CoffeeCompiler
     FileUtils.mkpath outputDir if outputDir
     return if doesnNeedCompiling(filename, outputDir)
     args = ["coffee"]
-    args.push '-r', plugin if plugin
     args.push '-o', outputDir if outputDir
     args.push '-c', filename
     Open3.popen3 *args do |stdin, stdout, stderr|

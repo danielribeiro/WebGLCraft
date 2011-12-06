@@ -22,3 +22,5 @@ class MethodTracer
         for id, used of @tracer when not used
             puts id
         return @
+
+window.MethodTracer = MethodTracer

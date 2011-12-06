@@ -14,3 +14,5 @@ CollisionUtils =
             , cube2.vmin[axis], cube2.vmax[axis]
             return false unless collides
         return true
+
+window.CollisionUtils = CollisionUtils

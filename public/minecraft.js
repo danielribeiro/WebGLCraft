@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, init_web_app, pvec, vec;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, pvec, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   }, __hasProp = Object.prototype.hasOwnProperty;
@@ -359,9 +359,10 @@
     return data;
   };
   Game.prototype.populateWorld = function() {
-    var _i, data, i, middle, middlePos;
+    var _i, data, i, middle, middlePos, playerHeight;
     middle = this.grid.size / 2;
     data = this.generateHeight();
+    playerHeight = null;
     for (_i = -5; _i <= 5; _i++) {
       (function() {
         var _j, _result, j;
@@ -373,6 +374,9 @@
             var j = _j;
             return _result.push((function() {
               height = (Math.abs(Math.floor(data[i + 5][j + 5]))) + 1;
+              if (i === 0 && j === 0) {
+                playerHeight = (height + 1) * CubeSize;
+              }
               return height.times(__bind(function(k) {
                 return this.cubeAt(middle + i, k, middle + j);
               }, this));
@@ -383,7 +387,7 @@
       }).call(this);
     }
     middlePos = middle * CubeSize;
-    return this.player.pos.set(middlePos, 300, middlePos);
+    return this.player.pos.set(middlePos, playerHeight, middlePos);
   };
   Game.prototype.cubeAt = function(x, y, z, geo, validatingFunction) {
     var halfcube, mesh;
@@ -797,7 +801,7 @@
       return this.mousewheel(delta);
     }, this));
   };
-  init_web_app = function() {
+  window.init_web_app = function() {
     var game;
     $(document).bind("contextmenu", function() {
       return false;
@@ -809,41 +813,4 @@
     new BlockSelection(game).insert();
     return game.start();
   };
-window.AmbientLight = AmbientLight
-window.BlockSelection = BlockSelection
-window.Blocks = Blocks
-window.ClampToEdgeWrapping = ClampToEdgeWrapping
-window.Clock = Clock
-window.CollisionHelper = CollisionHelper
-window.CubeGeometry = CubeGeometry
-window.CubeSize = CubeSize
-window.DirectionalLight = DirectionalLight
-window.Floor = Floor
-window.Game = Game
-window.Grid = Grid
-window.LinearMipMapLinearFilter = LinearMipMapLinearFilter
-window.Matrix4 = Matrix4
-window.Mesh = Mesh
-window.MeshLambertMaterial = MeshLambertMaterial
-window.MeshNormalMaterial = MeshNormalMaterial
-window.NearestFilter = NearestFilter
-window.Object3D = Object3D
-window.PerspectiveCamera = PerspectiveCamera
-window.PlaneGeometry = PlaneGeometry
-window.Player = Player
-window.PointLight = PointLight
-window.Projector = Projector
-window.Ray = Ray
-window.RepeatWrapping = RepeatWrapping
-window.Scene = Scene
-window.Texture = Texture
-window.TextureHelper = TextureHelper
-window.UVMapping = UVMapping
-window.Vector2 = Vector2
-window.Vector3 = Vector3
-window.WebGLRenderer = WebGLRenderer
-window._ref = _ref
-window.init_web_app = init_web_app
-window.pvec = pvec
-window.vec = vec
 }).call(this);

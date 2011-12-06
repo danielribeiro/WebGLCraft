@@ -119,6 +119,6 @@
     this.updateLook();
     return null;
   };
-window.Controls = Controls
-window.MouseEvent = MouseEvent
+  window.MouseEvent = MouseEvent;
+  window.Controls = Controls;
 }).call(this);

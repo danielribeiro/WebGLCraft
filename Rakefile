@@ -15,7 +15,7 @@ def compileall(from, to, force = false)
   outDir = File.expand_path to
   coffeeDir = File.expand_path from
   puts "Compiling all files: #{coffeeDir} -> #{outDir}"
-  compiler = CoffeeCompiler.new './globalizer.coffee', force
+  compiler = CoffeeCompiler.new force
   begin
     compiler.compileAll(__FILE__, coffeeDir, outDir)
   rescue Exception => ex

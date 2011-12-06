@@ -16,22 +16,6 @@ patch Number,
     toDegrees: ->  (@ * 180) / Math.PI
 
 
-setBindings = (keyBinds, bind) ->
-    for type, keys of keyBinds
-        for key, command of keys
-            bind type, key, command
-
-
-assoc = (o, i) ->
+window.assoc = (o, i) ->
     (o[k] = v) for k, v of i
     return o
-
-
-class IdentityHashMap
-    constructor: ->
-        @hash = {}
-
-    put: (key, value) -> @hash[key.id] = value
-    get: (key) -> @hash[key.id]
-    deleteAt: (key) -> delete @hash[key.id]
-    contains: (key) -> @hash[key.id]?

@@ -265,13 +265,14 @@ class Game
     populateWorld: ->
         middle = @grid.size / 2
         data = @generateHeight()
+        playerHeight = null
         for i in [-5..5]
             for j in [-5..5]
                 height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
-                height.times (k) =>
-                    @cubeAt middle + i , k, middle + j
+                playerHeight = (height + 1) * CubeSize if i == 0 and j == 0
+                height.times (k) => @cubeAt middle + i , k, middle + j
         middlePos = middle * CubeSize
-        @player.pos.set middlePos, 300, middlePos
+        @player.pos.set middlePos, playerHeight, middlePos
 
     cubeAt: (x, y, z, geo, validatingFunction) ->
         geo or=@geo
@@ -555,7 +556,7 @@ class BlockSelection
         $(document).mousewheel (e, delta) => @mousewheel delta
 
 
-init_web_app = ->
+window.init_web_app = ->
     $(document).bind "contextmenu", -> false
     return Detector.addGetWebGLMessage() unless Detector.webgl
     game = new Game()

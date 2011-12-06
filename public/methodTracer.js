@@ -51,5 +51,5 @@
     }
     return this;
   };
-window.MethodTracer = MethodTracer
+  window.MethodTracer = MethodTracer;
 }).call(this);

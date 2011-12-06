@@ -81,3 +81,6 @@ class Controls
         @lat = max(-85, min(85, @lat))
         @updateLook()
         return
+
+window.MouseEvent = MouseEvent
+window.Controls = Controls

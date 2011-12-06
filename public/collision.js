@@ -24,5 +24,5 @@
       return true;
     }
   };
-window.CollisionUtils = CollisionUtils
+  window.CollisionUtils = CollisionUtils;
 }).call(this);
