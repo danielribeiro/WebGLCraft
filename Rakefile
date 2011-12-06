@@ -26,19 +26,19 @@ end
 
 desc "compile all coffeescripts and start watching them"
 task :compile_watch do
-  compileall 'lib/coffee', 'public'
+  compileall 'lib/', 'public'
   system "watchr", 'compileall.rb'
 end
 
 desc "Forces the compilation of all coffeescripts and start watching them"
 task :compile do
-  compileall 'lib/coffee', 'public', true
+  compileall 'lib/', 'public', true
   system "watchr", 'compileall.rb'
 end
 
 desc "runs unit tests"
 task :spec do
-  compileall 'lib/coffee', 'public'
+  compileall 'lib/', 'public'
   compileall 'spec/coffee', 'spec/javascripts'
   imports = %w[spec/jasmine-node/lib spec/javascripts public]
   system "env NODE_PATH=#{imports.join ':'} node spec/jasmine-node/specs.js"

@@ -1,23 +1,20 @@
-(function() {
-  var __hasProp = Object.prototype.hasOwnProperty;
+
   patch(Number, {
     mod: function(arg) {
-      if (this >= 0) {
-        return this % arg;
-      }
+      if (this >= 0) return this % arg;
       return (this + arg) % arg;
     },
     div: function(arg) {
       return Math.floor(this / arg);
     },
     times: function(fn) {
-      var _result, i;
+      var i, _results;
       i = 0;
-      _result = [];
+      _results = [];
       while (i < this) {
-        _result.push(fn(i++));
+        _results.push(fn(i++));
       }
-      return _result;
+      return _results;
     },
     toRadians: function() {
       return (this * Math.PI) / 180;
@@ -26,14 +23,12 @@
       return (this * 180) / Math.PI;
     }
   });
+
   window.assoc = function(o, i) {
-    var _ref, k, v;
-    _ref = i;
-    for (k in _ref) {
-      if (!__hasProp.call(_ref, k)) continue;
-      v = _ref[k];
-      (o[k] = v);
+    var k, v;
+    for (k in i) {
+      v = i[k];
+      o[k] = v;
     }
     return o;
   };
-}).call(this);
