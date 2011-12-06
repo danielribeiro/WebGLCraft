@@ -89,8 +89,7 @@
 
     function Grid(size) {
       var _this = this;
-      this.size = size;
-      this.size || (this.size = 5);
+      this.size = size != null ? size : 5;
       this.matrix = [];
       this.size.times(function(i) {
         _this.matrix[i] = [];
@@ -455,17 +454,20 @@
     };
 
     Game.prototype.defineControls = function() {
-      var key, _i, _len, _ref;
+      var bindit, key, _i, _len, _ref;
       var _this = this;
-      _ref = "wasd".split('').concat('space');
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        key = _ref[_i];
+      bindit = function(key) {
         $(document).bind('keydown', key, function() {
           return _this.keysDown[key] = true;
         });
-        $(document).bind('keyup', key, function() {
+        return $(document).bind('keyup', key, function() {
           return _this.keysDown[key] = false;
         });
+      };
+      _ref = "wasd".split('').concat('space');
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        key = _ref[_i];
+        bindit(key);
       }
       $(document).bind('keydown', 'p', function() {
         return _this.togglePause();

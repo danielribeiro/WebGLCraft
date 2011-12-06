@@ -59,8 +59,7 @@ class Player
 
 
 class Grid
-    constructor: (@size) ->
-        @size or= 5
+    constructor: (@size = 5) ->
         @matrix = []
         @size.times (i) =>
             @matrix[i] = []
@@ -315,9 +314,11 @@ class Game
         scene.add directionalLight
 
     defineControls: ->
-        for key in "wasd".split('').concat('space')
+        bindit = (key) =>
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
+        for key in "wasd".split('').concat('space')
+            bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
         $(@canvas).mousedown (e) => @onMouseDown e
         $(@canvas).mouseup (e) => @onMouseUp e
