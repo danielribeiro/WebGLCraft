@@ -7,7 +7,6 @@
 {LinearMipMapLinearFilter, ClampToEdgeWrapping, Clock} = THREE
 
 vec = (x, y, z) -> new Vector3 x, y, z
-pvec = (v) -> [v.x, v.y, v.z].toString()
 
 CubeSize = 50
 Blocks = ["cobblestone", "plank", "brick", "diamond",
@@ -192,24 +191,9 @@ class Game
         @rad = CubeSize
         @width = window.innerWidth
         @height = window.innerHeight
-
-        grass_dirt = TextureHelper.loadTexture "./textures/grass_dirt.png"
-        grass = TextureHelper.loadTexture "./textures/grass.png"
-        dirt = TextureHelper.loadTexture "./textures/dirt.png"
-        materials = [grass_dirt, #right
-            grass_dirt, # left
-            grass, # top
-            dirt, # bottom
-            grass_dirt, # back
-            grass_dirt]  #front
-        @cubeBlocks = {}
-        for b in Blocks
-            texture = TextureHelper.loadTexture "./textures/#{b}.png"
-            cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, texture
-            @cubeBlocks[b] = cube
+        @geo = @createGrassGeometry()
+        @cubeBlocks = @createBlocksGeometry()
         @selectCubeBlock 'cobblestone'
-        @geo = new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
-
         @move = {x: 0, z: 0, y: 0}
         @keysDown = {}
         @grid = new Grid(100)
@@ -223,16 +207,36 @@ class Game
         @scene = new Scene()
         new Floor(50000, 50000).addToScene @scene
         @scene.add @camera
-        @populateWorld()
         @addLights @scene
-        @renderer.render @scene, @camera
-        @defineControls()
         @projector = new Projector()
         @castRay = null
         @moved = false
         @toDelete = null
         @collisionHelper = new CollisionHelper(@player, @grid)
         @clock = new Clock()
+        @populateWorld()
+        @defineControls()
+
+    createBlocksGeometry: ->
+        cubeBlocks = {}
+        for b in Blocks
+            cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, @texture(b)
+            cubeBlocks[b] = cube
+        return cubeBlocks
+
+    createGrassGeometry: ->
+        [grass_dirt, grass, dirt] = @textures "grass_dirt", "grass", "dirt"
+        materials = [grass_dirt, #right
+            grass_dirt, # left
+            grass, # top
+            dirt, # bottom
+            grass_dirt, # back
+            grass_dirt]  #front
+        new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
+
+    texture: (name) -> TextureHelper.loadTexture "./textures/#{name}.png"
+
+    textures: (names...) -> return (@texture name for name in names)
 
     gridCoords: (x, y, z) -> @grid.gridCoords x, y, z
 

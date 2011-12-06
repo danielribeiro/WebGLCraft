@@ -1,8 +1,8 @@
 (function() {
-  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, pvec, vec;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, _ref, vec;
   var __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
-  }, __hasProp = Object.prototype.hasOwnProperty;
+  }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty;
   _ref = THREE;
   Object3D = _ref.Object3D;
   Matrix4 = _ref.Matrix4;
@@ -38,9 +38,6 @@
   Clock = _ref.Clock;
   vec = function(x, y, z) {
     return new Vector3(x, y, z);
-  };
-  pvec = function(v) {
-    return [v.x, v.y, v.z].toString();
   };
   CubeSize = 50;
   Blocks = ["cobblestone", "plank", "brick", "diamond", "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"];
@@ -277,24 +274,12 @@
     return scene.add(this.plane);
   };
   Game = function() {
-    var _i, _len, _ref2, b, cube, dirt, grass, grass_dirt, materials, texture;
     this.rad = CubeSize;
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    grass_dirt = TextureHelper.loadTexture("./textures/grass_dirt.png");
-    grass = TextureHelper.loadTexture("./textures/grass.png");
-    dirt = TextureHelper.loadTexture("./textures/dirt.png");
-    materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
-    this.cubeBlocks = {};
-    _ref2 = Blocks;
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      b = _ref2[_i];
-      texture = TextureHelper.loadTexture("./textures/" + (b) + ".png");
-      cube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, texture);
-      this.cubeBlocks[b] = cube;
-    }
+    this.geo = this.createGrassGeometry();
+    this.cubeBlocks = this.createBlocksGeometry();
     this.selectCubeBlock('cobblestone');
-    this.geo = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
     this.move = {
       x: 0,
       z: 0,
@@ -312,17 +297,49 @@
     this.scene = new Scene();
     new Floor(50000, 50000).addToScene(this.scene);
     this.scene.add(this.camera);
-    this.populateWorld();
     this.addLights(this.scene);
-    this.renderer.render(this.scene, this.camera);
-    this.defineControls();
     this.projector = new Projector();
     this.castRay = null;
     this.moved = false;
     this.toDelete = null;
     this.collisionHelper = new CollisionHelper(this.player, this.grid);
     this.clock = new Clock();
+    this.populateWorld();
+    this.defineControls();
     return this;
+  };
+  Game.prototype.createBlocksGeometry = function() {
+    var _i, _len, _ref2, b, cube, cubeBlocks;
+    cubeBlocks = {};
+    _ref2 = Blocks;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      b = _ref2[_i];
+      cube = new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, this.texture(b));
+      cubeBlocks[b] = cube;
+    }
+    return cubeBlocks;
+  };
+  Game.prototype.createGrassGeometry = function() {
+    var _ref2, dirt, grass, grass_dirt, materials;
+    _ref2 = this.textures("grass_dirt", "grass", "dirt");
+    grass_dirt = _ref2[0];
+    grass = _ref2[1];
+    dirt = _ref2[2];
+    materials = [grass_dirt, grass_dirt, grass, dirt, grass_dirt, grass_dirt];
+    return new THREE.CubeGeometry(this.rad, this.rad, this.rad, 1, 1, 1, materials);
+  };
+  Game.prototype.texture = function(name) {
+    return TextureHelper.loadTexture("./textures/" + (name) + ".png");
+  };
+  Game.prototype.textures = function() {
+    var _i, _len, _ref2, _result, name, names;
+    names = __slice.call(arguments, 0);
+    _result = []; _ref2 = names;
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      name = _ref2[_i];
+      _result.push(this.texture(name));
+    }
+    return _result;
   };
   Game.prototype.gridCoords = function(x, y, z) {
     return this.grid.gridCoords(x, y, z);
