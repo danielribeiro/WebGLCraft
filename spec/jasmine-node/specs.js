@@ -1,6 +1,6 @@
-require.paths.push("./lib");
+// require.paths.push("./lib"); Completely removed on node 0.6.0
 var jasmine = require('jasmine');
-var sys = require('sys');
+var sys = require('util');
 
 for(var key in jasmine) {
   global[key] = jasmine[key];

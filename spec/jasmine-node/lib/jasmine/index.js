@@ -1,5 +1,5 @@
 var fs = require('fs');
-var sys = require('sys');
+var sys = require('util');
 
 var filename = __dirname + '/jasmine-0.10.2.js';
 global.window = {

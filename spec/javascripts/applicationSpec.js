@@ -1,34 +1,40 @@
 (function() {
   var cube, importAll, isFalse, isTrue, same, vec;
-  var __hasProp = Object.prototype.hasOwnProperty;
+
   importAll = function(from) {
-    var _i, _ref, _result, i;
-    _result = []; _ref = from;
-    for (i in _ref) {
-      if (!__hasProp.call(_ref, i)) continue;
-      _i = _ref[i];
-      _result.push(global[i] = from[i]);
+    var i, _results;
+    _results = [];
+    for (i in from) {
+      _results.push(global[i] = from[i]);
     }
-    return _result;
+    return _results;
   };
+
   same = function(thi, that) {
     return expect(thi).toEqual(that);
   };
+
   isTrue = function(val) {
     return same(val, true);
   };
+
   isFalse = function(val) {
     return same(val, false);
   };
+
   require('specBrowserAdapter');
+
   require('lib/rbcoffee');
+
   require('collision');
+
   cube = function(vmin, vmax) {
     return {
       vmin: vmin,
       vmax: vmax
     };
   };
+
   vec = function(x, y, z) {
     return {
       x: x,
@@ -36,6 +42,7 @@
       z: z
     };
   };
+
   describe("Intersection utils", function() {
     it("can decide interval collision", function() {
       var collides;
@@ -61,10 +68,5 @@
       return isTrue(collides(cube1, cube2));
     });
   });
-window.cube = cube
-window.importAll = importAll
-window.isFalse = isFalse
-window.isTrue = isTrue
-window.same = same
-window.vec = vec
+
 }).call(this);
