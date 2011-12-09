@@ -827,12 +827,13 @@
       pause: "Pause/Unpause",
       space: "Jump",
       wasd: "WASD keys to move",
-      scroll: "TODO"
+      scroll: "Scroll to change selected block"
     };
 
     Instructions.prototype.insert = function() {
       var _this = this;
       this.setBoder();
+      this.domElement.append('<h1>Click to start</h1>');
       this.domElement.append("<table>" + (this.lines()) + "</table>");
       this.domElement.mousedown(function() {
         _this.domElement.hide();
@@ -881,6 +882,9 @@
     var startGame;
     $("#blocks").hide();
     $('#instructions').hide();
+    $(document).bind("contextmenu", function() {
+      return false;
+    });
     if (!Detector.webgl) return Detector.addGetWebGLMessage();
     startGame = function() {
       var game;

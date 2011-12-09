@@ -572,10 +572,11 @@ class Instructions
         pause: "Pause/Unpause"
         space: "Jump"
         wasd: "WASD keys to move"
-        scroll: "TODO"
+        scroll: "Scroll to change selected block"
 
     insert: ->
         @setBoder()
+        @domElement.append '<h1>Click to start</h1>'
         @domElement.append("<table>#{@lines()}</table>")
         @domElement.mousedown =>
             @domElement.hide()
@@ -604,7 +605,7 @@ class Instructions
 window.init_web_app = ->
     $("#blocks").hide()
     $('#instructions').hide()
-    # $(document).bind "contextmenu", -> false
+    $(document).bind "contextmenu", -> false
     return Detector.addGetWebGLMessage() unless Detector.webgl
     startGame = ->
         game = new Game()
