@@ -21,9 +21,13 @@ task 'compile', 'Compile', ->
     puts "Compiling..."
     compileall 'lib/', 'public/'
 
+task 'server', 'Serve the current filesystem. Needed for loading textures from fs.
+Require python installed.', ->
+    system 'python', '-m SimpleHTTPServer'.split(' ')
+
 task 'spec', "runs unit tests", ->
     compileall 'lib/', 'public'
     compileall 'spec/coffee', 'spec/javascripts'
-    imports = ['spec/jasmine-node/lib', 'spec/javascripts public']
+    imports = ['spec/jasmine-node/lib', 'spec/javascripts', 'public']
     process.env["NODE_PATH"] += ":" + imports.join ":"
     system "node", ["spec/jasmine-node/specs.js"]
