@@ -3,7 +3,7 @@ puts = console.log
 
 system = (name, args) ->
     print = (buffer) -> process.stdout.write buffer.toString()
-    proc =         spawn name, args
+    proc = spawn name, args
     proc.stdout.on 'data', print
     proc.stderr.on 'data', print
     proc.on        'exit', (status) ->

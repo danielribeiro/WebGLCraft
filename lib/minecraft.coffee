@@ -559,11 +559,44 @@ class BlockSelection
         @ligthUp @current
         domElement.mousedown (e) => @mousedown e
         $(document).mousewheel (e, delta) => @mousewheel delta
+        domElement.show()
+
+class Instructions
+    constructor: ->
+        @domElement = $('#instructions')
+
+    insert: ->
+        images = (@img(i)for i in 'drag leftclick pause rightclick space wasd'.split(' '))
+        @setBoder()
+        @domElement.append(@column 'left', images.join('</br>'))
+        @domElement.append(@column 'right', @labels())
+        @domElement.append "<div style='clear:both;'></div>"
+        $('#instructions').show()
+
+    setBoder: ->
+        for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
+            @domElement.css prefix + 'border-radius', '10px'
+        return
+
+    labels: ->
+        l = (for i in 'drag leftclick pause rightclick space wasd'.split(' ')
+            "<div>my name is #{i}</div>")
+        return l.join('')
+
+    img: (name) ->
+        "<img src='./instructions/#{name}.png'/>"
+
+    column: (type, content) -> "<div class='#{type} column'>#{content}</div>"
+
 
 
 window.init_web_app = ->
-    $(document).bind "contextmenu", -> false
+    $("#blocks").hide()
+    $('#instructions').hide()
+    # $(document).bind "contextmenu", -> false
     return Detector.addGetWebGLMessage() unless Detector.webgl
+    new Instructions().insert()
+    return
     game = new Game()
     new BlockSelection(game).insert()
     game.start()

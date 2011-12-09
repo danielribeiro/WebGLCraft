@@ -1,5 +1,5 @@
 (function() {
-  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, vec;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, Instructions, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, vec;
   var __slice = Array.prototype.slice;
 
   Object3D = THREE.Object3D, Matrix4 = THREE.Matrix4, Scene = THREE.Scene, Mesh = THREE.Mesh, WebGLRenderer = THREE.WebGLRenderer, PerspectiveCamera = THREE.PerspectiveCamera;
@@ -803,21 +803,84 @@
       domElement.mousedown(function(e) {
         return _this.mousedown(e);
       });
-      return $(document).mousewheel(function(e, delta) {
+      $(document).mousewheel(function(e, delta) {
         return _this.mousewheel(delta);
       });
+      return domElement.show();
     };
 
     return BlockSelection;
 
   })();
 
+  Instructions = (function() {
+
+    function Instructions() {
+      this.domElement = $('#instructions');
+    }
+
+    Instructions.prototype.insert = function() {
+      var i, images;
+      images = (function() {
+        var _i, _len, _ref, _results;
+        _ref = 'drag leftclick pause rightclick space wasd'.split(' ');
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          i = _ref[_i];
+          _results.push(this.img(i));
+        }
+        return _results;
+      }).call(this);
+      this.setBoder();
+      this.domElement.append(this.column('left', images.join('</br>')));
+      this.domElement.append(this.column('right', this.labels()));
+      this.domElement.append("<div style='clear:both;'></div>");
+      return $('#instructions').show();
+    };
+
+    Instructions.prototype.setBoder = function() {
+      var prefix, _i, _len, _ref;
+      _ref = ['-webkit-', '-moz-', '-o-', '-ms-', ''];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        prefix = _ref[_i];
+        this.domElement.css(prefix + 'border-radius', '10px');
+      }
+    };
+
+    Instructions.prototype.labels = function() {
+      var i, l;
+      l = (function() {
+        var _i, _len, _ref, _results;
+        _ref = 'drag leftclick pause rightclick space wasd'.split(' ');
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          i = _ref[_i];
+          _results.push("<div>my name is " + i + "</div>");
+        }
+        return _results;
+      })();
+      return l.join('');
+    };
+
+    Instructions.prototype.img = function(name) {
+      return "<img src='./instructions/" + name + ".png'/>";
+    };
+
+    Instructions.prototype.column = function(type, content) {
+      return "<div class='" + type + " column'>" + content + "</div>";
+    };
+
+    return Instructions;
+
+  })();
+
   window.init_web_app = function() {
     var game;
-    $(document).bind("contextmenu", function() {
-      return false;
-    });
+    $("#blocks").hide();
+    $('#instructions').hide();
     if (!Detector.webgl) return Detector.addGetWebGLMessage();
+    new Instructions().insert();
+    return;
     game = new Game();
     new BlockSelection(game).insert();
     return game.start();
