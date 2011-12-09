@@ -364,7 +364,7 @@
     };
 
     Game.prototype.generateHeight = function() {
-      var data, heightFactor, perlin, quality, size, z;
+      var data, perlin, quality, size, z;
       size = 11;
       data = [];
       size.times(function(i) {
@@ -374,8 +374,7 @@
         });
       });
       perlin = new ImprovedNoise();
-      heightFactor = 0.1;
-      quality = 2 * heightFactor;
+      quality = 0.05;
       z = Math.random() * 100;
       4..times(function(j) {
         size.times(function(x) {

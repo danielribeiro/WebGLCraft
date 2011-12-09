@@ -253,8 +253,7 @@ class Game
             size.times (j) ->
                 data[i][j] = 0
         perlin = new ImprovedNoise()
-        heightFactor = 0.1
-        quality = 2 * heightFactor
+        quality = 0.05
         z = Math.random() * 100
         4.times (j) ->
             size.times (x) ->
