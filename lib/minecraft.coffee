@@ -562,31 +562,42 @@ class BlockSelection
         domElement.show()
 
 class Instructions
-    constructor: ->
+    constructor: (@callback) ->
         @domElement = $('#instructions')
 
+    instructions:
+        leftclick: "Remove block"
+        rightclick: "Add block"
+        drag: "Drag with the left mouse clicked to move the camera"
+        pause: "Pause/Unpause"
+        space: "Jump"
+        wasd: "WASD keys to move"
+        scroll: "TODO"
+
     insert: ->
-        images = (@img(i)for i in 'drag leftclick pause rightclick space wasd'.split(' '))
         @setBoder()
-        @domElement.append(@column 'left', images.join('</br>'))
-        @domElement.append(@column 'right', @labels())
-        @domElement.append "<div style='clear:both;'></div>"
-        $('#instructions').show()
+        @domElement.append("<table>#{@lines()}</table>")
+        @domElement.mousedown =>
+            @domElement.hide()
+            @callback()
+        @domElement.show()
+
+    lines: ->
+        ret = (@line(inst) for inst of @instructions)
+        ret.join(' ')
+
+    line: (name) ->
+        inst = @instructions[name]
+        "<tr><td class='image'>#{@img(name)}</td>
+        <td class='label'>#{inst}</td></tr>"
 
     setBoder: ->
         for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
             @domElement.css prefix + 'border-radius', '10px'
         return
 
-    labels: ->
-        l = (for i in 'drag leftclick pause rightclick space wasd'.split(' ')
-            "<div>my name is #{i}</div>")
-        return l.join('')
+    img: (name) -> "<img src='./instructions/#{name}.png'/>"
 
-    img: (name) ->
-        "<img src='./instructions/#{name}.png'/>"
-
-    column: (type, content) -> "<div class='#{type} column'>#{content}</div>"
 
 
 
@@ -595,9 +606,9 @@ window.init_web_app = ->
     $('#instructions').hide()
     # $(document).bind "contextmenu", -> false
     return Detector.addGetWebGLMessage() unless Detector.webgl
-    new Instructions().insert()
-    return
-    game = new Game()
-    new BlockSelection(game).insert()
-    game.start()
+    startGame = ->
+        game = new Game()
+        new BlockSelection(game).insert()
+        game.start()
+    new Instructions(startGame).insert()
 

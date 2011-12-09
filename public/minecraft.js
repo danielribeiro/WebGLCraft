@@ -815,27 +815,49 @@
 
   Instructions = (function() {
 
-    function Instructions() {
+    function Instructions(callback) {
+      this.callback = callback;
       this.domElement = $('#instructions');
     }
 
+    Instructions.prototype.instructions = {
+      leftclick: "Remove block",
+      rightclick: "Add block",
+      drag: "Drag with the left mouse clicked to move the camera",
+      pause: "Pause/Unpause",
+      space: "Jump",
+      wasd: "WASD keys to move",
+      scroll: "TODO"
+    };
+
     Instructions.prototype.insert = function() {
-      var i, images;
-      images = (function() {
-        var _i, _len, _ref, _results;
-        _ref = 'drag leftclick pause rightclick space wasd'.split(' ');
+      var _this = this;
+      this.setBoder();
+      this.domElement.append("<table>" + (this.lines()) + "</table>");
+      this.domElement.mousedown(function() {
+        _this.domElement.hide();
+        return _this.callback();
+      });
+      return this.domElement.show();
+    };
+
+    Instructions.prototype.lines = function() {
+      var inst, ret;
+      ret = (function() {
+        var _results;
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          i = _ref[_i];
-          _results.push(this.img(i));
+        for (inst in this.instructions) {
+          _results.push(this.line(inst));
         }
         return _results;
       }).call(this);
-      this.setBoder();
-      this.domElement.append(this.column('left', images.join('</br>')));
-      this.domElement.append(this.column('right', this.labels()));
-      this.domElement.append("<div style='clear:both;'></div>");
-      return $('#instructions').show();
+      return ret.join(' ');
+    };
+
+    Instructions.prototype.line = function(name) {
+      var inst;
+      inst = this.instructions[name];
+      return "<tr><td class='image'>" + (this.img(name)) + "</td>        <td class='label'>" + inst + "</td></tr>";
     };
 
     Instructions.prototype.setBoder = function() {
@@ -847,27 +869,8 @@
       }
     };
 
-    Instructions.prototype.labels = function() {
-      var i, l;
-      l = (function() {
-        var _i, _len, _ref, _results;
-        _ref = 'drag leftclick pause rightclick space wasd'.split(' ');
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          i = _ref[_i];
-          _results.push("<div>my name is " + i + "</div>");
-        }
-        return _results;
-      })();
-      return l.join('');
-    };
-
     Instructions.prototype.img = function(name) {
       return "<img src='./instructions/" + name + ".png'/>";
-    };
-
-    Instructions.prototype.column = function(type, content) {
-      return "<div class='" + type + " column'>" + content + "</div>";
     };
 
     return Instructions;
@@ -875,15 +878,17 @@
   })();
 
   window.init_web_app = function() {
-    var game;
+    var startGame;
     $("#blocks").hide();
     $('#instructions').hide();
     if (!Detector.webgl) return Detector.addGetWebGLMessage();
-    new Instructions().insert();
-    return;
-    game = new Game();
-    new BlockSelection(game).insert();
-    return game.start();
+    startGame = function() {
+      var game;
+      game = new Game();
+      new BlockSelection(game).insert();
+      return game.start();
+    };
+    return new Instructions(startGame).insert();
   };
 
 }).call(this);
