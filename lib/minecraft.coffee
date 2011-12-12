@@ -578,7 +578,7 @@ class Instructions
         <h1>Click to start</h1>
         <table>#{@lines()}</table>
         </div>"
-        $("#domElement").mousedown =>
+        $("#instructionsContent").mousedown =>
             @domElement.hide()
             @callback()
         return

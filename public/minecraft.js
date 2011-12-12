@@ -832,7 +832,7 @@
     Instructions.prototype.intructionsBody = function() {
       var _this = this;
       this.domElement.append("<div id='instructionsContent'>        <h1>Click to start</h1>        <table>" + (this.lines()) + "</table>        </div>");
-      $("#domElement").mousedown(function() {
+      $("#instructionsContent").mousedown(function() {
         _this.domElement.hide();
         return _this.callback();
       });
