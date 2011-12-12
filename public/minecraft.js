@@ -829,15 +829,21 @@
       scroll: "Scroll to change selected block"
     };
 
-    Instructions.prototype.insert = function() {
+    Instructions.prototype.intructionsBody = function() {
       var _this = this;
-      this.setBoder();
-      this.domElement.append('<h1>Click to start</h1>');
-      this.domElement.append("<table>" + (this.lines()) + "</table>");
-      this.domElement.mousedown(function() {
+      this.domElement.append("<div id='instructionsContent'>        <h1>Click to start</h1>        <table>" + (this.lines()) + "</table>        </div>");
+      $("#domElement").mousedown(function() {
         _this.domElement.hide();
         return _this.callback();
       });
+    };
+
+    Instructions.prototype.insert = function() {
+      var minecraft;
+      this.setBoder();
+      this.intructionsBody();
+      minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>";
+      this.domElement.append("<div>Not affiliated with Mojang. " + minecraft + " is a trademark of Mojang</div>");
       return this.domElement.show();
     };
 

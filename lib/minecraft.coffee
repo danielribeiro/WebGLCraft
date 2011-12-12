@@ -573,13 +573,21 @@ class Instructions
         wasd: "WASD keys to move"
         scroll: "Scroll to change selected block"
 
-    insert: ->
-        @setBoder()
-        @domElement.append '<h1>Click to start</h1>'
-        @domElement.append("<table>#{@lines()}</table>")
-        @domElement.mousedown =>
+    intructionsBody: ->
+        @domElement.append "<div id='instructionsContent'>
+        <h1>Click to start</h1>
+        <table>#{@lines()}</table>
+        </div>"
+        $("#domElement").mousedown =>
             @domElement.hide()
             @callback()
+        return
+
+    insert: ->
+        @setBoder()
+        @intructionsBody()
+        minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
+        @domElement.append "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
         @domElement.show()
 
     lines: ->
