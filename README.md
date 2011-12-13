@@ -45,4 +45,4 @@ Created by Daniel Ribeiro. Not affiliated with Mojang. Minecraft is a trademark 
 
 Released under the MIT License: http://www.opensource.org/licenses/mit-license.php
 
-http://github.com/danielribeiro/ClojureCoffeeScriptGame
+http://github.com/danielribeiro/WebGLCraft
