@@ -838,12 +838,20 @@
       });
     };
 
+    Instructions.prototype.ribbon = function() {
+      return '<a href="https://github.com/danielribeiro/WebGLCraft">\
+        <img style="position: fixed; top: 0; right: 0; border: 0;"\
+        src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"\
+        alt="Fork me on GitHub"  target="_blank"></a>';
+    };
+
     Instructions.prototype.insert = function() {
-      var minecraft;
+      var legal, minecraft;
       this.setBoder();
       this.intructionsBody();
       minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>";
-      this.domElement.append("<div>Not affiliated with Mojang. " + minecraft + " is a trademark of Mojang</div>");
+      legal = "<div>Not affiliated with Mojang. " + minecraft + " is a trademark of Mojang</div>";
+      this.domElement.append(legal + this.ribbon());
       return this.domElement.show();
     };
 
