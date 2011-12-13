@@ -839,10 +839,10 @@
     };
 
     Instructions.prototype.ribbon = function() {
-      return '<a href="https://github.com/danielribeiro/WebGLCraft">\
+      return '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">\
         <img style="position: fixed; top: 0; right: 0; border: 0;"\
         src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"\
-        alt="Fork me on GitHub"  target="_blank"></a>';
+        alt="Fork me on GitHub"></a>';
     };
 
     Instructions.prototype.insert = function() {
