@@ -10,9 +10,13 @@ Compiling
 
 It requires Coffeescript 1.1.3, and node.js 0.6+
 
-Just run:
+To compile, run:
 
     cake c
+
+The command above will also watch for any changes. If you just wanna compile the files, run:
+
+    cake compile
 
 If you wanna see the game locally, you need python, and you run 
 
@@ -25,9 +29,6 @@ which simply runs
 
 enabling you to open the game on [http://localhost:8000/public/](http://localhost:8000/public/).
 
-The command above will also watch for any dependencies. If you just wanna compile the files, run:
-
-    cake compile
 
 To run the tests, simply run:
 
