@@ -839,19 +839,21 @@
     };
 
     Instructions.prototype.ribbon = function() {
-      return '<a href="https://github.com/danielribeiro/WebGLCraft">\
+      return '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">\
         <img style="position: fixed; top: 0; right: 0; border: 0;"\
         src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"\
-        alt="Fork me on GitHub"  target="_blank"></a>';
+        alt="Fork me on GitHub"></a>';
     };
 
     Instructions.prototype.insert = function() {
-      var legal, minecraft;
+      var hnimage, hnlink, legal, minecraft;
       this.setBoder();
       this.intructionsBody();
       minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>";
       legal = "<div>Not affiliated with Mojang. " + minecraft + " is a trademark of Mojang</div>";
-      this.domElement.append(legal + this.ribbon());
+      hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />';
+      hnlink = "<div>Comment on  " + hnimage + " <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>";
+      this.domElement.append(legal + hnlink + this.ribbon());
       return this.domElement.show();
     };
 
