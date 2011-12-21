@@ -594,7 +594,9 @@ class Instructions
         @intructionsBody()
         minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
         legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
-        @domElement.append legal  + @ribbon()
+        hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
+        hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
+        @domElement.append legal + hnlink + @ribbon()
         @domElement.show()
 
     lines: ->
