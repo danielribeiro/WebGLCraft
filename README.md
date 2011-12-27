@@ -34,7 +34,7 @@ To run the tests, simply run:
 
     cake spec
 
-The test are powered by [Jasmine](http://pivotal.github.com/jasmine/), and can also be seen
+The tests are powered by [Jasmine](http://pivotal.github.com/jasmine/), and can also be seen
 on the browser (useful for debugging) by opening test/web_runner.html.
 
 
