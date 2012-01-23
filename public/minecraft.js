@@ -757,8 +757,9 @@
     };
 
     BlockSelection.prototype.mousewheel = function(delta) {
-      var index;
-      index = (Blocks.indexOf(this.current) - delta).mod(Blocks.length);
+      var dif, index;
+      dif = (delta >= 0 ? 1 : -1);
+      index = (Blocks.indexOf(this.current) - dif).mod(Blocks.length);
       return this.select(Blocks[index]);
     };
 

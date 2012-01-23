@@ -536,7 +536,8 @@ class BlockSelection
         return false
 
     mousewheel: (delta) ->
-        index = (Blocks.indexOf(@current) - delta).mod(Blocks.length)
+        dif = (if delta >= 0 then 1 else -1)
+        index = (Blocks.indexOf(@current) - dif).mod(Blocks.length)
         @select Blocks[index]
 
     ligthUp: (target) -> @_setOpacity target, 0.8
