@@ -617,16 +617,16 @@ class Instructions
     img: (name) -> "<img src='./instructions/#{name}.png'/>"
 
 
-
-
 window.init_web_app = ->
+    game = null
     $("#blocks").hide()
     $('#instructions').hide()
     $(document).bind "contextmenu", -> false
+    $(document).bind "keydown", 'c', -> game?.controls.lockPointer()
     return Detector.addGetWebGLMessage() unless Detector.webgl
     startGame = ->
         game = new Game()
         new BlockSelection(game).insert()
         game.start()
+        return
     new Instructions(startGame).insert()
-

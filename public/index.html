@@ -82,6 +82,22 @@
                 text-align: center;
             }
 
+            #cursor {
+                display:none;
+                position:absolute;
+                top:50%;
+                left:50%;
+                width:20px;
+                margin-left:-10px;
+                font-size:18px;
+                text-align:center;
+                color:#fff;
+                z-index:2;
+            }
+            #cursor::before {
+                content: '+'
+            }
+
             #oldie a { color:#fff }
 
             body {
@@ -94,6 +110,7 @@
     <body>
         <div id="instructions"></div>
         <div id="container"></div>
+        <div id="cursor"></div>
         <div id="blocks">
         </div>
     </body>
