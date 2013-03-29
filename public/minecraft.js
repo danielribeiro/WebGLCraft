@@ -996,6 +996,7 @@ this.Minecraft = {
       var game;
       game = new Game();
       new BlockSelection(game).insert();
+      $("#minecraft-blocks").show();
       return game.start();
     };
     return new Instructions(startGame).insert();

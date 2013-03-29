@@ -594,10 +594,10 @@ class Instructions
                                  <h1>Click to start</h1>
                                  <table>#{@lines()}</table>
                                  </div>"
-      $("#instructionsContent").mousedown =>
-        @domElement.hide()
-        @callback()
-      return
+        $("#instructionsContent").mousedown =>
+            @domElement.hide()
+            @callback()
+        return
 
     ribbon: ->
       '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
@@ -663,6 +663,7 @@ class Instructions
         startGame = ->
             game = new Game()
             new BlockSelection(game).insert()
+
             $("#minecraft-blocks").show()
             game.start()
         new Instructions(startGame).insert()
