@@ -17,7 +17,7 @@
         <script src='./camera.js' type='text/javascript'></script>
         <script src='./collision.js' type='text/javascript'></script>
         <script src='./minecraft.js' type='text/javascript'></script>
-        <script type='text/javascript'>$(function () {init_web_app({"environment":"production"})})</script>
+        <script type='text/javascript'>$(function () {Minecraft.start()})</script>
         <style type="text/css">
             body {
                 margin: 0;
@@ -39,27 +39,9 @@
                 color: blue;
                 text-decoration: underline;
             }
-            #container {
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-            }
-            #blocks {
-                position: relative;
-                bottom: 37px;
-                margin: auto;
-                background: white;
-                width: 320px;
-                height: 32px;
-            }
             #blocks img {
                 margin: 0;
                 padding: 0;
-            }
-            #oldie {
-                background:rgb(100,0,0) !important;
-                color:#fff !important;
-                margin-top:10em !important;
             }
             #instructions {
                 background: black;
@@ -89,12 +71,34 @@
                 background-color: gray;
             }
 
+            #minecraft-container {
+                margin: 0 auto;
+                padding: 0;
+                overflow: hidden;
+                /*width: 800px;*/
+                /*height: 600px;*/
+            }
+            #minecraft-blocks {
+                position: relative;
+                top: -32px;
+                margin: auto;
+                background: white;
+                width: 320px;
+                height: 32px;
+                display: none;
+
+            }
+            #minecraft-blocks img {
+                margin: 0;
+                padding: 0;
+            }
+
         </style>
     </head>
     <body>
         <div id="instructions"></div>
-        <div id="container"></div>
-        <div id="blocks">
+        <div id="minecraft-container"></div>
+        <div id="minecraft-blocks">
         </div>
     </body>
 </html>

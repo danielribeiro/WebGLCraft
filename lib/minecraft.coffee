@@ -245,7 +245,39 @@ class Game
         args = @gridCoords(x, y, z).concat(val)
         return @grid.put args...
 
+
+    generateHeight: ->
+        size = 11
+        data = []
+        size.times (i) ->
+            data[i] = []
+            size.times (j) ->
+                data[i][j] = 0
+        perlin = new ImprovedNoise()
+        quality = 0.05
+        z = Math.random() * 100
+        4.times (j) ->
+            size.times (x) ->
+                size.times (y) ->
+                    noise = perlin.noise(x / quality, y / quality, z)
+                    data[x][y] += noise * quality
+            quality *= 4
+        data
+
     populateWorld: ->
+      middle = @grid.size / 2
+      data = @generateHeight()
+      playerHeight = null
+      for i in [-5..5]
+        for j in [-5..5]
+          height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
+          playerHeight = (height + 1) * CubeSize if i == 0 and j == 0
+          height.times (k) => @cubeAt middle + i , k, middle + j
+      middlePos = middle * CubeSize
+      @player.pos.set middlePos, playerHeight, middlePos
+
+
+    populateWorld2: ->
         middle = @grid.size / 2
         ret = if @populateWorldFunction?
             setblockFunc = (x, y, z, blockName) =>
@@ -544,13 +576,94 @@ class BlockSelection
         $(document).mousewheel (e, delta) => @mousewheel delta
         domElement.show()
 
+class Instructions
+    constructor: (@callback) ->
+        @domElement = $('#instructions')
 
-window.Minecraft = 
-    start: (populateWorldFunction) ->
+    instructions:
+      leftclick: "Remove block"
+      rightclick: "Add block"
+      drag: "Drag with the left mouse clicked to move the camera"
+      pause: "Pause/Unpause"
+      space: "Jump"
+      wasd: "WASD keys to move"
+      scroll: "Scroll to change selected block"
+
+    intructionsBody: ->
+        @domElement.append "<div id='instructionsContent'>
+                                 <h1>Click to start</h1>
+                                 <table>#{@lines()}</table>
+                                 </div>"
+      $("#instructionsContent").mousedown =>
+        @domElement.hide()
+        @callback()
+      return
+
+    ribbon: ->
+      '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
+              <img style="position: fixed; top: 0; right: 0; border: 0;"
+              src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
+              alt="Fork me on GitHub"></a>'
+
+    insert: ->
+      @setBoder()
+      @intructionsBody()
+      minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
+      legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
+      hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
+      hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
+      @domElement.append legal + hnlink + @ribbon()
+      @domElement.show()
+
+    lines: ->
+      ret = (@line(inst) for inst of @instructions)
+      ret.join(' ')
+
+    line: (name) ->
+      inst = @instructions[name]
+      "<tr><td class='image'>#{@img(name)}</td>
+              <td class='label'>#{inst}</td></tr>"
+
+    setBoder: ->
+      for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
+        @domElement.css prefix + 'border-radius', '10px'
+      return
+
+    img: (name) -> "<img src='./instructions/#{name}.png'/>"
+
+#  var createPyramid = function(setblockFunc, middle) {
+#                                                     6..times(function(k) {
+#                                                                          var i, j, s;
+#                                                              s = 5 - k;
+#  for (i = -s; i <= s; i++ ) {
+#    for (j = -s; j <= s; j++) {
+#                              setblockFunc(middle + i, k, middle + j, 'brick');
+#  }
+#  }
+#  });
+#  return [middle - 3, 33, middle + 4];
+#  }
+
+#window.Minecraft =
+#    start: (populateWorldFunction) ->
+#        $(document).bind "contextmenu", -> false
+#        return Detector.addGetWebGLMessage() unless Detector.webgl
+#        game = new Game(populateWorldFunction)
+#        new BlockSelection(game).insert()
+#        game.start()
+
+
+
+@Minecraft =
+    start: ->
+        $("#blocks").hide()
+        $('#instructions').hide()
         $(document).bind "contextmenu", -> false
         return Detector.addGetWebGLMessage() unless Detector.webgl
-        game = new Game(populateWorldFunction)
-        new BlockSelection(game).insert()
-        game.start()
-
+        startGame = ->
+            game = new Game()
+            new BlockSelection(game).insert()
+            $("#minecraft-blocks").show()
+            game.start()
+        new Instructions(startGame).insert()
 
