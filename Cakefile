@@ -1,18 +1,17 @@
 {spawn} = require 'child_process'
 puts = console.log
 
-system = (name, args) ->
+system = (name, args, callback) ->
     print = (buffer) -> process.stdout.write buffer.toString()
     proc = spawn name, args
     proc.stdout.on 'data', print
     proc.stderr.on 'data', print
-    proc.on        'exit', (status) ->
-        process.exit(1) if status != 0
+    proc.on        'exit', (status) -> callback?()
 
-compileall = (from, to, watch = false) ->
+compileall = (from, to, watch = false, callback = null) ->
     args = ['-b', '-o', to, '-c', from]
     args.unshift '-w' if watch
-    system 'coffee', args
+    system 'coffee', args, callback
 
 task 'c', 'Compile and watch', ->
     compileall 'lib/', 'public/', true
@@ -26,8 +25,8 @@ Require python installed.', ->
     system 'python', '-m SimpleHTTPServer'.split(' ')
 
 task 'spec', "runs unit tests", ->
-    compileall 'lib/', 'public'
-    compileall 'spec/coffee', 'spec/javascripts'
-    imports = ['spec/jasmine-node/lib', 'spec/javascripts', 'public']
-    process.env["NODE_PATH"] += ":" + imports.join ":"
-    system "node", ["spec/jasmine-node/specs.js"]
+    compileall 'lib/', 'public/', false, ->
+        compileall 'spec/coffee', 'spec/javascripts', false, ->
+            imports = ['spec/jasmine-node/lib', 'spec/javascripts', 'public']
+            process.env["NODE_PATH"] += ":" + imports.join ":"
+            system "node", ["spec/jasmine-node/specs.js"]
