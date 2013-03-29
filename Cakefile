@@ -10,7 +10,7 @@ system = (name, args) ->
         process.exit(1) if status != 0
 
 compileall = (from, to, watch = false) ->
-    args = ['-o', to, '-c', from]
+    args = ['-b', '-o', to, '-c', from]
     args.unshift '-w' if watch
     system 'coffee', args
 

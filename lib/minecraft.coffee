@@ -186,7 +186,7 @@ class Floor
 
 
 class Game
-    constructor: ->
+    constructor: (@populateWorldFunction) ->
         @rad = CubeSize
         @width = window.innerWidth
         @height = window.innerHeight
@@ -199,6 +199,7 @@ class Game
         @onGround = true
         @pause = off
         @renderer = @createRenderer()
+        @rendererPosition = $("#minecraft-container canvas").offset()
         @camera = @createCamera()
         @canvas = @renderer.domElement
         @controls = new Controls @camera, @canvas
@@ -244,37 +245,16 @@ class Game
         args = @gridCoords(x, y, z).concat(val)
         return @grid.put args...
 
-
-    generateHeight: ->
-        size = 11
-        data = []
-        size.times (i) ->
-            data[i] = []
-            size.times (j) ->
-                data[i][j] = 0
-        perlin = new ImprovedNoise()
-        quality = 0.05
-        z = Math.random() * 100
-        4.times (j) ->
-            size.times (x) ->
-                size.times (y) ->
-                    noise = perlin.noise(x / quality, y / quality, z)
-                    data[x][y] += noise * quality
-            quality *= 4
-        data
-
-
     populateWorld: ->
         middle = @grid.size / 2
-        data = @generateHeight()
-        playerHeight = null
-        for i in [-5..5]
-            for j in [-5..5]
-                height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
-                playerHeight = (height + 1) * CubeSize if i == 0 and j == 0
-                height.times (k) => @cubeAt middle + i , k, middle + j
-        middlePos = middle * CubeSize
-        @player.pos.set middlePos, playerHeight, middlePos
+        ret = if @populateWorldFunction?
+            setblockFunc = (x, y, z, blockName) =>
+                @cubeAt x, y, z, @cubeBlocks[blockName]
+            @populateWorldFunction setblockFunc, middle
+        else
+            [middle, 3, middle] 
+        pos = (i * CubeSize for i in ret)
+        @player.pos.set pos...
 
     cubeAt: (x, y, z, geo, validatingFunction) ->
         geo or=@geo
@@ -301,7 +281,7 @@ class Game
         renderer.setSize @width, @height
         renderer.setClearColorHex(0xBFD1E5, 1.0)
         renderer.clear()
-        $('#container').append(renderer.domElement)
+        $('#minecraft-container').append(renderer.domElement)
         renderer
 
     addLights: (scene) ->
@@ -328,9 +308,12 @@ class Game
         @clock.start() if @pause is off
         return
 
+    relativePosition: (e) -> 
+        [e.pageX - @rendererPosition.left, e.pageY - @rendererPosition.top]
+
     onMouseUp: (event) ->
         if not @moved and MouseEvent.isLeftButton event
-            @toDelete = [event.pageX, event.pageY]
+            @toDelete = @relativePosition(event)
         @moved = false
 
     onMouseMove: (event) -> @moved = true
@@ -338,7 +321,7 @@ class Game
     onMouseDown: (event) ->
         @moved = false
         return unless MouseEvent.isRightButton event
-        @castRay = [event.pageX, event.pageY]
+        @castRay = @relativePosition(event)
 
     deleteBlock: ->
         return unless @toDelete?
@@ -541,7 +524,7 @@ class BlockSelection
         @select Blocks[index]
 
     ligthUp: (target) -> @_setOpacity target, 0.8
-    lightOff:  (target) -> @_setOpacity target, 1
+    lightOff: (target) -> @_setOpacity target, 1
 
     select: (name) ->
         return if @current is name
@@ -554,79 +537,20 @@ class BlockSelection
 
     insert: ->
         blockList = (@blockImg(b) for b in Blocks)
-        domElement = $("#blocks")
+        domElement = $("#minecraft-blocks")
         domElement.append blockList.join('')
         @ligthUp @current
         domElement.mousedown (e) => @mousedown e
         $(document).mousewheel (e, delta) => @mousewheel delta
         domElement.show()
 
-class Instructions
-    constructor: (@callback) ->
-        @domElement = $('#instructions')
 
-    instructions:
-        leftclick: "Remove block"
-        rightclick: "Add block"
-        drag: "Drag with the left mouse clicked to move the camera"
-        pause: "Pause/Unpause"
-        space: "Jump"
-        wasd: "WASD keys to move"
-        scroll: "Scroll to change selected block"
-
-    intructionsBody: ->
-        @domElement.append "<div id='instructionsContent'>
-        <h1>Click to start</h1>
-        <table>#{@lines()}</table>
-        </div>"
-        $("#instructionsContent").mousedown =>
-            @domElement.hide()
-            @callback()
-        return
-
-    ribbon: ->
-        '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
-        <img style="position: fixed; top: 0; right: 0; border: 0;"
-        src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
-        alt="Fork me on GitHub"></a>'
-
-    insert: ->
-        @setBoder()
-        @intructionsBody()
-        minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
-        legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
-        hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
-        hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
-        @domElement.append legal + hnlink + @ribbon()
-        @domElement.show()
-
-    lines: ->
-        ret = (@line(inst) for inst of @instructions)
-        ret.join(' ')
-
-    line: (name) ->
-        inst = @instructions[name]
-        "<tr><td class='image'>#{@img(name)}</td>
-        <td class='label'>#{inst}</td></tr>"
-
-    setBoder: ->
-        for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
-            @domElement.css prefix + 'border-radius', '10px'
-        return
-
-    img: (name) -> "<img src='./instructions/#{name}.png'/>"
-
-
-
-
-window.init_web_app = ->
-    $("#blocks").hide()
-    $('#instructions').hide()
-    $(document).bind "contextmenu", -> false
-    return Detector.addGetWebGLMessage() unless Detector.webgl
-    startGame = ->
-        game = new Game()
+window.Minecraft = 
+    start: (populateWorldFunction) ->
+        $(document).bind "contextmenu", -> false
+        return Detector.addGetWebGLMessage() unless Detector.webgl
+        game = new Game(populateWorldFunction)
         new BlockSelection(game).insert()
         game.start()
-    new Instructions(startGame).insert()
+
 

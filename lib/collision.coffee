@@ -1,6 +1,9 @@
 CollisionUtils =
     # The two intervals are [s1, f1] and [s2, f2]
-    testIntervalCollision: (s1, f1, s2, f2) -> !(s2 > f1 || s1 > f2)
+    testIntervalCollision: (s1, f1, s2, f2) ->
+        return true if s1 == s2
+        return f1 >= s2 if s1 < s2
+        return f2 >= s1
 
     #Cubes are objects with vmax, vmin (the vertices with greatest/smallest values)
     #properties. Assumes unrotated cubes.
