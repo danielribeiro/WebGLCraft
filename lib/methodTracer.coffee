@@ -1,4 +1,4 @@
-class MethodTracer
+class @MethodTracer
     constructor: ->
         @tracer = {}
 
@@ -23,4 +23,3 @@ class MethodTracer
             puts id
         return @
 
-window.MethodTracer = MethodTracer

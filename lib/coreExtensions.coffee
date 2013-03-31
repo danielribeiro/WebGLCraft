@@ -16,6 +16,6 @@ patch Number,
     toDegrees: ->  (@ * 180) / Math.PI
 
 
-window.assoc = (o, i) ->
+@assoc = (o, i) ->
     (o[k] = v) for k, v of i
     return o

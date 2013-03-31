@@ -1,4 +1,4 @@
-CollisionUtils =
+@CollisionUtils =
     # The two intervals are [s1, f1] and [s2, f2]
     testIntervalCollision: (s1, f1, s2, f2) ->
         return true if s1 == s2
@@ -14,5 +14,3 @@ CollisionUtils =
             , cube2.vmin[axis], cube2.vmax[axis]
             return false unless collides
         return true
-
-window.CollisionUtils = CollisionUtils

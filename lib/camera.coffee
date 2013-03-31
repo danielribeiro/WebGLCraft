@@ -1,10 +1,10 @@
-MouseEvent =
+@MouseEvent =
     isLeftButton: (event) -> event.which == 1
     isRightButton: (event) -> event.which == 3
 
     isLeftButtonDown: (event) -> event.button == 0 and @isLeftButton event
 
-class Controls
+class @Controls
     constructor: (object, domElement) ->
         @object = object
         @target = new THREE.Vector3 0, 0, 0
@@ -81,6 +81,3 @@ class Controls
         @lat = max(-85, min(85, @lat))
         @updateLook()
         return
-
-window.MouseEvent = MouseEvent
-window.Controls = Controls

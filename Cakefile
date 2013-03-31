@@ -9,7 +9,7 @@ system = (name, args, callback) ->
     proc.on        'exit', (status) -> callback?()
 
 compileall = (from, to, watch = false, callback = null) ->
-    args = ['-b', '-o', to, '-c', from]
+    args = ['-o', to, '-c', from]
     args.unshift '-w' if watch
     system 'coffee', args, callback
 
@@ -26,7 +26,5 @@ Require python installed.', ->
 
 task 'spec', "runs unit tests", ->
     compileall 'lib/', 'public/', false, ->
-        compileall 'spec/coffee', 'spec/javascripts', false, ->
-            imports = ['spec/jasmine-node/lib', 'spec/javascripts', 'public']
-            process.env["NODE_PATH"] += ":" + imports.join ":"
-            system "node", ["spec/jasmine-node/specs.js"]
+        system 'python', '-m SimpleHTTPServer 8081'.split(' ')
+        system "open", ["http://localhost:8081/spec/web_runner.html"]
