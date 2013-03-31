@@ -15,6 +15,7 @@ compileall = (from, to, watch = false, callback = null) ->
 
 task 'c', 'Compile and watch', ->
     compileall 'lib/', 'public/', true
+    compileall 'spec/coffee', 'spec/javascripts', true
 
 task 'compile', 'Compile', ->
     puts "Compiling..."

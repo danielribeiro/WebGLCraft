@@ -13,7 +13,7 @@
     },
     testCubeCollision: function(cube1, cube2) {
       var axis, collides, fcol, _i, _len, _ref;
-      fcol = CollisionUtils.testIntervalCollision;
+      fcol = this.testIntervalCollision;
       _ref = ['x', 'y', 'z'];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         axis = _ref[_i];
