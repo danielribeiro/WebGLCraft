@@ -6,10 +6,6 @@ same = (thi, that) -> expect(thi).toEqual(that)
 isTrue = (val) -> same val, true
 isFalse = (val) -> same val, false
 
-require 'specBrowserAdapter'
-require 'lib/rbcoffee'
-require 'collision'
-
 cube = (vmin, vmax) -> {vmin, vmax}
 vec = (x, y, z) -> {x, y, z}
 
