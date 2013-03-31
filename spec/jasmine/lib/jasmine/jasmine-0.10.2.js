@@ -924,21 +924,7 @@ jasmine.Block = function(env, func, spec) {
 
 jasmine.Block.prototype.execute = function(onComplete) {
 //  Exceptions bubble, so that we can catch them with the browser. USE ERROR CLASS!
-    var onNode = headless
-   if (onNode) {
-   try {
-           this.func.apply(this.spec);
-  } catch (e) {
-        if (console) {
-            console.log("Error on Test:" +  this.spec.description)
-        }
-        throw e
-//    this.spec.fail(e);
-  }
-   }
-   else {
-       this.func.apply(this.spec);
-   }
+  this.func.apply(this.spec);
   onComplete();
 };
 /** JavaScript API reporter.

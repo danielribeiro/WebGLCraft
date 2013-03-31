@@ -23,12 +23,6 @@
     return same(val, false);
   };
 
-  require('specBrowserAdapter');
-
-  require('lib/rbcoffee');
-
-  require('collision');
-
   cube = function(vmin, vmax) {
     return {
       vmin: vmin,

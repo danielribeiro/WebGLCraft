@@ -25,6 +25,7 @@ Require python installed.', ->
     system 'python', '-m SimpleHTTPServer'.split(' ')
 
 task 'spec', "runs unit tests", ->
+    puts "Make sure to be running server on port 8000"
     compileall 'lib/', 'public/', false, ->
-        system 'python', '-m SimpleHTTPServer 8081'.split(' ')
-        system "open", ["http://localhost:8081/spec/web_runner.html"]
+        compileall 'spec/coffee', 'spec/javascripts', false, ->
+            system "open", ["http://localhost:8000/spec/web_runner.html"]

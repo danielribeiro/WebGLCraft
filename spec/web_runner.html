@@ -4,10 +4,10 @@
     <head>
         <title>Jasmine Test Runner</title>
 
-        <script type="text/javascript" src="./jasmine-node/lib/jasmine/jasmine-0.10.2.js"></script>
-        <script type="text/javascript" src="./jasmine-node/lib/jasmine/TrivialReporter.js"></script>
-        <script type="text/javascript" src="./jasmine-node/lib/jasmine/consolex.js"></script>
-        <link rel="stylesheet" type="text/css" href="./jasmine-node/lib/jasmine/jasmine.css">
+        <script type="text/javascript" src="./jasmine/lib/jasmine/jasmine-0.10.2.js"></script>
+        <script type="text/javascript" src="./jasmine/lib/jasmine/TrivialReporter.js"></script>
+        <script type="text/javascript" src="./jasmine/lib/jasmine/consolex.js"></script>
+        <link rel="stylesheet" type="text/css" href="./jasmine/lib/jasmine/jasmine.css">
 
         <script type="text/javascript">
             var include = function() {
@@ -18,7 +18,7 @@
             }
             jasmine.include('../public/lib/rbcoffee.js', true);
             jasmine.include('../public/collision.js', true);
-            include('specBrowserAdapter', 'applicationSpec');
+            include('applicationSpec');
         </script>
     </head>
     <body>
