@@ -8,7 +8,7 @@ You can see a demo [here](http://danielribeiro.github.com/WebGLCraft/).
 Compiling
 ----
 
-It requires Coffeescript 1.1.3, and node.js 0.6+
+It requires Coffeescript 1.1.3+ (version 1.6.2+ for [source maps](http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/)), and node.js 0.6+
 
 To compile, run:
 
