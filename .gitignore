@@ -12,4 +12,6 @@ db
 ## Build
 *.gem
 public/*.js
+public/*.map
 spec/javascripts/*.js
+spec/javascripts/*.map

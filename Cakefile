@@ -9,7 +9,7 @@ system = (name, args, callback) ->
     proc.on        'exit', (status) -> callback?()
 
 compileall = (from, to, watch = false, callback = null) ->
-    args = ['-o', to, '-c', from]
+    args = ['--map', '-o', to, '-c', from]
     args.unshift '-w' if watch
     system 'coffee', args, callback
 
