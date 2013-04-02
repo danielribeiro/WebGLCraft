@@ -11,4 +11,5 @@ db
 
 ## Build
 *.gem
-
+public/*.js
+spec/javascripts/*.js
