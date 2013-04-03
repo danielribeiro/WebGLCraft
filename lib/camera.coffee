@@ -52,7 +52,7 @@ class @Controls
 
     halfCircle:  Math.PI / 180
 
-    viewDirection: -> @target.clone().subSelf(@object.position)
+    viewDirection: -> @target.clone().sub(@object.position)
 
     move: (newPosition) ->
         @object.position = newPosition
