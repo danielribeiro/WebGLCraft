@@ -1,7 +1,7 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
+{AmbientLight, DirectionalLight, PointLight, Raycaster, Vector3, Vector2} = THREE
 {MeshLambertMaterial, MeshNormalMaterial, Projector} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
 {LinearMipMapLinearFilter, ClampToEdgeWrapping, Clock} = THREE
@@ -221,7 +221,8 @@ class Game
         cubeBlocks = {}
         for b in Blocks
             geo = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1
-            cubeBlocks[b] = @meshSpec geo, @texture(b)
+            t = @texture(b)
+            cubeBlocks[b] = @meshSpec geo, [t, t, t, t, t, t]
         return cubeBlocks
 
     createGrassGeometry: ->
@@ -292,6 +293,8 @@ class Game
 
     cubeAt: (x, y, z, meshSpec, validatingFunction) ->
         meshSpec or=@currentMeshSpec
+        raise "bad material" unless meshSpec.geometry?
+        raise "really bad material" unless meshSpec.material?
         mesh = new Mesh(meshSpec.geometry, new THREE.MeshFaceMaterial(meshSpec.material))
         mesh.geometry.dynamic = false
         halfcube = CubeSize / 2
@@ -365,12 +368,12 @@ class Game
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
         todir = vector.sub(@camera.position).normalize()
-        @deleteBlockInGrid new Ray @camera.position, todir
+        @deleteBlockInGrid new Raycaster @camera.position, todir
         @toDelete = null
         return
 
     findBlock: (ray) ->
-        for o in ray.intersectScene(@scene)
+        for o in ray.intersectObjects(@scene.children)
             return o unless o.object.name is 'floor'
         return null
 
@@ -394,13 +397,13 @@ class Game
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
         todir = vector.sub(@camera.position).normalize()
-        @placeBlockInGrid new Ray @camera.position, todir
+        @placeBlockInGrid new Raycaster @camera.position, todir
         @castRay = null
         return
 
     getAdjacentCubePosition: (target) ->
         normal = target.face.normal.clone()
-        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        p = target.object.position.clone().add normal.multiplyScalar(CubeSize)
         return p
 
     addHalfCube: (p) ->
