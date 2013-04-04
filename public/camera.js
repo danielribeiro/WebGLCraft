@@ -84,7 +84,7 @@
     Controls.prototype.halfCircle = Math.PI / 180;
 
     Controls.prototype.viewDirection = function() {
-      return this.target.clone().subSelf(this.object.position);
+      return this.target.clone().sub(this.object.position);
     };
 
     Controls.prototype.move = function(newPosition) {
