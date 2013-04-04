@@ -1,7 +1,7 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
+{AmbientLight, DirectionalLight, PointLight, Raycaster, Vector3, Vector2} = THREE
 {MeshLambertMaterial, MeshNormalMaterial, Projector} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
 {LinearMipMapLinearFilter, ClampToEdgeWrapping, Clock} = THREE
@@ -190,7 +190,7 @@ class Game
         @rad = CubeSize
         @width = window.innerWidth
         @height = window.innerHeight
-        @geo = @createGrassGeometry()
+        @currentMeshSpec = @createGrassGeometry()
         @cubeBlocks = @createBlocksGeometry()
         @selectCubeBlock 'cobblestone'
         @move = {x: 0, z: 0, y: 0}
@@ -220,8 +220,9 @@ class Game
     createBlocksGeometry: ->
         cubeBlocks = {}
         for b in Blocks
-            cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, @texture(b)
-            cubeBlocks[b] = cube
+            geo = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1
+            t = @texture(b)
+            cubeBlocks[b] = @meshSpec geo, [t, t, t, t, t, t]
         return cubeBlocks
 
     createGrassGeometry: ->
@@ -232,13 +233,15 @@ class Game
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
+        @meshSpec new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1), materials
 
     texture: (name) -> TextureHelper.loadTexture "./textures/#{name}.png"
 
     textures: (names...) -> return (@texture name for name in names)
 
     gridCoords: (x, y, z) -> @grid.gridCoords x, y, z
+
+    meshSpec: (geometry, material) -> {geometry, material}
 
 
     intoGrid: (x, y, z, val) ->
@@ -288,9 +291,11 @@ class Game
         pos = (i * CubeSize for i in ret)
         @player.pos.set pos...
 
-    cubeAt: (x, y, z, geo, validatingFunction) ->
-        geo or=@geo
-        mesh = new Mesh(geo, new THREE.MeshFaceMaterial())
+    cubeAt: (x, y, z, meshSpec, validatingFunction) ->
+        meshSpec or=@currentMeshSpec
+        raise "bad material" unless meshSpec.geometry?
+        raise "really bad material" unless meshSpec.material?
+        mesh = new Mesh(meshSpec.geometry, new THREE.MeshFaceMaterial(meshSpec.material))
         mesh.geometry.dynamic = false
         halfcube = CubeSize / 2
         mesh.position.set CubeSize * x, y * CubeSize + halfcube, CubeSize * z
@@ -362,13 +367,13 @@ class Game
         y = (-y / @height) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
-        todir = vector.subSelf(@camera.position).normalize()
-        @deleteBlockInGrid new Ray @camera.position, todir
+        todir = vector.sub(@camera.position).normalize()
+        @deleteBlockInGrid new Raycaster @camera.position, todir
         @toDelete = null
         return
 
     findBlock: (ray) ->
-        for o in ray.intersectScene(@scene)
+        for o in ray.intersectObjects(@scene.children)
             return o unless o.object.name is 'floor'
         return null
 
@@ -391,14 +396,14 @@ class Game
         y = (-y / @height) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
-        todir = vector.subSelf(@camera.position).normalize()
-        @placeBlockInGrid new Ray @camera.position, todir
+        todir = vector.sub(@camera.position).normalize()
+        @placeBlockInGrid new Raycaster @camera.position, todir
         @castRay = null
         return
 
     getAdjacentCubePosition: (target) ->
         normal = target.face.normal.clone()
-        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
+        p = target.object.position.clone().add normal.multiplyScalar(CubeSize)
         return p
 
     addHalfCube: (p) ->
@@ -522,7 +527,7 @@ class Game
         @controls.move pos
         eyesDelta = @controls.viewDirection().normalize().multiplyScalar(20)
         eyesDelta.y = 0
-        pos.subSelf eyesDelta
+        pos.sub eyesDelta
         return
 
     idealSpeed: 1 / 60
