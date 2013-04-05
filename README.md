@@ -3,7 +3,7 @@ WebGLCraft
 
 WebGL implementation of [Minecraft](http://www.minecraft.net/) written in [Coffeescript](http://jashkenas.github.com/coffee-script/).
 
-You can see a demo [here](http://danielribeiro.github.com/WebGLCraft/).
+You can see a demo [here](http://danielribeiro.github.io/WebGLCraft/).
 
 Compiling
 ----
