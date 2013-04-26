@@ -1,7 +1,7 @@
 # Imports
 {Object3D, Matrix4, Scene, Mesh, WebGLRenderer, PerspectiveCamera} = THREE
 {CubeGeometry, PlaneGeometry, MeshLambertMaterial, MeshNormalMaterial} = THREE
-{AmbientLight, DirectionalLight, PointLight, Raycaster, Vector3, Vector2} = THREE
+{AmbientLight, DirectionalLight, PointLight, Ray, Vector3, Vector2} = THREE
 {MeshLambertMaterial, MeshNormalMaterial, Projector} = THREE
 {Texture, UVMapping, RepeatWrapping, RepeatWrapping, NearestFilter} = THREE
 {LinearMipMapLinearFilter, ClampToEdgeWrapping, Clock} = THREE
@@ -186,11 +186,11 @@ class Floor
 
 
 class Game
-    constructor: (@populateWorldFunction) ->
+    constructor: ->
         @rad = CubeSize
         @width = window.innerWidth
         @height = window.innerHeight
-        @currentMeshSpec = @createGrassGeometry()
+        @geo = @createGrassGeometry()
         @cubeBlocks = @createBlocksGeometry()
         @selectCubeBlock 'cobblestone'
         @move = {x: 0, z: 0, y: 0}
@@ -199,7 +199,6 @@ class Game
         @onGround = true
         @pause = off
         @renderer = @createRenderer()
-        @rendererPosition = $("#minecraft-container canvas").offset()
         @camera = @createCamera()
         @canvas = @renderer.domElement
         @controls = new Controls @camera, @canvas
@@ -220,9 +219,8 @@ class Game
     createBlocksGeometry: ->
         cubeBlocks = {}
         for b in Blocks
-            geo = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1
-            t = @texture(b)
-            cubeBlocks[b] = @meshSpec geo, [t, t, t, t, t, t]
+            cube = new THREE.CubeGeometry @rad, @rad, @rad, 1, 1, 1, @texture(b)
+            cubeBlocks[b] = cube
         return cubeBlocks
 
     createGrassGeometry: ->
@@ -233,15 +231,13 @@ class Game
             dirt, # bottom
             grass_dirt, # back
             grass_dirt]  #front
-        @meshSpec new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1), materials
+        new THREE.CubeGeometry( @rad, @rad, @rad, 1, 1, 1, materials)
 
     texture: (name) -> TextureHelper.loadTexture "./textures/#{name}.png"
 
     textures: (names...) -> return (@texture name for name in names)
 
     gridCoords: (x, y, z) -> @grid.gridCoords x, y, z
-
-    meshSpec: (geometry, material) -> {geometry, material}
 
 
     intoGrid: (x, y, z, val) ->
@@ -267,35 +263,22 @@ class Game
             quality *= 4
         data
 
+
     populateWorld: ->
-      middle = @grid.size / 2
-      data = @generateHeight()
-      playerHeight = null
-      for i in [-5..5]
-        for j in [-5..5]
-          height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
-          playerHeight = (height + 1) * CubeSize if i == 0 and j == 0
-          height.times (k) => @cubeAt middle + i , k, middle + j
-      middlePos = middle * CubeSize
-      @player.pos.set middlePos, playerHeight, middlePos
-
-
-    populateWorld2: ->
         middle = @grid.size / 2
-        ret = if @populateWorldFunction?
-            setblockFunc = (x, y, z, blockName) =>
-                @cubeAt x, y, z, @cubeBlocks[blockName]
-            @populateWorldFunction setblockFunc, middle
-        else
-            [middle, 3, middle] 
-        pos = (i * CubeSize for i in ret)
-        @player.pos.set pos...
+        data = @generateHeight()
+        playerHeight = null
+        for i in [-5..5]
+            for j in [-5..5]
+                height =(Math.abs Math.floor(data[i + 5][j + 5])) + 1
+                playerHeight = (height + 1) * CubeSize if i == 0 and j == 0
+                height.times (k) => @cubeAt middle + i , k, middle + j
+        middlePos = middle * CubeSize
+        @player.pos.set middlePos, playerHeight, middlePos
 
-    cubeAt: (x, y, z, meshSpec, validatingFunction) ->
-        meshSpec or=@currentMeshSpec
-        raise "bad material" unless meshSpec.geometry?
-        raise "really bad material" unless meshSpec.material?
-        mesh = new Mesh(meshSpec.geometry, new THREE.MeshFaceMaterial(meshSpec.material))
+    cubeAt: (x, y, z, geo, validatingFunction) ->
+        geo or=@geo
+        mesh = new Mesh(geo, new THREE.MeshFaceMaterial())
         mesh.geometry.dynamic = false
         halfcube = CubeSize / 2
         mesh.position.set CubeSize * x, y * CubeSize + halfcube, CubeSize * z
@@ -318,7 +301,7 @@ class Game
         renderer.setSize @width, @height
         renderer.setClearColorHex(0xBFD1E5, 1.0)
         renderer.clear()
-        $('#minecraft-container').append(renderer.domElement)
+        $('#container').append(renderer.domElement)
         renderer
 
     addLights: (scene) ->
@@ -345,12 +328,9 @@ class Game
         @clock.start() if @pause is off
         return
 
-    relativePosition: (e) -> 
-        [e.pageX - @rendererPosition.left, e.pageY - @rendererPosition.top]
-
     onMouseUp: (event) ->
         if not @moved and MouseEvent.isLeftButton event
-            @toDelete = @relativePosition(event)
+            @toDelete = [event.pageX, event.pageY]
         @moved = false
 
     onMouseMove: (event) -> @moved = true
@@ -358,7 +338,7 @@ class Game
     onMouseDown: (event) ->
         @moved = false
         return unless MouseEvent.isRightButton event
-        @castRay = @relativePosition(event)
+        @castRay = [event.pageX, event.pageY]
 
     deleteBlock: ->
         return unless @toDelete?
@@ -367,13 +347,13 @@ class Game
         y = (-y / @height) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
-        todir = vector.sub(@camera.position).normalize()
-        @deleteBlockInGrid new Raycaster @camera.position, todir
+        todir = vector.subSelf(@camera.position).normalize()
+        @deleteBlockInGrid new Ray @camera.position, todir
         @toDelete = null
         return
 
     findBlock: (ray) ->
-        for o in ray.intersectObjects(@scene.children)
+        for o in ray.intersectScene(@scene)
             return o unless o.object.name is 'floor'
         return null
 
@@ -396,14 +376,14 @@ class Game
         y = (-y / @height) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
-        todir = vector.sub(@camera.position).normalize()
-        @placeBlockInGrid new Raycaster @camera.position, todir
+        todir = vector.subSelf(@camera.position).normalize()
+        @placeBlockInGrid new Ray @camera.position, todir
         @castRay = null
         return
 
     getAdjacentCubePosition: (target) ->
         normal = target.face.normal.clone()
-        p = target.object.position.clone().add normal.multiplyScalar(CubeSize)
+        p = target.object.position.clone().addSelf normal.multiplyScalar(CubeSize)
         return p
 
     addHalfCube: (p) ->
@@ -527,7 +507,7 @@ class Game
         @controls.move pos
         eyesDelta = @controls.viewDirection().normalize().multiplyScalar(20)
         eyesDelta.y = 0
-        pos.sub eyesDelta
+        pos.subSelf eyesDelta
         return
 
     idealSpeed: 1 / 60
@@ -561,7 +541,7 @@ class BlockSelection
         @select Blocks[index]
 
     ligthUp: (target) -> @_setOpacity target, 0.8
-    lightOff: (target) -> @_setOpacity target, 1
+    lightOff:  (target) -> @_setOpacity target, 1
 
     select: (name) ->
         return if @current is name
@@ -574,7 +554,7 @@ class BlockSelection
 
     insert: ->
         blockList = (@blockImg(b) for b in Blocks)
-        domElement = $("#minecraft-blocks")
+        domElement = $("#blocks")
         domElement.append blockList.join('')
         @ligthUp @current
         domElement.mousedown (e) => @mousedown e
@@ -586,90 +566,67 @@ class Instructions
         @domElement = $('#instructions')
 
     instructions:
-      leftclick: "Remove block"
-      rightclick: "Add block"
-      drag: "Drag with the left mouse clicked to move the camera"
-      pause: "Pause/Unpause"
-      space: "Jump"
-      wasd: "WASD keys to move"
-      scroll: "Scroll to change selected block"
+        leftclick: "Remove block"
+        rightclick: "Add block"
+        drag: "Drag with the left mouse clicked to move the camera"
+        pause: "Pause/Unpause"
+        space: "Jump"
+        wasd: "WASD keys to move"
+        scroll: "Scroll to change selected block"
 
     intructionsBody: ->
         @domElement.append "<div id='instructionsContent'>
-                                 <h1>Click to start</h1>
-                                 <table>#{@lines()}</table>
-                                 </div>"
+        <h1>Click to start</h1>
+        <table>#{@lines()}</table>
+        </div>"
         $("#instructionsContent").mousedown =>
             @domElement.hide()
             @callback()
         return
 
     ribbon: ->
-      '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
-              <img style="position: fixed; top: 0; right: 0; border: 0;"
-              src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
-              alt="Fork me on GitHub"></a>'
+        '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
+        <img style="position: fixed; top: 0; right: 0; border: 0;"
+        src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
+        alt="Fork me on GitHub"></a>'
 
     insert: ->
-      @setBoder()
-      @intructionsBody()
-      minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
-      legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
-      hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
-      hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
-      @domElement.append legal + hnlink + @ribbon()
-      @domElement.show()
+        @setBoder()
+        @intructionsBody()
+        minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
+        legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
+        hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
+        hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
+        @domElement.append legal + hnlink + @ribbon()
+        @domElement.show()
 
     lines: ->
-      ret = (@line(inst) for inst of @instructions)
-      ret.join(' ')
+        ret = (@line(inst) for inst of @instructions)
+        ret.join(' ')
 
     line: (name) ->
-      inst = @instructions[name]
-      "<tr><td class='image'>#{@img(name)}</td>
-              <td class='label'>#{inst}</td></tr>"
+        inst = @instructions[name]
+        "<tr><td class='image'>#{@img(name)}</td>
+        <td class='label'>#{inst}</td></tr>"
 
     setBoder: ->
-      for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
-        @domElement.css prefix + 'border-radius', '10px'
-      return
+        for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
+            @domElement.css prefix + 'border-radius', '10px'
+        return
 
     img: (name) -> "<img src='./instructions/#{name}.png'/>"
 
-#  var createPyramid = function(setblockFunc, middle) {
-#                                                     6..times(function(k) {
-#                                                                          var i, j, s;
-#                                                              s = 5 - k;
-#  for (i = -s; i <= s; i++ ) {
-#    for (j = -s; j <= s; j++) {
-#                              setblockFunc(middle + i, k, middle + j, 'brick');
-#  }
-#  }
-#  });
-#  return [middle - 3, 33, middle + 4];
-#  }
 
-#window.Minecraft =
-#    start: (populateWorldFunction) ->
-#        $(document).bind "contextmenu", -> false
-#        return Detector.addGetWebGLMessage() unless Detector.webgl
-#        game = new Game(populateWorldFunction)
-#        new BlockSelection(game).insert()
-#        game.start()
-
-
-
-@Minecraft =
-    start: ->
-        $("#blocks").hide()
-        $('#instructions').hide()
-        $(document).bind "contextmenu", -> false
-        return Detector.addGetWebGLMessage() unless Detector.webgl
-        startGame = ->
-            game = new Game()
-            new BlockSelection(game).insert()
-
-            $("#minecraft-blocks").show()
-            game.start()
-        new Instructions(startGame).insert()
-
+window.init_web_app = ->
+    game = null
+    $("#blocks").hide()
+    $('#instructions').hide()
+    $(document).bind "contextmenu", -> false
+    $(document).bind "keydown", 'c', -> game?.controls.lockPointer()
+    return Detector.addGetWebGLMessage() unless Detector.webgl
+    startGame = ->
+        game = new Game()
+        new BlockSelection(game).insert()
+        game.start()
+        return
+    new Instructions(startGame).insert()
