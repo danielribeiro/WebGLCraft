@@ -636,8 +636,9 @@
       return p;
     };
 
-    Game.prototype.getCubeOnFloorPosition = function(ray) {
-      var o, ret, t, v;
+    Game.prototype.getCubeOnFloorPosition = function(raycast) {
+      var o, ray, ret, t, v;
+      ray = raycast.ray;
       if (ray.direction.y >= 0) {
         return null;
       }
