@@ -412,7 +412,8 @@ class Game
         p.x += CubeSize / 2
         return p
 
-    getCubeOnFloorPosition: (ray) ->
+    getCubeOnFloorPosition: (raycast) ->
+        ray = raycast.ray
         return null if ray.direction.y >= 0
         ret = vec()
         o = ray.origin
