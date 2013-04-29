@@ -201,6 +201,7 @@ class Game
         @renderer = @createRenderer()
         @rendererPosition = $("#minecraft-container canvas").offset()
         @camera = @createCamera()
+        THREEx.WindowResize @renderer, @camera
         @canvas = @renderer.domElement
         @controls = new Controls @camera, @canvas
         @player = new Player()
