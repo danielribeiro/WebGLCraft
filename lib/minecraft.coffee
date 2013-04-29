@@ -456,6 +456,7 @@ class Game
     collides: -> @collisionHelper.collides()
 
     start: ->
+        $(document).fullScreen(true)
         animate = =>
             @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
