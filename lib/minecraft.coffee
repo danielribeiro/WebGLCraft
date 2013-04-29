@@ -188,8 +188,6 @@ class Floor
 class Game
     constructor: (@populateWorldFunction) ->
         @rad = CubeSize
-        @width = window.innerWidth
-        @height = window.innerHeight
         @currentMeshSpec = @createGrassGeometry()
         @cubeBlocks = @createBlocksGeometry()
         @selectCubeBlock 'cobblestone'
@@ -217,6 +215,9 @@ class Game
         @clock = new Clock()
         @populateWorld()
         @defineControls()
+
+    width: -> window.innerWidth
+    height: -> window.innerHeight
 
     createBlocksGeometry: ->
         cubeBlocks = {}
@@ -310,13 +311,13 @@ class Game
         return
 
     createCamera: ->
-        camera = new PerspectiveCamera(45, @width / @height, 1, 10000)
+        camera = new PerspectiveCamera(45, @width() / @height(), 1, 10000)
         camera.lookAt vec 0, 0, 0
         camera
 
     createRenderer: ->
         renderer = new WebGLRenderer(antialias: true)
-        renderer.setSize @width, @height
+        renderer.setSize @width(), @height()
         renderer.setClearColorHex(0xBFD1E5, 1.0)
         renderer.clear()
         $('#minecraft-container').append(renderer.domElement)
@@ -364,8 +365,8 @@ class Game
     deleteBlock: ->
         return unless @toDelete?
         [x, y] = @toDelete
-        x = (x / @width) * 2 - 1
-        y = (-y / @height) * 2 + 1
+        x = (x / @width()) * 2 - 1
+        y = (-y / @height()) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
         todir = vector.sub(@camera.position).normalize()
@@ -393,8 +394,8 @@ class Game
     placeBlock: ->
         return unless @castRay?
         [x, y] = @castRay
-        x = (x / @width) * 2 - 1
-        y = (-y / @height) * 2 + 1
+        x = (x / @width()) * 2 - 1
+        y = (-y / @height()) * 2 + 1
         vector = vec x, y, 1
         @projector.unprojectVector vector, @camera
         todir = vector.sub(@camera.position).normalize()
