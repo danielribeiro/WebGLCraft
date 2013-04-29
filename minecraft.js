@@ -297,8 +297,6 @@
     function Game(populateWorldFunction) {
       this.populateWorldFunction = populateWorldFunction;
       this.rad = CubeSize;
-      this.width = window.innerWidth;
-      this.height = window.innerHeight;
       this.currentMeshSpec = this.createGrassGeometry();
       this.cubeBlocks = this.createBlocksGeometry();
       this.selectCubeBlock('cobblestone');
@@ -314,6 +312,7 @@
       this.renderer = this.createRenderer();
       this.rendererPosition = $("#minecraft-container canvas").offset();
       this.camera = this.createCamera();
+      THREEx.WindowResize(this.renderer, this.camera);
       this.canvas = this.renderer.domElement;
       this.controls = new Controls(this.camera, this.canvas);
       this.player = new Player();
@@ -330,6 +329,14 @@
       this.populateWorld();
       this.defineControls();
     }
+
+    Game.prototype.width = function() {
+      return window.innerWidth;
+    };
+
+    Game.prototype.height = function() {
+      return window.innerHeight;
+    };
 
     Game.prototype.createBlocksGeometry = function() {
       var b, cubeBlocks, geo, t, _i, _len;
@@ -478,7 +485,7 @@
 
     Game.prototype.createCamera = function() {
       var camera;
-      camera = new PerspectiveCamera(45, this.width / this.height, 1, 10000);
+      camera = new PerspectiveCamera(45, this.width() / this.height(), 1, 10000);
       camera.lookAt(vec(0, 0, 0));
       return camera;
     };
@@ -488,7 +495,7 @@
       renderer = new WebGLRenderer({
         antialias: true
       });
-      renderer.setSize(this.width, this.height);
+      renderer.setSize(this.width(), this.height());
       renderer.setClearColorHex(0xBFD1E5, 1.0);
       renderer.clear();
       $('#minecraft-container').append(renderer.domElement);
@@ -571,8 +578,8 @@
         return;
       }
       _ref = this.toDelete, x = _ref[0], y = _ref[1];
-      x = (x / this.width) * 2 - 1;
-      y = (-y / this.height) * 2 + 1;
+      x = (x / this.width()) * 2 - 1;
+      y = (-y / this.height()) * 2 + 1;
       vector = vec(x, y, 1);
       this.projector.unprojectVector(vector, this.camera);
       todir = vector.sub(this.camera.position).normalize();
@@ -613,8 +620,8 @@
         return;
       }
       _ref = this.castRay, x = _ref[0], y = _ref[1];
-      x = (x / this.width) * 2 - 1;
-      y = (-y / this.height) * 2 + 1;
+      x = (x / this.width()) * 2 - 1;
+      y = (-y / this.height()) * 2 + 1;
       vector = vec(x, y, 1);
       this.projector.unprojectVector(vector, this.camera);
       todir = vector.sub(this.camera.position).normalize();
@@ -707,6 +714,7 @@
     Game.prototype.start = function() {
       var animate,
         _this = this;
+      $(document).fullScreen(true);
       animate = function() {
         if (!_this.pause) {
           _this.tick();
