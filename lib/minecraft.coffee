@@ -333,7 +333,9 @@ class Game
 
     defineControls: ->
         bindit = (key) =>
-            $(document).bind 'keydown', key, => @keysDown[key] = true
+            $(document).bind 'keydown', key, =>
+                puts "key down"
+                @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
         for key in "wasd".split('').concat('space')
             bindit key
