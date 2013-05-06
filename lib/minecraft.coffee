@@ -335,7 +335,7 @@ class Game
         bindit = (key) =>
             $(document).bind 'keydown', key, => @keysDown[key] = true
             $(document).bind 'keyup', key, => @keysDown[key] = false
-        for key in "wasd".split('').concat('space')
+        for key in "wasd".split('').concat('space', 'up', 'down', 'left', 'right')
             bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
         $(@canvas).mousedown (e) => @onMouseDown e
@@ -485,9 +485,13 @@ class Game
 
     playerKeys:
         w: 'z+'
+        up: 'z+'
         s: 'z-'
+        down: 'z-'
         a: 'x+'
+        left: 'x+'
         d: 'x-'
+        right: 'x-'
 
     shouldJump: -> @keysDown.space and @onGround
 
