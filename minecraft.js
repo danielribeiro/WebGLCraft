@@ -523,7 +523,7 @@
           return _this.keysDown[key] = false;
         });
       };
-      _ref = "wasd".split('').concat('space');
+      _ref = "wasd".split('').concat('space', 'up', 'down', 'left', 'right');
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         key = _ref[_i];
         bindit(key);
@@ -756,9 +756,13 @@
 
     Game.prototype.playerKeys = {
       w: 'z+',
+      up: 'z+',
       s: 'z-',
+      down: 'z-',
       a: 'x+',
-      d: 'x-'
+      left: 'x+',
+      d: 'x-',
+      right: 'x-'
     };
 
     Game.prototype.shouldJump = function() {
