@@ -505,6 +505,7 @@ class Game
             vel = if operation is '-' then -baseVel else baseVel
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
+            enablePointerLock()
             @onGround = false
             @move.y = jumpSpeed
         @garanteeXYNorm()
@@ -666,21 +667,10 @@ class Instructions
 #        game.start()
 
 
-#from : https://github.com/MiJyn/island_survivor/blob/6abae8641b42e4b644b224ade3973bf573e72c84/js/Island-util/pointerlock.js
-lockPointer = (elem) ->
-    if typeof navigator.pointer is "undefined"
-
-        # Firefox
-        elem.requestPointerLock = elem.requestPointerLock or elem.mozRequestPointerLock or elem.webkitRequestPointerLock
-        elem.requestPointerLock()
-    else
-        navigator.pointer.lock elem
-
-
+# this one actually works on chrome: http://www.html5rocks.com/en/tutorials/pointerlock/intro/?redirect_from_locale=de
 
 @Minecraft =
     start: ->
-        lockPointer(document)
         $("#blocks").hide()
         $('#instructions').hide()
         $(document).bind "contextmenu", -> false
