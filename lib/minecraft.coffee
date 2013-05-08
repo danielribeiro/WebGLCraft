@@ -666,17 +666,21 @@ class Instructions
 #        game.start()
 
 
-# from http://www.html5rocks.com/en/tutorials/pointerlock/intro/?redirect_from_locale=ru
-debugPointerLock = ->
-    hasPointerLock = 'pointerLockElement' in document or 'mozPointerLockElement' in document or 'webkitPointerLockElement' in document
-    puts "has pointer lock: #{hasPointerLock}"
+#from : https://github.com/MiJyn/island_survivor/blob/6abae8641b42e4b644b224ade3973bf573e72c84/js/Island-util/pointerlock.js
+lockPointer = (elem) ->
+    if typeof navigator.pointer is "undefined"
 
+        # Firefox
+        elem.requestPointerLock = elem.requestPointerLock or elem.mozRequestPointerLock or elem.webkitRequestPointerLock
+        elem.requestPointerLock()
+    else
+        navigator.pointer.lock elem
 
 
 
 @Minecraft =
     start: ->
-        debugPointerLock()
+        lockPointer(document)
         $("#blocks").hide()
         $('#instructions').hide()
         $(document).bind "contextmenu", -> false
