@@ -666,9 +666,17 @@ class Instructions
 #        game.start()
 
 
+# from http://www.html5rocks.com/en/tutorials/pointerlock/intro/?redirect_from_locale=ru
+debugPointerLock = ->
+    hasPointerLock = 'pointerLockElement' in document or 'mozPointerLockElement' in document or 'webkitPointerLockElement' in document
+    puts "has pointer lock: #{hasPointerLock}"
+
+
+
 
 @Minecraft =
     start: ->
+        debugPointerLock()
         $("#blocks").hide()
         $('#instructions').hide()
         $(document).bind "contextmenu", -> false
