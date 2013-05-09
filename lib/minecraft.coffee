@@ -342,7 +342,10 @@ class Game
         $(@canvas).mousedown (e) => @onMouseDown e
         $(@canvas).mouseup (e) => @onMouseUp e
         $(@canvas).mousemove (e) => @onMouseMove
-        @enablePointerLock()
+
+        @enablePointerLock() unless @pointerlockEnabled # feature flagged until complete
+
+    pointerlockEnabled: false
 
     enablePointerLock: ->
         if @canvas.webkitRequestPointerLock
