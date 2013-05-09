@@ -216,6 +216,7 @@ class Game
         @populateWorld()
         @defineControls()
 
+
     width: -> window.innerWidth
     height: -> window.innerHeight
 
@@ -340,7 +341,14 @@ class Game
         $(document).bind 'keydown', 'p', => @togglePause()
         $(@canvas).mousedown (e) => @onMouseDown e
         $(@canvas).mouseup (e) => @onMouseUp e
-        $(@canvas).mousemove (e) => @onMouseMove e
+        $(@canvas).mousemove (e) => @onMouseMove
+        @enablePointerLock()
+
+    enablePointerLock: ->
+        if @canvas.webkitRequestPointerLock
+            @canvas.webkitRequestPointerLock()
+        if @canvas.mozRequestPointerLock
+            @canvas.mozRequestPointerLock()
 
     togglePause: ->
         @pause = !@pause
