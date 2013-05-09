@@ -341,7 +341,7 @@ class Game
         $(document).bind 'keydown', 'p', => @togglePause()
         $(@canvas).mousedown (e) => @onMouseDown e
         $(@canvas).mouseup (e) => @onMouseUp e
-        $(@canvas).mousemove (e) => @onMouseMove
+        $(@canvas).mousemove (e) => @onMouseMove e
 
         @enablePointerLock() unless @pointerlockEnabled # feature flagged until complete
 
