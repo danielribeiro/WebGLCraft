@@ -537,9 +537,23 @@
       $(this.canvas).mouseup(function(e) {
         return _this.onMouseUp(e);
       });
-      return $(this.canvas).mousemove(function(e) {
+      $(this.canvas).mousemove(function(e) {
         return _this.onMouseMove(e);
       });
+      if (!this.pointerlockEnabled) {
+        return this.enablePointerLock();
+      }
+    };
+
+    Game.prototype.pointerlockEnabled = false;
+
+    Game.prototype.enablePointerLock = function() {
+      if (this.canvas.webkitRequestPointerLock) {
+        this.canvas.webkitRequestPointerLock();
+      }
+      if (this.canvas.mozRequestPointerLock) {
+        return this.canvas.mozRequestPointerLock();
+      }
     };
 
     Game.prototype.togglePause = function() {
@@ -785,6 +799,7 @@
         }
       }
       if (this.shouldJump()) {
+        enablePointerLock();
         this.onGround = false;
         this.move.y = jumpSpeed;
       }
