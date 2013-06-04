@@ -511,12 +511,11 @@ class Game
         jumpSpeed = .8
         @move.x = 0
         @move.z = 0
-        for key, action of @playerKeys
+        for key, action of @playerKys
             [axis, operation] = action
             vel = if operation is '-' then -baseVel else baseVel
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
-            enablePointerLock()
             @onGround = false
             @move.y = jumpSpeed
         @garanteeXYNorm()
