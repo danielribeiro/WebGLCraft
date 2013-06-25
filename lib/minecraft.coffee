@@ -184,6 +184,16 @@ class Floor
 
     addToScene: (scene) -> scene.add @plane
 
+requestPointerLock = (container) ->
+    # Lock the pointer
+    container.requestPointerLock = container.requestPointerLock or container.mozRequestPointerLock or container.webkitRequestPointerLock
+    if container.mozRequestFullScreen
+        container.mozRequestFullScreen()
+        document.addEventListener "mozfullscreenchange", (fullscreenChange = ->
+            container.requestPointerLock()  if document.mozFullScreenElement is container or document.mozFullscreenElement is container
+        ), false
+    else
+        container.requestPointerLock()
 
 class Game
     constructor: (@populateWorldFunction) ->
@@ -348,10 +358,7 @@ class Game
     pointerlockEnabled: false
 
     enablePointerLock: ->
-        if @canvas.webkitRequestPointerLock
-            @canvas.webkitRequestPointerLock()
-        if @canvas.mozRequestPointerLock
-            @canvas.mozRequestPointerLock()
+        requestPointerLock @canvas
 
     togglePause: ->
         @pause = !@pause
