@@ -343,16 +343,6 @@ class Game
         $(@canvas).mouseup (e) => @onMouseUp e
         $(@canvas).mousemove (e) => @onMouseMove e
 
-        @enablePointerLock() unless @pointerlockEnabled # feature flagged until complete
-
-    pointerlockEnabled: false
-
-    enablePointerLock: ->
-        if @canvas.webkitRequestPointerLock
-            @canvas.webkitRequestPointerLock()
-        if @canvas.mozRequestPointerLock
-            @canvas.mozRequestPointerLock()
-
     togglePause: ->
         @pause = !@pause
         @clock.start() if @pause is off
@@ -469,7 +459,6 @@ class Game
     collides: -> @collisionHelper.collides()
 
     start: ->
-        $(document).fullScreen(true)
         animate = =>
             @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
@@ -676,8 +665,6 @@ class Instructions
 #        new BlockSelection(game).insert()
 #        game.start()
 
-
-# this one actually works on chrome: http://www.html5rocks.com/en/tutorials/pointerlock/intro/?redirect_from_locale=de
 
 @Minecraft =
     start: ->
