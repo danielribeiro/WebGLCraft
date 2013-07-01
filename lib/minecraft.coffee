@@ -644,26 +644,6 @@ class Instructions
 
     img: (name) -> "<img src='./instructions/#{name}.png'/>"
 
-#  var createPyramid = function(setblockFunc, middle) {
-#                                                     6..times(function(k) {
-#                                                                          var i, j, s;
-#                                                              s = 5 - k;
-#  for (i = -s; i <= s; i++ ) {
-#    for (j = -s; j <= s; j++) {
-#                              setblockFunc(middle + i, k, middle + j, 'brick');
-#  }
-#  }
-#  });
-#  return [middle - 3, 33, middle + 4];
-#  }
-
-#window.Minecraft =
-#    start: (populateWorldFunction) ->
-#        $(document).bind "contextmenu", -> false
-#        return Detector.addGetWebGLMessage() unless Detector.webgl
-#        game = new Game(populateWorldFunction)
-#        new BlockSelection(game).insert()
-#        game.start()
 
 
 @Minecraft =
