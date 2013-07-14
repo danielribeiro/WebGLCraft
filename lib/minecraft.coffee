@@ -352,8 +352,8 @@ class Game
         @clock.start() if @pause is off
         return
 
-    relativePosition: (e) -> 
-        [e.pageX - @rendererPosition.left, e.pageY - @rendererPosition.top]
+    relativePosition: (x, y) ->
+        [x - @rendererPosition.left, y - @rendererPosition.top]
 
     onMouseUp: (event) ->
         if not @moved and MouseEvent.isLeftButton event
@@ -362,10 +362,15 @@ class Game
 
     onMouseMove: (event) -> @moved = true
 
-    onMouseDown: (event) ->
+    fullscreen: true
+
+    onMouseDown: (e) ->
         @moved = false
         return unless MouseEvent.isRightButton event
-        @castRay = @relativePosition(event)
+        @castRay = if @fullscreen
+                @relativePosition(@width() / 2, @height() / 2)
+            else
+                @relativePosition(e.pageX, e.pageY)
 
     deleteBlock: ->
         return unless @toDelete?
@@ -661,6 +666,7 @@ class Instructions
             new BlockSelection(game).insert()
 
             $("#minecraft-blocks").show()
+            window.game = game
             game.start()
         new Instructions(startGame).insert()
 
