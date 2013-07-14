@@ -81,3 +81,8 @@ class @Controls
         @lat = max(-85, min(85, @lat))
         @updateLook()
         return
+
+
+class @PointerLockControls extends Controls
+
+
