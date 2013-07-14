@@ -20,15 +20,15 @@ class @Controls
         @defineBindings()
 
     defineBindings: ->
-        $(@domElement).mousemove (e) => @onMouseMove e
-        $(@domElement).mousedown (e) => @onMouseDown e
-        $(@domElement).mouseup (e) => @onMouseUp e
-        $(@domElement).mouseenter (e) => @onMouserEnter e
+        $(@domElement).mousemove @onMouseMove
+        $(@domElement).mousedown @onMouseDown
+        $(@domElement).mouseup @onMouseUp
+        $(@domElement).mouseenter @onMouserEnter
 
-    onMouserEnter: (event) ->
+    onMouserEnter: (event) =>
         @onMouseUp(event) unless MouseEvent.isLeftButtonDown event
 
-    onMouseDown: (event) ->
+    onMouseDown: (event) =>
         return unless MouseEvent.isLeftButton event
         @domElement.focus() if @domElement isnt document
         @anchorx = event.pageX
@@ -37,7 +37,7 @@ class @Controls
         @mouseDragOn = true
         return false
 
-    onMouseUp: (event) ->
+    onMouseUp: (event) =>
         @mouseDragOn = false
         return false
 
@@ -45,7 +45,7 @@ class @Controls
         @mouseX = event.pageX
         @mouseY = event.pageY
 
-    onMouseMove: (event) ->
+    onMouseMove: (event) =>
         return unless @mouseDragOn
         @setMouse event
         return
