@@ -95,10 +95,28 @@
                 padding: 0;
             }
 
+            #cursor {
+                display:none;
+                position:absolute;
+                top:50%;
+                left:50%;
+                width:20px;
+                margin-left:-10px;
+                font-size:18px;
+                text-align:center;
+                color:#fff;
+                z-index:2;
+            }
+            #cursor::before {
+                content: '+'
+            }
+
+
         </style>
     </head>
     <body>
         <div id="instructions"></div>
+        <div id="cursor"></div>
         <div id="minecraft-container"></div>
         <div id="minecraft-blocks">
         </div>
