@@ -196,6 +196,7 @@ class Game
         @grid = new Grid(100)
         @onGround = true
         @pause = off
+        @fullscreen = off
         @renderer = @createRenderer()
         @rendererPosition = $("#minecraft-container canvas").offset()
         @camera = @createCamera()
@@ -361,8 +362,6 @@ class Game
         @moved = false
 
     onMouseMove: (event) -> @moved = true
-
-    fullscreen: true
 
     onMouseDown: (e) ->
         @moved = false
