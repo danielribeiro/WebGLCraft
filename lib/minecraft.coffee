@@ -472,12 +472,14 @@ class Game
             requestAnimationFrame animate, @renderer.domElement
         animate()
         PointerLock.init onEnable: @enablePointLock, onDisable: @disablePointLock
-        PointerLock.fullScreenLock(@canvas)
+        PointerLock.fullScreenLock($("body").get(0))
 
     enablePointLock: =>
+        $("#cursor").show()
         @fullscreen = on
 
     disablePointLock: =>
+        $("#cursor").hide()
         @fullscreen = off
 
 
