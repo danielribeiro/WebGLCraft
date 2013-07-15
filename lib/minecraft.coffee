@@ -471,6 +471,15 @@ class Game
             @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
         animate()
+        PointerLock.init onEnable: @enablePointLock, onDisable: @disablePointLock
+        PointerLock.fullScreenLock(@canvas)
+
+    enablePointLock: =>
+        @fullscreen = on
+
+    disablePointLock: =>
+        @fullscreen = off
+
 
     axes: ['x', 'y', 'z']
     iterationCount: 10
