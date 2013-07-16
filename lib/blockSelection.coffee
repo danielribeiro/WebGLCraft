@@ -1,3 +1,6 @@
+@Blocks = ["cobblestone", "plank", "brick", "diamond",
+          "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
+
 class @BlockSelection
     constructor: (@game) -> @current = "cobblestone"
 

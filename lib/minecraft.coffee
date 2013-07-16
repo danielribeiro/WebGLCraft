@@ -9,8 +9,6 @@
 vec = (x, y, z) -> new Vector3 x, y, z
 
 CubeSize = 50
-Blocks = ["cobblestone", "plank", "brick", "diamond",
-    "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
 
 class Player
     width: CubeSize * 0.3
