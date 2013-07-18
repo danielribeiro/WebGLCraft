@@ -44,6 +44,11 @@ class @Controls
     setMouse: (event) ->
         @mouseX = event.pageX
         @mouseY = event.pageY
+        @setDelta event.pageX - @anchorx, event.pageY - @anchory
+
+    setDelta: (x, y) ->
+        @deltaX = x
+        @deltaY = y
 
     onMouseMove: (event) =>
         return unless @mouseDragOn
@@ -84,5 +89,25 @@ class @Controls
 
 
 class @PointerLockControls extends Controls
+    constructor: (object, domElement) ->
+        super
+        @deltaX = 0
+        @deltaY = 0
+
+    update: ->
+        return if @mouseX is @anchorx and @mouseY is @anchory
+        return if @deltaX is @previousDeltaX and @deltaY is @previousDeltaY
+        @previousDeltaX = @deltaX
+        @previousDeltaY = @deltaY
+        @anchorx = window.innerWidth / 2
+        @anchory = window.innerHeight / 2
+        {max, min} = Math
+
+        @lon += @deltaX * @lookSpeed
+        @lat -= @deltaY * @lookSpeed
+        @lat = max(-85, min(85, @lat))
+        @updateLook()
+        return
+
 
 
