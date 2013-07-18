@@ -90,9 +90,11 @@ class @Controls
 
 class @PointerLockControls extends Controls
     constructor: (object, domElement) ->
-        super
+        super(object, domElement)
         @deltaX = 0
         @deltaY = 0
+        @previousDeltaX = 0
+        @previousDeltaY = 0
 
     update: ->
         return if @mouseX is @anchorx and @mouseY is @anchory
@@ -109,5 +111,14 @@ class @PointerLockControls extends Controls
         @updateLook()
         return
 
+    onMouseMove: (event) ->
+        if @mouseDragOn
+            @setMouse event.pageX, event.pageY
+        else
+            e = event.originalEvent
+            x = e.movementX or e.mozMovementX or e.webkitMovementX
+            y = e.movementY or e.mozMovementY or e.webkitMovementY
+            @setDelta x, y
+        return
 
 
