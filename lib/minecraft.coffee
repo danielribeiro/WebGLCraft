@@ -354,9 +354,9 @@ class Game
     relativePosition: (x, y) ->
         [x - @rendererPosition.left, y - @rendererPosition.top]
 
-    onMouseUp: (event) ->
+    onMouseUp: (e) ->
         if not @moved and MouseEvent.isLeftButton event
-            @toDelete = @relativePosition(event)
+            @toDelete = @relativePosition(e.pageX, e.pageY)
         @moved = false
 
     onMouseMove: (event) -> @moved = true
