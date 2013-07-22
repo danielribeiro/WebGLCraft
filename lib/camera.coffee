@@ -83,6 +83,7 @@ class @Controls
         @lat -= (@mouseY - @anchory) * @lookSpeed
         @anchorx = @mouseX
         @anchory = @mouseY
+        # Limiting how much up and down you can look. -90 is fully down and +90 would be fully up, so we limit a little less
         @lat = max(-85, min(85, @lat))
         @updateLook()
         return
