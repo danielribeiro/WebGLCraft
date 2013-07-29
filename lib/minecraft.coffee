@@ -365,7 +365,7 @@ class Game
         @moved = false
         return unless MouseEvent.isRightButton event
         @castRay = if @fullscreen
-                @relativePosition(@width() / 2, @height() / 2)
+                @relativePosition(e.pageX, e.pageY)
             else
                 @relativePosition(e.pageX, e.pageY)
 
@@ -474,10 +474,12 @@ class Game
 
     enablePointLock: =>
         $("#cursor").show()
+        @controls.enableMouseLocked()
         @fullscreen = on
 
     disablePointLock: =>
         $("#cursor").hide()
+        @controls.disableMouseLocked()
         @fullscreen = off
 
 
