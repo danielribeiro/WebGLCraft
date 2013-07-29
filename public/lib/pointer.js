@@ -42,7 +42,7 @@
         container.mozRequestFullScreen();
       } else {
         container.fullScreenLock();
-        container.webkitRequestFullScreen();
+        container.webkitRequestFullscreen();
       }
       return this.container = container;
     }
