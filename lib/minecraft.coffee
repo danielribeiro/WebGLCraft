@@ -342,9 +342,12 @@ class Game
         for key in "wasd".split('').concat('space', 'up', 'down', 'left', 'right')
             bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
+        $(document).mousedown (e) => @onMouseDown e
         $(@canvas).mousedown (e) => @onMouseDown e
+        $(document).mouseup (e) => @onMouseUp e
         $(@canvas).mouseup (e) => @onMouseUp e
-        $(@canvas).mousemove (e) => @onMouseMove e
+        $(document).mousemove (e) => @onMouseMove e
+        $(@canvas).mousemove (e) => @onMouseUp e
 
     togglePause: ->
         @pause = !@pause
@@ -356,18 +359,19 @@ class Game
 
     onMouseUp: (e) ->
         if not @moved and MouseEvent.isLeftButton event
-            @toDelete = @relativePosition(e.pageX, e.pageY)
+            @toDelete = @_targetPosition(e)
         @moved = false
 
     onMouseMove: (event) -> @moved = true
 
     onMouseDown: (e) ->
         @moved = false
-        return unless MouseEvent.isRightButton event
-        @castRay = if @fullscreen
-                @relativePosition(e.pageX, e.pageY)
-            else
-                @relativePosition(e.pageX, e.pageY)
+        return unless MouseEvent.isRightButton e
+        @castRay = @_targetPosition(e)
+
+    _targetPosition: (e) ->
+        return @relativePosition(@width() / 2, @height() / 2) if @fullscreen
+        @relativePosition(e.pageX, e.pageY)
 
     deleteBlock: ->
         return unless @toDelete?

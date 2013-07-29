@@ -67,7 +67,6 @@ class @Controls
             e = event.originalEvent
             x = e.movementX or e.mozMovementX or e.webkitMovementX
             y = e.movementY or e.mozMovementY or e.webkitMovementY
-            puts x, y
             @setDelta x, y
         return
 
