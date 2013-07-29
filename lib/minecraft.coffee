@@ -342,12 +342,10 @@ class Game
         for key in "wasd".split('').concat('space', 'up', 'down', 'left', 'right')
             bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
-        $(document).mousedown (e) => @onMouseDown e
-        $(@canvas).mousedown (e) => @onMouseDown e
-        $(document).mouseup (e) => @onMouseUp e
-        $(@canvas).mouseup (e) => @onMouseUp e
-        $(document).mousemove (e) => @onMouseMove e
-        $(@canvas).mousemove (e) => @onMouseUp e
+        for target in [document, @canvas]
+            $(target).mousedown (e) => @onMouseDown e
+            $(target).mouseup (e) => @onMouseUp e
+            $(target).mousemove (e) => @onMouseMove e
 
     togglePause: ->
         @pause = !@pause
