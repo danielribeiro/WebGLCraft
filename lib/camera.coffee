@@ -14,45 +14,61 @@ class @Controls
         @mouseY = 0
         @lat = -66.59
         @lon = -31.8
+        @deltaX = 0
+        @deltaY = 0
         @mouseDragOn = false
         @anchorx = null
         @anchory = null
+        @mouseLocked = false
         @defineBindings()
 
-    defineBindings: ->
-        $(@domElement).mousemove @onMouseMove
-        $(@domElement).mousedown @onMouseDown
-        $(@domElement).mouseup @onMouseUp
-        $(@domElement).mouseenter @onMouserEnter
+    enableMouseLocked: -> @mouseLocked = true
+    disableMouseLocked: -> @mouseLocked = false
 
-    onMouserEnter: (event) =>
+    defineBindings: ->
+        $(document).mousemove (e) => @onMouseMove e
+        $(@domElement).mousedown (e) => @onMouseDown e
+        $(@domElement).mouseup (e) => @onMouseUp e
+        $(@domElement).mouseenter (e) => @onMouserEnter e
+
+
+    showCrosshair: -> document.getElementById('cursor').style.display = 'block'
+    hideCrosshair: -> document.getElementById('cursor').style.display = 'none'
+
+    onMouserEnter: (event) ->
         @onMouseUp(event) unless MouseEvent.isLeftButtonDown event
 
-    onMouseDown: (event) =>
+    onMouseDown: (event) ->
         return unless MouseEvent.isLeftButton event
-        @domElement.focus() if @domElement isnt document
+        @domElement.focus() if @mouseLocked and @domElement isnt document
         @anchorx = event.pageX
         @anchory = event.pageY
-        @setMouse event
+        @setMouse @anchorx, @anchory
         @mouseDragOn = true
         return false
 
-    onMouseUp: (event) =>
+    onMouseUp: (event) ->
         @mouseDragOn = false
         return false
 
-    setMouse: (event) ->
-        @mouseX = event.pageX
-        @mouseY = event.pageY
-        @setDelta event.pageX - @anchorx, event.pageY - @anchory
+    setMouse: (x, y) ->
+        @mouseX = x
+        @mouseY = y
+        @setDelta x - @anchorx, y - @anchory
 
     setDelta: (x, y) ->
         @deltaX = x
         @deltaY = y
 
-    onMouseMove: (event) =>
-        return unless @mouseDragOn
-        @setMouse event
+    onMouseMove: (event) ->
+        if @mouseDragOn
+            @setMouse event.pageX, event.pageY
+        else if @mouseLocked
+            e = event.originalEvent
+            x = e.movementX or e.mozMovementX or e.webkitMovementX
+            y = e.movementY or e.mozMovementY or e.webkitMovementY
+            puts x, y
+            @setDelta x, y
         return
 
     halfCircle:  Math.PI / 180
@@ -76,50 +92,22 @@ class @Controls
         return
 
     update: ->
-        return unless @mouseDragOn
-        return if @mouseX is @anchorx and @mouseY is @anchory
+        return unless @mouseDragOn or @mouseLocked
+        return if @mouseDragOn and @mouseX is @anchorx and @mouseY is @anchory
         {max, min} = Math
-        @lon += (@mouseX - @anchorx) * @lookSpeed
-        @lat -= (@mouseY - @anchory) * @lookSpeed
-        @anchorx = @mouseX
-        @anchory = @mouseY
-        # Limiting how much up and down you can look. -90 is fully down and +90 would be fully up, so we limit a little less
-        @lat = max(-85, min(85, @lat))
-        @updateLook()
-        return
-
-
-class @PointerLockControls extends Controls
-    constructor: (object, domElement) ->
-        super(object, domElement)
-        @deltaX = 0
-        @deltaY = 0
-        @previousDeltaX = 0
-        @previousDeltaY = 0
-
-    update: ->
-        return if @mouseX is @anchorx and @mouseY is @anchory
-        return if @deltaX is @previousDeltaX and @deltaY is @previousDeltaY
-        @previousDeltaX = @deltaX
-        @previousDeltaY = @deltaY
-        @anchorx = window.innerWidth / 2
-        @anchory = window.innerHeight / 2
-        {max, min} = Math
+        if @mouseLocked
+            return if @deltaX is @previousDeltaX and @deltaY is @previousDeltaY
+            @previousDeltaX = @deltaX
+            @previousDeltaY = @deltaY
+            @anchorx = window.innerWidth/2
+            @anchory = window.innerHeight/2
+        else if @mouseDragOn
+            return if @mouseX is @anchorx and @mouseY is @anchory
+            @anchorx = @mouseX
+            @anchory = @mouseY
 
         @lon += @deltaX * @lookSpeed
         @lat -= @deltaY * @lookSpeed
         @lat = max(-85, min(85, @lat))
         @updateLook()
         return
-
-    onMouseMove: (event) ->
-        if @mouseDragOn
-            @setMouse event.pageX, event.pageY
-        else
-            e = event.originalEvent
-            x = e.movementX or e.mozMovementX or e.webkitMovementX
-            y = e.movementY or e.mozMovementY or e.webkitMovementY
-            @setDelta x, y
-        return
-
-
