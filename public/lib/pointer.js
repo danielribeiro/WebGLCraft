@@ -36,15 +36,15 @@
       container.fullScreenLock = container.fullScreenLock || container.mozRequestPointerLock || container.webkitRequestPointerLock;
       onFirefox = container.mozRequestFullScreen != null;
       if (onFirefox) {
-        if (this.container !== container) {
-          onScreenChange = function() {
-            if (document.mozFullScreenElement === container) {
-              return container.fullScreenLock();
-            }
-          };
-          document.addEventListener("mozfullscreenchange", onScreenChange, false);
-        }
-        container.mozRequestFullScreen();
+//        if (this.container !== container) {
+//          onScreenChange = function() {
+//            if (document.mozFullScreenElement === container) {
+//              return container.fullScreenLock();
+//            }
+//          };
+//          document.addEventListener("mozfullscreenchange", onScreenChange, false);
+//        }
+//        container.mozRequestFullScreen();
       } else {
         container.fullScreenLock();
         container.webkitRequestFullscreen();
