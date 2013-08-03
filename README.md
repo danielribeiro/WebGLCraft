@@ -32,7 +32,7 @@ which simply runs
 
     python -m SimpleHTTPServer
 
-enabling you to open the game on [http://localhost:8000/public/](http://localhost:8000/public/).
+enabling you to open the game on [http://localhost:8000/public/](http://localhost:8000/public/)
 
 
 To run the tests, simply run:
@@ -42,7 +42,7 @@ To run the tests, simply run:
 
 
 The tests are powered by [Jasmine](http://pivotal.github.com/jasmine/), and can also be seen
-on the browser (useful for debugging) by opening test/web_runner.html.
+on the browser (useful for debugging) by opening http://localhost:8000/spec/web_runner.html
 
 Coffeescript Source Maps
 -----
@@ -66,7 +66,7 @@ Make sure you have the latest coffeescript running (see [this](https://github.co
 Meta
 ----
 
-Created by Daniel Ribeiro. Not affiliated with Mojang. Minecraft is a trademark of [Mojang](http://mojang.com/).
+Created by [Daniel Ribeiro](http://metaphysicaldeveloper.wordpress.com/about-me). Not affiliated with Mojang. Minecraft is a trademark of [Mojang](http://mojang.com/).
 
 Released under the MIT License: http://www.opensource.org/licenses/mit-license.php
 
