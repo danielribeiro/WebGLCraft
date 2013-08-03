@@ -39,6 +39,32 @@
       return this;
     };
 
+    MethodTracer.prototype.traceModule = function(module, moduleName) {
+      var f, name, tracer, uniqueId;
+      for (name in module) {
+        f = module[name];
+        if (!(typeof f === 'function')) {
+          continue;
+        }
+        uniqueId = "Module " + moduleName + "#" + name;
+        tracer = this.tracer;
+        tracer[uniqueId] = false;
+        module[name] = this.wrapfn(module, uniqueId, f);
+      }
+      return this;
+    };
+
+    MethodTracer.prototype.wrapfn = function(module, uniqueId, f) {
+      var self;
+      self = this;
+      return function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        self.tracer[uniqueId] = true;
+        return f.apply(module, args);
+      };
+    };
+
     MethodTracer.prototype.printUnused = function() {
       var id, used, _ref;
       _ref = this.tracer;

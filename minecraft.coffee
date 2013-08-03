@@ -9,8 +9,6 @@
 vec = (x, y, z) -> new Vector3 x, y, z
 
 CubeSize = 50
-Blocks = ["cobblestone", "plank", "brick", "diamond",
-    "glowstone", "obsidian", "whitewool", "bluewool", "redwool", "netherrack"]
 
 class Player
     width: CubeSize * 0.3
@@ -196,6 +194,7 @@ class Game
         @grid = new Grid(100)
         @onGround = true
         @pause = off
+        @fullscreen = off
         @renderer = @createRenderer()
         @rendererPosition = $("#minecraft-container canvas").offset()
         @camera = @createCamera()
@@ -334,44 +333,43 @@ class Game
 
     defineControls: ->
         bindit = (key) =>
-            $(document).bind 'keydown', key, => @keysDown[key] = true
-            $(document).bind 'keyup', key, => @keysDown[key] = false
+            $(document).bind 'keydown', key, =>
+                @keysDown[key] = true
+                return false
+            $(document).bind 'keyup', key, =>
+                @keysDown[key] = false
+                return false
         for key in "wasd".split('').concat('space', 'up', 'down', 'left', 'right')
             bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
-        $(@canvas).mousedown (e) => @onMouseDown e
-        $(@canvas).mouseup (e) => @onMouseUp e
-        $(@canvas).mousemove (e) => @onMouseMove e
-
-        @enablePointerLock() unless @pointerlockEnabled # feature flagged until complete
-
-    pointerlockEnabled: false
-
-    enablePointerLock: ->
-        if @canvas.webkitRequestPointerLock
-            @canvas.webkitRequestPointerLock()
-        if @canvas.mozRequestPointerLock
-            @canvas.mozRequestPointerLock()
+        for target in [document, @canvas]
+            $(target).mousedown (e) => @onMouseDown e
+            $(target).mouseup (e) => @onMouseUp e
+            $(target).mousemove (e) => @onMouseMove e
 
     togglePause: ->
         @pause = !@pause
         @clock.start() if @pause is off
         return
 
-    relativePosition: (e) -> 
-        [e.pageX - @rendererPosition.left, e.pageY - @rendererPosition.top]
+    relativePosition: (x, y) ->
+        [x - @rendererPosition.left, y - @rendererPosition.top]
 
-    onMouseUp: (event) ->
+    onMouseUp: (e) ->
         if not @moved and MouseEvent.isLeftButton event
-            @toDelete = @relativePosition(event)
+            @toDelete = @_targetPosition(e)
         @moved = false
 
     onMouseMove: (event) -> @moved = true
 
-    onMouseDown: (event) ->
+    onMouseDown: (e) ->
         @moved = false
-        return unless MouseEvent.isRightButton event
-        @castRay = @relativePosition(event)
+        return unless MouseEvent.isRightButton e
+        @castRay = @_targetPosition(e)
+
+    _targetPosition: (e) ->
+        return @relativePosition(@width() / 2, @height() / 2) if @fullscreen
+        @relativePosition(e.pageX, e.pageY)
 
     deleteBlock: ->
         return unless @toDelete?
@@ -469,11 +467,23 @@ class Game
     collides: -> @collisionHelper.collides()
 
     start: ->
-        $(document).fullScreen(true)
         animate = =>
             @tick() unless @pause
             requestAnimationFrame animate, @renderer.domElement
         animate()
+        PointerLock.init onEnable: @enablePointLock, onDisable: @disablePointLock
+        PointerLock.fullScreenLock($("#app").get(0))
+
+    enablePointLock: =>
+        $("#cursor").show()
+        @controls.enableMouseLocked()
+        @fullscreen = on
+
+    disablePointLock: =>
+        $("#cursor").hide()
+        @controls.disableMouseLocked()
+        @fullscreen = off
+
 
     axes: ['x', 'y', 'z']
     iterationCount: 10
@@ -516,7 +526,6 @@ class Game
             vel = if operation is '-' then -baseVel else baseVel
             @move[axis] += vel if @keysDown[key]
         if @shouldJump()
-            enablePointerLock()
             @onGround = false
             @move.y = jumpSpeed
         @garanteeXYNorm()
@@ -563,123 +572,6 @@ class Game
         @renderer.render @scene, @camera
         return
 
-class BlockSelection
-    constructor: (@game) ->
-        @current = "cobblestone"
-
-    blockImg: (name) ->
-        "<img width='32' height='32' src='./textures/#{name}icon.png' id='#{name}'/>"
-
-    mousedown: (e) ->
-        return false if e.target == @
-        @select e.target.id
-        return false
-
-    mousewheel: (delta) ->
-        dif = (if delta >= 0 then 1 else -1)
-        index = (Blocks.indexOf(@current) - dif).mod(Blocks.length)
-        @select Blocks[index]
-
-    ligthUp: (target) -> @_setOpacity target, 0.8
-    lightOff: (target) -> @_setOpacity target, 1
-
-    select: (name) ->
-        return if @current is name
-        @game.selectCubeBlock name
-        @ligthUp name
-        @lightOff @current
-        @current = name
-
-    _setOpacity: (target, val) -> $("#" + target).css(opacity: val)
-
-    insert: ->
-        blockList = (@blockImg(b) for b in Blocks)
-        domElement = $("#minecraft-blocks")
-        domElement.append blockList.join('')
-        @ligthUp @current
-        domElement.mousedown (e) => @mousedown e
-        $(document).mousewheel (e, delta) => @mousewheel delta
-        domElement.show()
-
-class Instructions
-    constructor: (@callback) ->
-        @domElement = $('#instructions')
-
-    instructions:
-      leftclick: "Remove block"
-      rightclick: "Add block"
-      drag: "Drag with the left mouse clicked to move the camera"
-      pause: "Pause/Unpause"
-      space: "Jump"
-      wasd: "WASD keys to move"
-      scroll: "Scroll to change selected block"
-
-    intructionsBody: ->
-        @domElement.append "<div id='instructionsContent'>
-                                 <h1>Click to start</h1>
-                                 <table>#{@lines()}</table>
-                                 </div>"
-        $("#instructionsContent").mousedown =>
-            @domElement.hide()
-            @callback()
-        return
-
-    ribbon: ->
-      '<a href="https://github.com/danielribeiro/WebGLCraft" target="_blank">
-              <img style="position: fixed; top: 0; right: 0; border: 0;"
-              src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
-              alt="Fork me on GitHub"></a>'
-
-    insert: ->
-      @setBoder()
-      @intructionsBody()
-      minecraft = "<a href='http://www.minecraft.net/' target='_blank'>Minecraft</a>"
-      legal = "<div>Not affiliated with Mojang. #{minecraft} is a trademark of Mojang</div>"
-      hnimage = '<img class="alignnone" title="hacker news" src="http://1.gravatar.com/blavatar/96c849b03aefaf7ef9d30158754f0019?s=20" alt="" width="20" height="20" />'
-      hnlink = "<div>Comment on  #{hnimage} <a href='http://news.ycombinator.com/item?id=3376620'  target='_blank'>Hacker News</a></div>"
-      @domElement.append legal + hnlink + @ribbon()
-      @domElement.show()
-
-    lines: ->
-      ret = (@line(inst) for inst of @instructions)
-      ret.join(' ')
-
-    line: (name) ->
-      inst = @instructions[name]
-      "<tr><td class='image'>#{@img(name)}</td>
-              <td class='label'>#{inst}</td></tr>"
-
-    setBoder: ->
-      for prefix in ['-webkit-', '-moz-', '-o-', '-ms-', '']
-        @domElement.css prefix + 'border-radius', '10px'
-      return
-
-    img: (name) -> "<img src='./instructions/#{name}.png'/>"
-
-#  var createPyramid = function(setblockFunc, middle) {
-#                                                     6..times(function(k) {
-#                                                                          var i, j, s;
-#                                                              s = 5 - k;
-#  for (i = -s; i <= s; i++ ) {
-#    for (j = -s; j <= s; j++) {
-#                              setblockFunc(middle + i, k, middle + j, 'brick');
-#  }
-#  }
-#  });
-#  return [middle - 3, 33, middle + 4];
-#  }
-
-#window.Minecraft =
-#    start: (populateWorldFunction) ->
-#        $(document).bind "contextmenu", -> false
-#        return Detector.addGetWebGLMessage() unless Detector.webgl
-#        game = new Game(populateWorldFunction)
-#        new BlockSelection(game).insert()
-#        game.start()
-
-
-# this one actually works on chrome: http://www.html5rocks.com/en/tutorials/pointerlock/intro/?redirect_from_locale=de
-
 @Minecraft =
     start: ->
         $("#blocks").hide()
@@ -691,6 +583,7 @@ class Instructions
             new BlockSelection(game).insert()
 
             $("#minecraft-blocks").show()
+            window.game = game
             game.start()
         new Instructions(startGame).insert()
 
