@@ -356,7 +356,7 @@ class Game
         [x - @rendererPosition.left, y - @rendererPosition.top]
 
     onMouseUp: (e) ->
-        if not @moved and MouseEvent.isLeftButton event
+        if not @moved and MouseEvent.isLeftButton e
             @toDelete = @_targetPosition(e)
         @moved = false
 

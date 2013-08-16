@@ -564,7 +564,7 @@
     };
 
     Game.prototype.onMouseUp = function(e) {
-      if (!this.moved && MouseEvent.isLeftButton(event)) {
+      if (!this.moved && MouseEvent.isLeftButton(e)) {
         this.toDelete = this._targetPosition(e);
       }
       return this.moved = false;
