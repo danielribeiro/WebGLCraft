@@ -6,6 +6,7 @@ class @Instructions
         leftclick: "Remove block"
         rightclick: "Add block"
         drag: "Drag with the left mouse clicked to move the camera"
+        save: "Save map"
         pause: "Pause/Unpause"
         space: "Jump"
         wasd: "WASD keys to move"
