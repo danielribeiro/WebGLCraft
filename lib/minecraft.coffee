@@ -273,12 +273,16 @@ class Game
             quality *= 4
         data
 
-    haveSave: -> !!localStorage["map"] and !!localStorage["position"]
+    haveSave: -> !!localStorage["map"] and !!localStorage["position"] and !! localStorage["direction"]
 
     loadWorld: ->
         map = JSON.parse localStorage["map"]
         position = JSON.parse localStorage["position"]
+        direction = JSON.parse localStorage["direction"]
+
         @player.pos.set position...
+        @controls.setDirection direction
+
         for mapYZ,x in map
             for mapZ,y in mapYZ
                 for cubeName,z in mapZ
@@ -367,6 +371,7 @@ class Game
     save: ->
         localStorage["map"] = JSON.stringify @grid.map
         localStorage["position"] = JSON.stringify [ @player.position("x"),@player.position("y"),@player.position("z")]
+        localStorage["direction"] = JSON.stringify @controls.getDirection()
 
     togglePause: ->
         @pause = !@pause
