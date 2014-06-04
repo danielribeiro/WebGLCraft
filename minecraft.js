@@ -97,6 +97,7 @@
           return _this.matrix[i][j] = [];
         });
       });
+      this.map = JSON.parse(JSON.stringify(this.matrix));
     }
 
     Grid.prototype.insideGrid = function(x, y, z) {
@@ -108,7 +109,11 @@
     };
 
     Grid.prototype.put = function(x, y, z, val) {
-      return this.matrix[x][y][z] = val;
+      this.matrix[x][y][z] = val;
+      if (!val) {
+        return this.map[x][y][z] = null;
+      }
+      return this.map[x][y][z] = val.material.materials[0].map.image.src.match(/\/([a-zA-Z0-9_]*)\..*$/)[1];
     };
 
     Grid.prototype.gridCoords = function(x, y, z) {
@@ -420,9 +425,51 @@
       return data;
     };
 
+    Game.prototype.haveSave = function() {
+      return !!localStorage["map"] && !!localStorage["position"] && !!localStorage["direction"];
+    };
+
+    Game.prototype.loadWorld = function() {
+      var cubeName, direction, map, mapYZ, mapZ, position, x, y, z, _i, _len, _ref, _results;
+      map = JSON.parse(localStorage["map"]);
+      position = JSON.parse(localStorage["position"]);
+      direction = JSON.parse(localStorage["direction"]);
+      (_ref = this.player.pos).set.apply(_ref, position);
+      this.controls.setDirection(direction);
+      _results = [];
+      for (x = _i = 0, _len = map.length; _i < _len; x = ++_i) {
+        mapYZ = map[x];
+        _results.push((function() {
+          var _j, _len1, _results1;
+          _results1 = [];
+          for (y = _j = 0, _len1 = mapYZ.length; _j < _len1; y = ++_j) {
+            mapZ = mapYZ[y];
+            _results1.push((function() {
+              var _k, _len2, _results2;
+              _results2 = [];
+              for (z = _k = 0, _len2 = mapZ.length; _k < _len2; z = ++_k) {
+                cubeName = mapZ[z];
+                if (cubeName) {
+                  _results2.push(this.cubeAt(x, y, z, this.cubeBlocks[cubeName]));
+                } else {
+                  _results2.push(void 0);
+                }
+              }
+              return _results2;
+            }).call(this));
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
+    };
+
     Game.prototype.populateWorld = function() {
       var data, height, i, j, middle, middlePos, playerHeight, _i, _j,
         _this = this;
+      if (this.haveSave()) {
+        return this.loadWorld();
+      }
       middle = this.grid.size / 2;
       data = this.generateHeight();
       playerHeight = null;
@@ -535,6 +582,9 @@
       $(document).bind('keydown', 'p', function() {
         return _this.togglePause();
       });
+      $(document).bind('keydown', 'k', function() {
+        return _this.save();
+      });
       _ref1 = [document, this.canvas];
       _results = [];
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
@@ -550,6 +600,12 @@
         }));
       }
       return _results;
+    };
+
+    Game.prototype.save = function() {
+      localStorage["map"] = JSON.stringify(this.grid.map);
+      localStorage["position"] = JSON.stringify([this.player.position("x"), this.player.position("y"), this.player.position("z")]);
+      return localStorage["direction"] = JSON.stringify(this.controls.getDirection());
     };
 
     Game.prototype.togglePause = function() {

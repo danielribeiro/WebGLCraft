@@ -63,12 +63,16 @@ class Grid
             @matrix[i] = []
             @size.times (j) =>
                 @matrix[i][j] = []
+        @map = JSON.parse(JSON.stringify(@matrix)) #deep copy
 
     insideGrid: (x, y, z) -> 0 <= x < @size and 0 <= y < @size and 0 <= z < @size
 
     get: (x, y, z) -> @matrix[x][y][z]
 
-    put: (x, y, z, val) -> @matrix[x][y][z] = val
+    put: (x, y, z, val) -> 
+        @matrix[x][y][z] = val
+        return @map[x][y][z] = null unless val
+        @map[x][y][z] = val.material.materials[0].map.image.src.match(/\/([a-zA-Z0-9_]*)\..*$/)[1] # hack to take cubeName
 
     gridCoords: (x, y, z) ->
         x = Math.floor(x / CubeSize)
@@ -269,7 +273,23 @@ class Game
             quality *= 4
         data
 
+    haveSave: -> !!localStorage["map"] and !!localStorage["position"] and !! localStorage["direction"]
+
+    loadWorld: ->
+        map = JSON.parse localStorage["map"]
+        position = JSON.parse localStorage["position"]
+        direction = JSON.parse localStorage["direction"]
+
+        @player.pos.set position...
+        @controls.setDirection direction
+
+        for mapYZ,x in map
+            for mapZ,y in mapYZ
+                for cubeName,z in mapZ
+                    @cubeAt x,y,z, @cubeBlocks[cubeName] if cubeName
+
     populateWorld: ->
+      return @loadWorld() if @haveSave()
       middle = @grid.size / 2
       data = @generateHeight()
       playerHeight = null
@@ -342,10 +362,16 @@ class Game
         for key in "wasd".split('').concat('space', 'up', 'down', 'left', 'right')
             bindit key
         $(document).bind 'keydown', 'p', => @togglePause()
+        $(document).bind 'keydown', 'k', => @save()
         for target in [document, @canvas]
             $(target).mousedown (e) => @onMouseDown e
             $(target).mouseup (e) => @onMouseUp e
             $(target).mousemove (e) => @onMouseMove e
+
+    save: ->
+        localStorage["map"] = JSON.stringify @grid.map
+        localStorage["position"] = JSON.stringify [ @player.position("x"),@player.position("y"),@player.position("z")]
+        localStorage["direction"] = JSON.stringify @controls.getDirection()
 
     togglePause: ->
         @pause = !@pause

@@ -99,6 +99,17 @@
       return this.deltaY = y;
     };
 
+    Controls.prototype.setDirection = function(dir) {
+      return this.lat = dir.lat, this.lon = dir.lon, dir;
+    };
+
+    Controls.prototype.getDirection = function() {
+      return {
+        lat: this.lat,
+        lon: this.lon
+      };
+    };
+
     Controls.prototype.onMouseMove = function(event) {
       var e, x, y;
       if (this.mouseDragOn) {

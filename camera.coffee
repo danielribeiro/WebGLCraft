@@ -60,6 +60,10 @@ class @Controls
         @deltaX = x
         @deltaY = y
 
+    setDirection: (dir) -> {@lat,@lon} = dir
+
+    getDirection: -> {@lat,@lon}
+
     onMouseMove: (event) ->
         if @mouseDragOn
             @setMouse event.pageX, event.pageY
