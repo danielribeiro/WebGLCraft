@@ -33,7 +33,7 @@
       if (this.enabled) {
         return;
       }
-      container.fullScreenLock = container.fullScreenLock || container.mozRequestPointerLock || container.webkitRequestPointerLock;
+      container.fullScreenLock = container.requestPointerLock || container.mozRequestPointerLock || container.webkitRequestPointerLock;
       onFirefox = container.mozRequestFullScreen != null;
       if (onFirefox) {
 //        if (this.container !== container) {
@@ -47,7 +47,7 @@
 //        container.mozRequestFullScreen();
       } else {
         container.fullScreenLock();
-        container.webkitRequestFullscreen();
+        container.webkitRequestFullScreen();
       }
       return this.container = container;
     },
