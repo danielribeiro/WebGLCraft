@@ -120,6 +120,7 @@
     Controls.prototype.onMouseMove = function(event) {
       var e, x, y;
       if (this.mouseDragOn) {
+        console.log(event);
         this.setMouse(event.pageX, event.pageY);
       } else if (this.mouseLocked) {
         e = event.originalEvent;

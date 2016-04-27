@@ -809,23 +809,16 @@
           return requestAnimationFrame(animate, _this.renderer.domElement);
         };
       })(this);
-      animate();
-      PointerLock.init({
-        onEnable: this.enablePointLock,
-        onDisable: this.disablePointLock
-      });
-      return PointerLock.fullScreenLock($("#app canvas").get(0));
+      return animate();
     };
 
     Game.prototype.enablePointLock = function() {
       $("#cursor").show();
-      this.controls.enableMouseLocked();
       return this.fullscreen = true;
     };
 
     Game.prototype.disablePointLock = function() {
       $("#cursor").hide();
-      this.controls.disableMouseLocked();
       return this.fullscreen = false;
     };
 

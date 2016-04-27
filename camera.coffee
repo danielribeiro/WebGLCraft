@@ -66,6 +66,7 @@ class @Controls
 
     onMouseMove: (event) ->
         if @mouseDragOn
+            console.log event
             @setMouse event.pageX, event.pageY
         else if @mouseLocked
             e = event.originalEvent
