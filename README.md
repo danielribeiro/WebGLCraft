@@ -41,7 +41,7 @@ To run the tests, simply run:
     cake spec
 
 
-The tests are powered by [Jasmine](http://pivotal.github.com/jasmine/), and can also be seen
+The tests are powered by [Jasmine](https://jasmine.github.io/), and can also be seen
 on the browser (useful for debugging) by opening http://localhost:8000/spec/web_runner.html
 
 Coffeescript Source Maps
